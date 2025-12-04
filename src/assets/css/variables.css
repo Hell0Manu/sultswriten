@@ -1,0 +1,155 @@
+:root {
+  /* =========================================
+     CORES DA MARCA (BRAND)
+     ========================================= */
+
+  /* Verdigris (Cor Primária)*/
+  --color-verdigris-100: #f6fcfc;
+  --color-verdigris-200: #e8f7f7;
+  --color-verdigris-300: #9cdede;
+  --color-verdigris-400: #4fc4c4;
+  --color-verdigris-500: #00acac; 
+  --color-verdigris-600: #167e7e;
+  --color-verdigris-700: #126868;
+  --color-verdigris-800: #0f5252;
+  --color-verdigris-900: #0b3d3d;
+
+  /* Gunmetal (Cor Secundária) */
+  --color-gunmetal-100: #f2f9fd;
+  --color-gunmetal-200: #c6e4f6;
+  --color-gunmetal-300: #6ebbe7;
+  --color-gunmetal-400: #42a6e0;
+  --color-gunmetal-500: #228fce;
+  --color-gunmetal-600: #1a70a2;
+  --color-gunmetal-700: #135276;
+  --color-gunmetal-800: #0c334b;
+  --color-gunmetal-900: #0a171f;
+
+  /* =========================================
+     CORES FUNCIONAIS (FUNCTIONAL)
+     ========================================= */
+
+  /* Blue (Info/Action) */
+  --color-blue-100: #e0edff;
+  --color-blue-200: #adcfff;
+  --color-blue-300: #7ab1ff;
+  --color-blue-400: #4794ff;
+  --color-blue-500: #206df3;
+  --color-blue-600: #005ee0;
+  --color-blue-700: #0048ad;
+  --color-blue-800: #00337a;
+  --color-blue-900: #001e47;
+
+  /* Purple */
+  --color-purple-100: #e9e3fc;
+  --color-purple-200: #c6b5f7;
+  --color-purple-300: #a287f2;
+  --color-purple-400: #7f5aed;
+  --color-purple-500: #6643d0;
+  --color-purple-600: #4f2db4;
+  --color-purple-700: #3d238b;
+  --color-purple-800: #2b1862;
+  --color-purple-900: #190e3a;
+
+  /* Pink */
+  --color-pink-100: #ffe0ef;
+  --color-pink-200: #ffadd6;
+  --color-pink-300: #ff7abd;
+  --color-pink-400: #ff47a3;
+  --color-pink-500: #ff148a;
+  --color-pink-600: #e00070;
+  --color-pink-700: #ad0057;
+  --color-pink-800: #7a003d;
+  --color-pink-900: #470024;
+
+  /* Red (Error/Danger) */
+  --color-red-100: #fbe5e5;
+  --color-red-200: #f3b9b9;
+  --color-red-300: #eb8e8e;
+  --color-red-400: #e36363;
+  --color-red-500: #dc3838;
+  --color-red-600: #bf2222;
+  --color-red-700: #931a1a;
+  --color-red-800: #681212;
+  --color-red-900: #3d0b0b;
+
+  /* Orange (Warning) */
+  --color-orange-100: #ffefe0;
+  --color-orange-200: #ffd6ad;
+  --color-orange-300: #ffbc7a;
+  --color-orange-400: #ffa347;
+  --color-orange-500: #ff8914;
+  --color-orange-600: #e07000;
+  --color-orange-700: #ad5700;
+  --color-orange-800: #7a3d00;
+  --color-orange-900: #472400;
+
+  /* Yellow */
+  --color-yellow-100: #fef7e1;
+  --color-yellow-200: #fdeaaf;
+  --color-yellow-300: #fcdc7d;
+  --color-yellow-400: #facf4c;
+  --color-yellow-500: #f9c11a;
+  --color-yellow-600: #daa506;
+  --color-yellow-700: #a98004;
+  --color-yellow-800: #775a03;
+  --color-yellow-900: #453402;
+
+  /* Brown */
+  --color-brown-100: #f4f0ec;
+  --color-brown-200: #e0d6cc;
+  --color-brown-300: #cdbdac;
+  --color-brown-400: #baa38c;
+  --color-brown-500: #a78a6c;
+  --color-brown-600: #8c7054;
+  --color-brown-700: #6c5741;
+  --color-brown-800: #4d3d2e;
+  --color-brown-900: #2d241b;
+
+  /* Green (Success) */
+  --color-green-100: #e7f8ef;
+  --color-green-200: #c0edd7;
+  --color-green-300: #98e1bd;
+  --color-green-400: #49ca8a;
+  --color-green-500: #32ae70;
+  --color-green-600: #278657;
+  --color-green-700: #1c5f3d;
+  --color-green-800: #164b30;
+  --color-green-900: #103724;
+
+  /* Neutral (Text/Backgrounds) */
+  --color-neutral-100: #ffffff;
+  --color-neutral-200: #eef0f1;
+  --color-neutral-300: #d2d7da;
+  --color-neutral-400: #9aa6ac;
+  --color-neutral-500: #7e8d95;
+  --color-neutral-600: #65737b;
+  --color-neutral-700: #4e595f;
+  --color-neutral-800: #373f43;
+  --color-neutral-900: #202527;
+
+  /* =========================================
+      cores abstratas para o uso real
+     ========================================= */
+  
+  /* Cores Principais */
+  --color-primary: var(--color-verdigris-500);
+  --color-primary-hover: var(--color-verdigris-600);
+  --color-primary-active: var(--color-verdigris-700);
+  --color-primary-light: var(--color-verdigris-100);
+
+  --color-secondary: var(--color-gunmetal-500);
+  --color-secondary-hover: var(--color-gunmetal-600);
+
+  /* Cores de Feedback */
+  --color-success: var(--color-green-500);
+  --color-warning: var(--color-orange-500);
+  --color-danger: var(--color-red-500);
+  --color-info: var(--color-blue-500);
+
+  /* Tipografia e Fundos */
+  --color-text-main: var(--color-neutral-900);
+  --color-text-muted: var(--color-neutral-600);
+  --color-background: var(--color-neutral-100);
+  --color-surface: var(--color-neutral-200);
+}

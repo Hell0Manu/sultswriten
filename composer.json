@@ -1,0 +1,46 @@
+{
+  "name": "sults/sults-writen",
+  "description": "Plugin de exportação e fluxo editorial SULTS.",
+  "type": "wordpress-plugin",
+  "keywords": ["wordpress", "plugin", "headless cms", "export", "workflow"],
+  "homepage": "https://github.com/sults/sultswriten",
+  "license": "GPL-2.0+",
+  "authors": [
+      {
+          "name": "Sults",
+          "email": "dev@sults.com.br"
+      }
+  ],
+  "require": {
+      "php": ">=7.4"
+  },
+ "require-dev": {
+    "phpunit/phpunit": "^9.5",
+    "mockery/mockery": "^1.4",
+    "wp-coding-standards/wpcs": "^3.0",
+    "yoast/phpunit-polyfills": "^4.0",
+    "phpcompatibility/phpcompatibility-wp": "^2.1"
+  },
+  "autoload": {
+      "psr-4": {
+          "Sults\\Writen\\": "src/"
+      }
+  },
+  "autoload-dev": {
+      "psr-4": {
+          "Sults\\Writen\\Tests\\": "tests/"
+      }
+  },
+  "scripts": {
+    "post-update-cmd": [
+        "vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs"
+    ],
+    "makepot": "wp i18n make-pot ."
+  },
+  "config": {
+      "optimize-autoloader": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}
