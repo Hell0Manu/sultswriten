@@ -92,12 +92,33 @@ class Plugin {
 		);
 
 		$this->container->set(
+			\Sults\Writen\Workflow\Permissions\PostEditingBlocker::class,
+			function ( $c ) {
+				return new \Sults\Writen\Workflow\Permissions\PostEditingBlocker(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Workflow\Permissions\RoleManager::class,
+			function ( $c ) {
+				return new \Sults\Writen\Workflow\Permissions\RoleManager(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
 					$c->get( PostStatusRegistrar::class ),
 					$c->get( AdminAssetsManager::class ),
-					$c->get( PostListPresenter::class )
+					$c->get( PostListPresenter::class ),
+					$c->get( \Sults\Writen\Workflow\Permissions\PostEditingBlocker::class ),
+					$c->get( \Sults\Writen\Workflow\Permissions\RoleManager::class )
 				);
 			}
 		);

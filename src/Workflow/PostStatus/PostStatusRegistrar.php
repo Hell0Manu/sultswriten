@@ -19,7 +19,7 @@ class PostStatusRegistrar {
 	public const CUSTOM_STATUSES = array(
 		'suspended'           => 'Suspenso',
 		'requires_adjustment' => 'Precisa de Ajustes',
-		'in_progress'         => 'Revisão em andamento',
+		'review_in_progress'  => 'Revisão em andamento',
 		'finished'            => 'Finalizado',
 	);
 
