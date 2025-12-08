@@ -12,6 +12,7 @@ use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 use Sults\Writen\Workflow\PostStatus\AdminAssetsManager;
 use Sults\Writen\Workflow\PostStatus\PostListPresenter;
 use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
+use Sults\Writen\Workflow\Notifications\NotificationManager;
 
 
 /**
@@ -96,69 +97,80 @@ class Plugin {
 			}
 		);
 
-			$this->container->set(
-				RoleLabelUpdater::class,
-				function () {
-					return new RoleLabelUpdater();
-				}
-			);
+		$this->container->set(
+			RoleLabelUpdater::class,
+			function () {
+				return new RoleLabelUpdater();
+			}
+		);
 
-			$this->container->set(
-				MediaLibraryLimiter::class,
-				function ( $c ) {
-					return new MediaLibraryLimiter(
-						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
-					);
-				}
-			);
+		$this->container->set(
+			MediaLibraryLimiter::class,
+			function ( $c ) {
+				return new MediaLibraryLimiter(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+				);
+			}
+		);
 
-			$this->container->set(
-				PostListVisibility::class,
-				function ( $c ) {
-					return new PostListVisibility(
-						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
-					);
-				}
-			);
+		$this->container->set(
+			PostListVisibility::class,
+			function ( $c ) {
+				return new PostListVisibility(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+				);
+			}
+		);
 
-			$this->container->set(
-				DeletePrevention::class,
-				function () {
-					return new DeletePrevention();
-				}
-			);
+		$this->container->set(
+			DeletePrevention::class,
+			function () {
+				return new DeletePrevention();
+			}
+		);
 
-			$this->container->set(
-				RoleManager::class,
-				function ( $c ) {
-					return new RoleManager(
-						$c->get( RoleLabelUpdater::class ),
-						$c->get( MediaLibraryLimiter::class ),
-						$c->get( PostListVisibility::class ),
-						$c->get( DeletePrevention::class )
-					);
-				}
-			);
+		$this->container->set(
+			RoleManager::class,
+			function ( $c ) {
+				return new RoleManager(
+					$c->get( RoleLabelUpdater::class ),
+					$c->get( MediaLibraryLimiter::class ),
+					$c->get( PostListVisibility::class ),
+					$c->get( DeletePrevention::class )
+				);
+			}
+		);
 
-			$this->container->set(
-				\Sults\Writen\Workflow\Permissions\PostEditingBlocker::class,
-				function ( $c ) {
-					return new \Sults\Writen\Workflow\Permissions\PostEditingBlocker(
-						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
-						$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
-					);
-				}
-			);
+		$this->container->set(
+			\Sults\Writen\Workflow\Permissions\PostEditingBlocker::class,
+			function ( $c ) {
+				return new \Sults\Writen\Workflow\Permissions\PostEditingBlocker(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
+				);
+			}
+		);
 
-			// Integrations.
-			$this->container->set(
-				AIOSEOCleaner::class,
-				function ( $c ) {
-					return new AIOSEOCleaner(
-						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
-					);
-				}
-			);
+		// Integrations.
+		$this->container->set(
+			AIOSEOCleaner::class,
+			function ( $c ) {
+				return new AIOSEOCleaner(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+				);
+			}
+		);
+
+		// Notification.
+		$this->container->set(
+			NotificationManager::class,
+			function ( $c ) {
+				return new NotificationManager(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
+				);
+			}
+		);
 
 		$this->container->set(
 			StatusManager::class,
@@ -189,6 +201,7 @@ class Plugin {
 	 * @return void
 	 */
 	public function init(): void {
+		$this->container->get( NotificationManager::class )->register();
 		$status_manager = $this->container->get( StatusManager::class );
 		$status_manager->register();
 

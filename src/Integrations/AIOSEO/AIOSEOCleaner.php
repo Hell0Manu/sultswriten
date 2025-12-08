@@ -29,7 +29,6 @@ class AIOSEOCleaner {
 	}
 
 	public function register(): void {
-		add_filter( 'aioseo_show_in_admin_bar', array( $this, 'hide_admin_bar_menu' ) );
 		add_action( 'add_meta_boxes', array( $this, 'remove_unwanted_metaboxes' ), 999 );
 		add_action( 'admin_head', array( $this, 'hide_tabs_and_elements' ) );
 	}
@@ -46,16 +45,6 @@ class AIOSEOCleaner {
 	}
 
 	/**
-	 * Callback do filtro 'aioseo_show_in_admin_bar'.
-	 */
-	public function hide_admin_bar_menu( $show ) {
-		if ( $this->is_restricted_user() ) {
-			return false;
-		}
-		return $show;
-	}
-
-	/**
 	 * Remove o metabox "Writing Assistant" e outros indesejados.
 	 */
 	public function remove_unwanted_metaboxes(): void {
@@ -64,7 +53,6 @@ class AIOSEOCleaner {
 		}
 
 		remove_meta_box( 'aioseo-writing-assistant-metabox', 'post', 'normal' );
-		remove_meta_box( 'aioseo-writing-assistant-metabox', 'page', 'normal' );
 	}
 
 	/**

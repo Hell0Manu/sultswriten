@@ -35,14 +35,4 @@ class Test_AIOSEO_Cleaner extends WP_UnitTestCase {
 
 		$this->assertFalse( $cleaner->is_restricted_user(), 'Administrador NÃO deve ser restrito.' );
 	}
-
-	public function test_admin_bar_menu_deve_ser_ocultado_para_restritos() {
-		$mockUser = Mockery::mock( WPUserProviderInterface::class );
-		$mockUser->shouldReceive( 'get_current_user_roles' )->andReturn( array( 'author' ) );
-
-		$cleaner = new AIOSEOCleaner( $mockUser );
-
-		// O filtro espera retornar FALSE para esconder o menu
-		$this->assertFalse( $cleaner->hide_admin_bar_menu( true ) );
-	}
 }

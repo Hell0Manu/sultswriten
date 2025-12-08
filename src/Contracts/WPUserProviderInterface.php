@@ -1,9 +1,8 @@
 <?php
 /**
- * Interface para o provedor de dados de usuário.
- *
- * Define o contrato para acessar informações do usuário atual e listar usuários,
- * isolando a lógica direta do WordPress.
+ * Interface WPUserProviderInterface
+ * * Contrato que define quais operações relacionadas a usuários o plugin precisa.
+ * Serve para desacoplar o código das funções globais do WordPress.
  *
  * @package    Sults\Writen
  * @subpackage Sults\Writen\Contracts
@@ -14,6 +13,8 @@ namespace Sults\Writen\Contracts;
 
 interface WPUserProviderInterface {
 	public function get_current_user_roles(): array;
-
 	public function get_users_dropdown( array $args ): string;
+	public function get_current_user_id(): int;
+	public function get_user_meta( int $user_id, string $key, bool $single = false );
+	public function update_user_meta( int $user_id, string $key, $value );
 }
