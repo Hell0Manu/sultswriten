@@ -3,6 +3,11 @@ namespace Sults\Writen\Core;
 
 use Sults\Writen\Core\Container;
 use Sults\Writen\Workflow\StatusManager;
+use Sults\Writen\Workflow\Permissions\RoleManager;
+use Sults\Writen\Workflow\Permissions\RoleLabelUpdater;
+use Sults\Writen\Workflow\Permissions\MediaLibraryLimiter;
+use Sults\Writen\Workflow\Permissions\PostListVisibility;
+use Sults\Writen\Workflow\Permissions\DeletePrevention;
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 use Sults\Writen\Workflow\PostStatus\AdminAssetsManager;
 use Sults\Writen\Workflow\PostStatus\PostListPresenter;
@@ -91,35 +96,73 @@ class Plugin {
 			}
 		);
 
-		$this->container->set(
-			\Sults\Writen\Workflow\Permissions\PostEditingBlocker::class,
-			function ( $c ) {
-				return new \Sults\Writen\Workflow\Permissions\PostEditingBlocker(
-					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
-				);
-			}
-		);
+			// 2.1. Componentes de Permissão (SRP)
+			$this->container->set(
+				RoleLabelUpdater::class,
+				function ( $c ) {
+					return new RoleLabelUpdater();
+				}
+			);
 
-		$this->container->set(
-			\Sults\Writen\Workflow\Permissions\RoleManager::class,
-			function ( $c ) {
-				return new \Sults\Writen\Workflow\Permissions\RoleManager(
-					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
-				);
-			}
-		);
+			$this->container->set(
+				MediaLibraryLimiter::class,
+				function ( $c ) {
+					return new MediaLibraryLimiter(
+						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+					);
+				}
+			);
+
+			$this->container->set(
+				PostListVisibility::class,
+				function ( $c ) {
+					return new PostListVisibility(
+						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+					);
+				}
+			);
+
+			$this->container->set(
+				DeletePrevention::class,
+				function ( $c ) {
+					return new DeletePrevention();
+				}
+			);
+
+			// 2.2. Coordenador de Permissões (RoleManager)
+			$this->container->set(
+				RoleManager::class,
+				function ( $c ) {
+					return new RoleManager(
+						$c->get( RoleLabelUpdater::class ),
+						$c->get( MediaLibraryLimiter::class ),
+						$c->get( PostListVisibility::class ),
+						$c->get( DeletePrevention::class )
+					);
+				}
+			);
+
+			// 2.3. Bloqueador de Edição (Mantido como está)
+			$this->container->set(
+				\Sults\Writen\Workflow\Permissions\PostEditingBlocker::class,
+				function ( $c ) {
+					return new \Sults\Writen\Workflow\Permissions\PostEditingBlocker(
+						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+						$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
+					);
+				}
+			);
 
 		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
-					$c->get( PostStatusRegistrar::class ),
-					$c->get( AdminAssetsManager::class ),
-					$c->get( PostListPresenter::class ),
-					$c->get( \Sults\Writen\Workflow\Permissions\PostEditingBlocker::class ),
-					$c->get( \Sults\Writen\Workflow\Permissions\RoleManager::class )
-				);
+						$c->get( PostStatusRegistrar::class ),
+						$c->get( AdminAssetsManager::class ),
+						$c->get( PostListPresenter::class ),
+						$c->get( \Sults\Writen\Workflow\Permissions\PostEditingBlocker::class ),
+						$c->get( RoleManager::class )
+					);
 			}
 		);
 	}
