@@ -24,7 +24,6 @@ class DeletePrevention {
         if ( get_post_status( $post_id ) === 'trash' ) {
             $user = get_userdata( $user_id );
             
-            // Bloqueia a exclusão permanente para editores (Redator-Chefe) e abaixo.
             if ( $user && in_array( 'editor', (array) $user->roles, true ) ) {
                 return array( 'do_not_allow' );
             }

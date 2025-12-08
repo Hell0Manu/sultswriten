@@ -42,13 +42,13 @@ class StatusManager {
 	}
 
 	public function register(): void {
-		$this->status_registrar->register();
-		$this->editing_blocker->register();
-		$this->role_manager->register();
+		add_action( 'init', array( $this->status_registrar, 'register' ), 5 );
+		add_action( 'init', array( $this->editing_blocker, 'register' ), 10 );
+		add_action( 'init', array( $this->role_manager, 'register' ), 10 );
 
 		if ( is_admin() ) {
-			$this->assets_manager->register();
-			$this->list_presenter->register();
+			add_action( 'init', array( $this->assets_manager, 'register' ), 10 );
+			add_action( 'init', array( $this->list_presenter, 'register' ), 10 );
 		}
 	}
 }

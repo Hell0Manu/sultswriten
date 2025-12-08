@@ -18,7 +18,7 @@ class PostEditingBlocker {
 
 	private array $blocked_statuses = array( 'review_in_progress', 'suspended', 'finished' );
 
-	private array $blocked_roles = array( 'contributor', 'redator' );
+	private array $blocked_roles = array( 'contributor');
 
 	public function __construct(
 		WPUserProviderInterface $user_provider,

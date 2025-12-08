@@ -34,7 +34,6 @@ class Plugin {
 
 	public function __construct() {
 		$this->container = new Container();
-		$this->define_constants();
 		$this->register_services();
 		// $this->init_hooks();
 	}
@@ -168,23 +167,12 @@ class Plugin {
 	}
 
 	/**
-	 * Define constantes globais usadas pelo plugin.
-	 *
-	 * @return void
-	 */
-	private function define_constants(): void {
-		if ( ! defined( 'SULTSWRITEN_PATH' ) ) {
-			define( 'SULTSWRITEN_PATH', plugin_dir_path( dirname( __DIR__ ) ) );
-		}
-	}
-
-	/**
 	 * Registra os hooks principais do plugin.
 	 *
 	 * @return void
 	 */
 	private function init_hooks(): void {
-		add_action( 'init', array( $this, 'init' ) );
+		add_action( 'plugins_loaded', array( $this, 'init' ) );
 	}
 
 	/**

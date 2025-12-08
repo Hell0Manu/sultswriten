@@ -43,11 +43,13 @@ class PostListVisibility {
         }
 
         $current_user_id = get_current_user_id();
+        $allowed_statuses = array('publish', 'finished');
+        $statuses_sql = "'" . implode( "', '", $allowed_statuses ) . "'";
 
         $sql_restriction = $wpdb->prepare(
             " AND ( 
-                {$wpdb->posts}.post_status = 'publish' 
-                OR {$wpdb->posts}.post_author = %d 
+                {$wpdb->posts}.post_author = %d 
+                OR {$wpdb->posts}.post_status IN ( $statuses_sql )
             )",
             $current_user_id
         );

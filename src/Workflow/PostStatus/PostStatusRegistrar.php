@@ -39,11 +39,12 @@ class PostStatusRegistrar {
 				$slug,
 				array(
 					'label'                     => $label,
-					'public'                    => true,
+					'public'                    => false,
 					'internal'                  => false,
-					'exclude_from_search'       => false,
+					'exclude_from_search'       => true,
 					'show_in_admin_all_list'    => true,
 					'show_in_admin_status_list' => true,
+					'protected'                 => true,
 					'label_count'               => _n_noop(
 						// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralSingular
 						$label . ' <span class="count">(%s)</span>',
