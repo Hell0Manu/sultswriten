@@ -14,12 +14,12 @@ use Sults\Writen\Infrastructure\RewriteManager;
 
 class Activator {
 
-    public static function activate(): void {
+	public static function activate(): void {
 
 		$role_manager = new RoleCapabilityManager();
-        $role_manager->apply();
+		$role_manager->apply();
 
-        $rewrite_manager = new RewriteManager();
-        $rewrite_manager->flush();
-    }
+		$rewrite_manager = new RewriteManager();
+		$rewrite_manager->flush();
+	}
 }

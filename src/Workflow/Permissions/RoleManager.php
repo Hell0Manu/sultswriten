@@ -18,27 +18,27 @@ use Sults\Writen\Workflow\Permissions\PostListVisibility;
 use Sults\Writen\Workflow\Permissions\DeletePrevention;
 
 class RoleManager {
-    private RoleLabelUpdater $label_updater;
-    private MediaLibraryLimiter $media_limiter;
-    private PostListVisibility $visibility_limiter;
-    private DeletePrevention $delete_prevention;
+	private RoleLabelUpdater $label_updater;
+	private MediaLibraryLimiter $media_limiter;
+	private PostListVisibility $visibility_limiter;
+	private DeletePrevention $delete_prevention;
 
-    public function __construct(
-        RoleLabelUpdater $label_updater,
-        MediaLibraryLimiter $media_limiter,
-        PostListVisibility $visibility_limiter,
-        DeletePrevention $delete_prevention
-    ) {
-        $this->label_updater      = $label_updater;
-        $this->media_limiter      = $media_limiter;
-        $this->visibility_limiter = $visibility_limiter;
-        $this->delete_prevention  = $delete_prevention;
-    }
+	public function __construct(
+		RoleLabelUpdater $label_updater,
+		MediaLibraryLimiter $media_limiter,
+		PostListVisibility $visibility_limiter,
+		DeletePrevention $delete_prevention
+	) {
+		$this->label_updater      = $label_updater;
+		$this->media_limiter      = $media_limiter;
+		$this->visibility_limiter = $visibility_limiter;
+		$this->delete_prevention  = $delete_prevention;
+	}
 
-    public function register(): void {
-        $this->label_updater->register();
-        $this->media_limiter->register();
-        $this->visibility_limiter->register();
-        $this->delete_prevention->register();
-    }
+	public function register(): void {
+		$this->label_updater->register();
+		$this->media_limiter->register();
+		$this->visibility_limiter->register();
+		$this->delete_prevention->register();
+	}
 }

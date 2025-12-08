@@ -95,10 +95,9 @@ class Plugin {
 			}
 		);
 
-			// 2.1. Componentes de Permissão (SRP)
 			$this->container->set(
 				RoleLabelUpdater::class,
-				function ( $c ) {
+				function () {
 					return new RoleLabelUpdater();
 				}
 			);
@@ -123,12 +122,11 @@ class Plugin {
 
 			$this->container->set(
 				DeletePrevention::class,
-				function ( $c ) {
+				function () {
 					return new DeletePrevention();
 				}
 			);
 
-			// 2.2. Coordenador de Permissões (RoleManager)
 			$this->container->set(
 				RoleManager::class,
 				function ( $c ) {
@@ -141,7 +139,6 @@ class Plugin {
 				}
 			);
 
-			// 2.3. Bloqueador de Edição (Mantido como está)
 			$this->container->set(
 				\Sults\Writen\Workflow\Permissions\PostEditingBlocker::class,
 				function ( $c ) {
@@ -156,12 +153,12 @@ class Plugin {
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
-						$c->get( PostStatusRegistrar::class ),
-						$c->get( AdminAssetsManager::class ),
-						$c->get( PostListPresenter::class ),
-						$c->get( \Sults\Writen\Workflow\Permissions\PostEditingBlocker::class ),
-						$c->get( RoleManager::class )
-					);
+					$c->get( PostStatusRegistrar::class ),
+					$c->get( AdminAssetsManager::class ),
+					$c->get( PostListPresenter::class ),
+					$c->get( \Sults\Writen\Workflow\Permissions\PostEditingBlocker::class ),
+					$c->get( RoleManager::class )
+				);
 			}
 		);
 	}

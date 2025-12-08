@@ -14,12 +14,12 @@ use Sults\Writen\Infrastructure\RewriteManager;
 
 class Deactivator {
 
-    public static function deactivate(): void {
+	public static function deactivate(): void {
 
 		$role_manager = new RoleCapabilityManager();
-        $role_manager->revert();
+		$role_manager->revert();
 
-        $rewrite_manager = new RewriteManager();
-        $rewrite_manager->flush();
-    }
+		$rewrite_manager = new RewriteManager();
+		$rewrite_manager->flush();
+	}
 }
