@@ -11,6 +11,7 @@ use Sults\Writen\Workflow\Permissions\DeletePrevention;
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 use Sults\Writen\Workflow\PostStatus\AdminAssetsManager;
 use Sults\Writen\Workflow\PostStatus\PostListPresenter;
+use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
 
 
 /**
@@ -149,6 +150,16 @@ class Plugin {
 				}
 			);
 
+			// Integrations.
+			$this->container->set(
+				AIOSEOCleaner::class,
+				function ( $c ) {
+					return new AIOSEOCleaner(
+						$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+					);
+				}
+			);
+
 		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
@@ -180,6 +191,10 @@ class Plugin {
 	public function init(): void {
 		$status_manager = $this->container->get( StatusManager::class );
 		$status_manager->register();
+
+		if ( is_admin() && defined( 'AIOSEO_VERSION' ) ) {
+			$this->container->get( AIOSEOCleaner::class )->register();
+		}
 	}
 
 	/**
