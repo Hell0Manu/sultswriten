@@ -4,12 +4,15 @@ namespace Sults\Writen\Interface\Dashboard;
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\NotificationRepositoryInterface;
 use Sults\Writen\Contracts\PostRepositoryInterface;
+use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 
 class WorkspaceController {
 
 	private WPUserProviderInterface $user_provider;
 	private NotificationRepositoryInterface $notification_repo;
 	private PostRepositoryInterface $post_repo;
+
+	public const PAGE_SLUG = 'sults-writen-workspace';
 
 	public function __construct(
 		WPUserProviderInterface $user_provider,
@@ -24,6 +27,16 @@ class WorkspaceController {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
 		add_action( 'admin_init', array( $this, 'handle_actions' ) );
+		add_action( 'admin_init', array( $this, 'redirect_default_dashboard' ) );
+	}
+
+	public function redirect_default_dashboard(): void {
+		global $pagenow;
+
+		if ( 'index.php' === $pagenow && ! $this->is_admin() ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+			exit;
+		}
 	}
 
 	public function add_menu_page(): void {
@@ -43,7 +56,7 @@ class WorkspaceController {
 			'Sults Workspace',
 			$menu_title,
 			'read',
-			'sults-writen-workspace',
+			self::PAGE_SLUG,
 			array( $this, 'render' ),
 			'dashicons-dashboard',
 			2
@@ -88,10 +101,22 @@ class WorkspaceController {
 		$notifications = $this->notification_repo->get_notifications( $user_id );
 		$unread_count  = $this->count_unread_notifications( $notifications );
 
+		$roles = $this->user_provider->get_current_user_roles();
+
+		$restricted_statuses = apply_filters( 'sultswriten_blocked_statuses', PostStatusRegistrar::get_restricted_statuses() );
+		$restricted_roles    = apply_filters( 'sultswriten_blocked_roles', PostStatusRegistrar::get_restricted_roles() );
+
+		$is_restricted_user = ! empty( array_intersect( $restricted_roles, $roles ) );
+
 		require __DIR__ . '/views/workspace-home.php';
 	}
 
 	private function count_unread_notifications( array $notifications ): int {
 		return count( array_filter( $notifications, fn( $n ) => empty( $n['read'] ) ) );
+	}
+
+	private function is_admin(): bool {
+		$roles = $this->user_provider->get_current_user_roles();
+		return in_array( 'administrator', $roles, true );
 	}
 }

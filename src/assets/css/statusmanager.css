@@ -4,7 +4,7 @@
 
 .sults-status-badge {
     display: inline-block;
-    padding: 4px 8px;
+    padding: 0px 8px;
     border-radius: 99px;
     font-size: 11px;
     font-weight: 600;
@@ -18,31 +18,35 @@
 }
 
 .sults-status-revisao_em_andamento {
-    background: var(--color-blue-300);
-    color: var(--color-blue-700);
+    background: var(--color-blue-500);
+    color: var(--color-blue-100);
 }
 
 .sults-status-pending {
-    background: var(--color-yellow-300);
-    color: var(--color-yellow-700);
+    background: var(--color-yellow-3500);
+    color: var(--color-yellow-100);
 }
 
 .sults-status-draft {
-    background: var(--color-neutral-300);
-    color: var(--color-neutral-700);
+    background: var(--color-neutral-500);
+    color: var(--color-neutral-100);
 }
 
 .sults-status-suspended {
-    background: var(--color-red-300);
-    color: var(--color-red-700);
+    background: var(--color-red-500);
+    color: var(--color-red-100);
 }
 
 .sults-status-requires_adjustment{
-    background: var(--color-orange-300);
-    color: var(--color-orange-700);
+    background: var(--color-orange-500);
+    color: var(--color-orange-100);
 }
 
 .sults-status-finished {
-    background: var(--color-green-300);
-    color: var(--color-green-700);
+    background: var(--color-green-500);
+    color: var(--color-green-100);
 }
+
+/* td {
+    align-content: center;
+} */

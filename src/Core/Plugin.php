@@ -16,9 +16,11 @@ use Sults\Writen\Workflow\PostStatus\AdminAssetsManager;
 use Sults\Writen\Workflow\PostStatus\PostListPresenter;
 
 use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
+use Sults\Writen\Interface\Theme\LoginTheme;
 
 use Sults\Writen\Interface\Dashboard\WorkspaceController;
 use Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager;
+use Sults\Writen\Interface\AdminMenuManager;
 
 use Sults\Writen\Workflow\Notifications\NotificationManager;
 use Sults\Writen\Contracts\NotificationRepositoryInterface;
@@ -227,6 +229,26 @@ class Plugin {
 		);
 
 		$this->container->set(
+			LoginTheme::class,
+			function ( $c ) {
+				return new LoginTheme(
+					SULTSWRITEN_URL,
+					SULTSWRITEN_VERSION,
+					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+			AdminMenuManager::class,
+			function ( $c ) {
+				return new AdminMenuManager(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
@@ -258,12 +280,17 @@ class Plugin {
 	 */
 	public function init(): void {
 		$status_manager = $this->container->get( StatusManager::class );
+		$this->container->get( LoginTheme::class )->register();
 		$status_manager->register();
 
 		if ( is_admin() && defined( 'AIOSEO_VERSION' ) ) {
 			$this->container->get( AIOSEOCleaner::class )->register();
+		}
+
+		if ( is_admin() ) {
 			$this->container->get( WorkspaceController::class )->register();
 			$this->container->get( WorkspaceAssetsManager::class )->register();
+			$this->container->get( AdminMenuManager::class )->register();
 		}
 	}
 

@@ -25,4 +25,8 @@ class WPAssetLoader implements AssetLoaderInterface {
 	public function localize_script( string $handle, string $object_name, array $l10n ): void {
 		wp_localize_script( $handle, $object_name, $l10n );
 	}
+
+	public function add_inline_style( string $handle, string $css ): void {
+		wp_add_inline_style( $handle, $css );
+	}
 }

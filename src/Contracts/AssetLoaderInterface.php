@@ -16,4 +16,5 @@ interface AssetLoaderInterface {
 	public function enqueue_script( string $handle, string $src, array $deps = array(), $ver = false, bool $in_footer = false ): void;
 	public function enqueue_style( string $handle, string $src, array $deps = array(), $ver = false, string $media = 'all' ): void;
 	public function localize_script( string $handle, string $object_name, array $l10n ): void;
+	public function add_inline_style( string $handle, string $css ): void;
 }

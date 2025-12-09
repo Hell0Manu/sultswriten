@@ -1,0 +1,136 @@
+body.login {
+    display: flex;             
+    align-items: center;        
+    justify-content: center;    
+    min-height: 100vh;         
+    height: auto;               
+}
+
+.login form {
+	border: none;
+	box-shadow: none; 
+	margin: 0;
+	padding:4px;
+}
+
+.login form .forgetmenot {
+	font-weight: 400;
+	float: right;
+	flex-direction:row-reverse;
+	align-items: center;
+}
+
+.login form .input,
+.login input[type="text"],
+.login input[type="password"] {
+	font-size: 24px;
+	width: 100%;
+	height: 54px;
+	padding: 0 18px ;
+    color: #3e3f5e;
+	border-radius: 12px;
+	border: 1px solid #dedeea;
+}
+
+.login .button-primary {
+	width: 100%;
+	height: 54px;
+    line-height: 54px;
+	border-radius: 10px;
+    background-color: #202d3b;
+	margin-top: 14px;
+}
+
+.language-switcher, #backtoblog  {
+	display: none;
+}
+
+#login {
+    display: flex !important;
+    flex-direction: column;
+}
+
+#login h1 {
+    order: 1;
+}
+
+#loginform {
+    order: 2;
+}
+
+.login .message {
+	border-left: 4px solid var(--color-info);
+	background-color: var(--color-info);
+}
+
+.login .notice {
+    border-radius: 12px;
+    color: white;
+}
+
+.login .success {
+	border-left-color:  var(--color-sucess);
+	background-color: var(--color-sucess);
+}
+
+.login .notice-error {
+	border-left-color: var(--color-danger);
+	background-color: var(--color-danger);
+}
+
+#login_error, .message, .success, 
+.notice, #login-message {
+    order: 3;
+    margin-top: 20px !important;    
+    margin-bottom: 0 !important;    
+}
+
+.login #nav  {
+    order: 4;
+	padding: 0;
+	text-align: center;
+}
+
+.login h1 a {
+	background-size: contain;
+	width: 90%;
+}
+
+
+.login .notice a{
+	color: white;
+}
+
+a:hover,
+a:active, a:focus, a, .login #nav a:focus,
+.login #backtoblog a:focus,
+.login h1 a:focus, .login #nav a:hover,
+.login #backtoblog a:hover,
+.login h1 a:hover {
+	color: var(--color-primary);
+}
+
+@media screen and (min-width: 768px) {
+	body {
+		background: linear-gradient(-20deg, #00cdac 0, #8ddad5 100%) !important;
+	}
+
+	#login {
+		width: 356px;
+		padding: 64px;
+		border-radius: 12px;
+		background-color: #fff;
+		box-shadow: 0 0 60px 0 rgba(94, 92, 154, .12);
+		position: relative;
+	}
+}
+
+@media screen and (max-width: 768px) {
+	body {
+		background: white;
+	}
+
+	#login {
+		padding: 16px;
+	}
+}
