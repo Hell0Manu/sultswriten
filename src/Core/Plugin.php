@@ -3,17 +3,26 @@ namespace Sults\Writen\Core;
 
 use Sults\Writen\Core\Container;
 use Sults\Writen\Workflow\StatusManager;
+
 use Sults\Writen\Workflow\Permissions\RoleManager;
 use Sults\Writen\Workflow\Permissions\RoleLabelUpdater;
 use Sults\Writen\Workflow\Permissions\MediaLibraryLimiter;
 use Sults\Writen\Workflow\Permissions\PostListVisibility;
 use Sults\Writen\Workflow\Permissions\DeletePrevention;
+use Sults\Writen\Workflow\Permissions\PostRedirectionManager;
+
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 use Sults\Writen\Workflow\PostStatus\AdminAssetsManager;
 use Sults\Writen\Workflow\PostStatus\PostListPresenter;
-use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
-use Sults\Writen\Workflow\Notifications\NotificationManager;
 
+use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
+
+use Sults\Writen\Interface\Dashboard\WorkspaceController;
+use Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager;
+
+use Sults\Writen\Workflow\Notifications\NotificationManager;
+use Sults\Writen\Contracts\NotificationRepositoryInterface;
+use Sults\Writen\Infrastructure\WPNotificationRepository;
 
 /**
  * Classe principal que comanda o plugin Sults Writen.
@@ -151,7 +160,6 @@ class Plugin {
 			}
 		);
 
-		// Integrations.
 		$this->container->set(
 			AIOSEOCleaner::class,
 			function ( $c ) {
@@ -161,11 +169,57 @@ class Plugin {
 			}
 		);
 
-		// Notification.
+		$this->container->set(
+			NotificationRepositoryInterface::class,
+			function () {
+				return new WPNotificationRepository();
+			}
+		);
+
 		$this->container->set(
 			NotificationManager::class,
 			function ( $c ) {
 				return new NotificationManager(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class ),
+					$c->get( NotificationRepositoryInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Contracts\PostRepositoryInterface::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\WPPostRepository();
+			}
+		);
+
+		$this->container->set(
+			WorkspaceAssetsManager::class,
+			function ( $c ) {
+				return new WorkspaceAssetsManager(
+					SULTSWRITEN_URL,
+					SULTSWRITEN_VERSION,
+					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+			WorkspaceController::class,
+			function ( $c ) {
+				return new WorkspaceController(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+					$c->get( \Sults\Writen\Contracts\NotificationRepositoryInterface::class ),
+					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Workflow\Permissions\PostRedirectionManager::class,
+			function ( $c ) {
+				return new \Sults\Writen\Workflow\Permissions\PostRedirectionManager(
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
 				);
@@ -180,7 +234,9 @@ class Plugin {
 					$c->get( AdminAssetsManager::class ),
 					$c->get( PostListPresenter::class ),
 					$c->get( \Sults\Writen\Workflow\Permissions\PostEditingBlocker::class ),
-					$c->get( RoleManager::class )
+					$c->get( RoleManager::class ),
+					$c->get( NotificationManager::class ),
+					$c->get( \Sults\Writen\Workflow\Permissions\PostRedirectionManager::class )
 				);
 			}
 		);
@@ -201,12 +257,13 @@ class Plugin {
 	 * @return void
 	 */
 	public function init(): void {
-		$this->container->get( NotificationManager::class )->register();
 		$status_manager = $this->container->get( StatusManager::class );
 		$status_manager->register();
 
 		if ( is_admin() && defined( 'AIOSEO_VERSION' ) ) {
 			$this->container->get( AIOSEOCleaner::class )->register();
+			$this->container->get( WorkspaceController::class )->register();
+			$this->container->get( WorkspaceAssetsManager::class )->register();
 		}
 	}
 

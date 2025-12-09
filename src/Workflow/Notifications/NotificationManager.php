@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Gerencia as notificações de mudança de status.
  *
@@ -10,17 +11,21 @@ namespace Sults\Writen\Workflow\Notifications;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\WPPostStatusProviderInterface;
+use Sults\Writen\Contracts\NotificationRepositoryInterface;
 
 class NotificationManager {
 	private WPUserProviderInterface $user_provider;
 	private WPPostStatusProviderInterface $status_provider;
+	private NotificationRepositoryInterface $notification_repository;
 
 	public function __construct(
 		WPUserProviderInterface $user_provider,
-		WPPostStatusProviderInterface $status_provider
+		WPPostStatusProviderInterface $status_provider,
+		NotificationRepositoryInterface $notification_repository
 	) {
-		$this->user_provider   = $user_provider;
-		$this->status_provider = $status_provider;
+		$this->user_provider           = $user_provider;
+		$this->status_provider         = $status_provider;
+		$this->notification_repository = $notification_repository;
 	}
 
 	public function register(): void {
@@ -34,7 +39,6 @@ class NotificationManager {
 
 		$current_user_id = $this->user_provider->get_current_user_id();
 
-		// Se quem está editando é o próprio dono do post, não notificamos.
 		if ( $current_user_id === (int) $post->post_author ) {
 			return;
 		}
@@ -57,15 +61,6 @@ class NotificationManager {
 			'read'    => false,
 		);
 
-		$user_notifs = $this->user_provider->get_user_meta( $post->post_author, '_sults_user_notifications', true );
-
-		if ( ! is_array( $user_notifs ) ) {
-			$user_notifs = array();
-		}
-
-		array_unshift( $user_notifs, $notification );
-		$user_notifs = array_slice( $user_notifs, 0, 20 );
-
-		$this->user_provider->update_user_meta( $post->post_author, '_sults_user_notifications', $user_notifs );
+		$this->notification_repository->add_notification( $post->post_author, $notification );
 	}
 }

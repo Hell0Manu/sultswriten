@@ -11,14 +11,11 @@ namespace Sults\Writen\Workflow\Permissions;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\WPPostStatusProviderInterface;
+use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 
 class PostEditingBlocker {
 	private WPUserProviderInterface $user_provider;
 	private WPPostStatusProviderInterface $status_provider;
-
-	private array $blocked_statuses = array( 'review_in_progress', 'suspended', 'finished' );
-
-	private array $blocked_roles = array( 'contributor' );
 
 	public function __construct(
 		WPUserProviderInterface $user_provider,
@@ -56,8 +53,8 @@ class PostEditingBlocker {
 			return $caps;
 		}
 
-		$statuses_to_block = apply_filters( 'sultswriten_blocked_statuses', $this->blocked_statuses );
-		$roles_to_block    = apply_filters( 'sultswriten_blocked_roles', $this->blocked_roles );
+		$statuses_to_block = apply_filters( 'sultswriten_blocked_statuses', PostStatusRegistrar::get_restricted_statuses() );
+		$roles_to_block    = apply_filters( 'sultswriten_blocked_roles', PostStatusRegistrar::get_restricted_roles() );
 
 		if ( ! in_array( $current_status, $statuses_to_block, true ) ) {
 			return $caps;
@@ -66,9 +63,13 @@ class PostEditingBlocker {
 		$user_roles = $this->user_provider->get_current_user_roles();
 
 		if ( array_intersect( $roles_to_block, $user_roles ) ) {
-			return array( 'do_not_allow' );
-		}
+			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : '';
 
+			if ( 'POST' === $request_method ) {
+				return array( 'do_not_allow' );
+			}
+			return $caps;
+		}
 		return $caps;
 	}
 }

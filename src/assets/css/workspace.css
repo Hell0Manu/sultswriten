@@ -1,0 +1,16 @@
+@media screen and (max-width: 782px) {
+    
+    .sults-card-body {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sults-card-body table {
+        min-width: 600px; 
+    }
+
+    .sults-status-badge {
+        display: inline-block; 
+        white-space: nowrap;
+    }
+}

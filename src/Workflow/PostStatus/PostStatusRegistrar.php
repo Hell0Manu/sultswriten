@@ -23,6 +23,16 @@ class PostStatusRegistrar {
 		'finished'            => 'Finalizado',
 	);
 
+	public const RESTRICTED_ROLES = array(
+		'contributor', // Redator.
+	);
+
+	public const RESTRICTED_STATUSES = array(
+		'review_in_progress',
+		'suspended',
+		'finished',
+	);
+
 	private WPPostStatusProviderInterface $status_provider;
 
 	public function __construct( WPPostStatusProviderInterface $status_provider ) {
@@ -59,5 +69,13 @@ class PostStatusRegistrar {
 
 	public static function get_custom_statuses(): array {
 		return self::CUSTOM_STATUSES;
+	}
+
+	public static function get_restricted_roles(): array {
+		return self::RESTRICTED_ROLES;
+	}
+
+	public static function get_restricted_statuses(): array {
+		return self::RESTRICTED_STATUSES;
 	}
 }
