@@ -94,23 +94,22 @@ class WorkspaceController {
 	}
 
 	public function render(): void {
-        $user_id = $this->user_provider->get_current_user_id();
+		$user_id = $this->user_provider->get_current_user_id();
 
-        $my_posts = $this->post_repo->get_posts_for_workspace( $user_id );
+		$my_posts = $this->post_repo->get_posts_for_workspace( $user_id );
 
-        $notifications = $this->notification_repo->get_notifications( $user_id );
-        $unread_count  = $this->count_unread_notifications( $notifications );
+		$notifications = $this->notification_repo->get_notifications( $user_id );
+		$unread_count  = $this->count_unread_notifications( $notifications );
 
-        $roles = $this->user_provider->get_current_user_roles();
+		$roles = $this->user_provider->get_current_user_roles();
 
-        $sultswriten_restricted_statuses = apply_filters( 'sultswriten_blocked_statuses', PostStatusRegistrar::get_restricted_statuses() );
-        $restricted_roles                = apply_filters( 'sultswriten_blocked_roles', PostStatusRegistrar::get_restricted_roles() );
+		$sultswriten_restricted_statuses = apply_filters( 'sultswriten_blocked_statuses', PostStatusRegistrar::get_restricted_statuses() );
+		$restricted_roles                = apply_filters( 'sultswriten_blocked_roles', PostStatusRegistrar::get_restricted_roles() );
 
-        $sultswriten_is_restricted_user = ! empty( array_intersect( $restricted_roles, $roles ) );
+		$sultswriten_is_restricted_user = ! empty( array_intersect( $restricted_roles, $roles ) );
 
-       
-        require __DIR__ . '/views/workspace-home.php';
-    }
+		require __DIR__ . '/views/workspace-home.php';
+	}
 
 	private function count_unread_notifications( array $notifications ): int {
 		return count( array_filter( $notifications, fn( $n ) => empty( $n['read'] ) ) );

@@ -26,6 +26,10 @@ use Sults\Writen\Workflow\Notifications\NotificationManager;
 use Sults\Writen\Contracts\NotificationRepositoryInterface;
 use Sults\Writen\Infrastructure\WPNotificationRepository;
 
+use Sults\Writen\Infrastructure\Media\GDWebPProcessor;
+use Sults\Writen\Contracts\ImageProcessorInterface;
+use Sults\Writen\Workflow\Media\ThumbnailDisabler;
+
 /**
  * Classe principal que comanda o plugin Sults Writen.
  */
@@ -249,6 +253,29 @@ class Plugin {
 		);
 
 		$this->container->set(
+			\Sults\Writen\Workflow\Media\MediaUploadManager::class,
+			function ( $c ) {
+				return new \Sults\Writen\Workflow\Media\MediaUploadManager(
+					$c->get( \Sults\Writen\Contracts\ImageProcessorInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Workflow\Media\ThumbnailDisabler::class,
+			function () {
+				return new \Sults\Writen\Workflow\Media\ThumbnailDisabler();
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Contracts\ImageProcessorInterface::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\Media\GDWebPProcessor();
+			}
+		);
+
+		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
@@ -282,6 +309,9 @@ class Plugin {
 		$status_manager = $this->container->get( StatusManager::class );
 		$this->container->get( LoginTheme::class )->register();
 		$status_manager->register();
+
+		$this->container->get( \Sults\Writen\Workflow\Media\MediaUploadManager::class )->register();
+		$this->container->get( \Sults\Writen\Workflow\Media\ThumbnailDisabler::class )->register();
 
 		if ( is_admin() && defined( 'AIOSEO_VERSION' ) ) {
 			$this->container->get( AIOSEOCleaner::class )->register();

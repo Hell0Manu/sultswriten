@@ -53,7 +53,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 									$sultswriten_status_lbl  = $sultswriten_status_obj ? $sultswriten_status_obj->label : $sultswriten_post_status;
 									$sultswriten_badge_class = 'sults-status-badge sults-status-' . esc_attr( $sultswriten_post_status );
 
-									// Definição da variável
 									$sultswriten_is_locked = $sultswriten_is_restricted_user && in_array( $sultswriten_post_status, $sultswriten_restricted_statuses, true );
 									?>
 									<tr>
@@ -77,12 +76,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</td>
 										<td style="text-align: right;">
 											
-											<?php 
-                                            // CORREÇÃO AQUI: Usando o nome correto da variável
-                                            if ( $sultswriten_is_locked ) : 
-                                            ?>
+											<?php
+											if ( $sultswriten_is_locked ) :
+												?>
 												
-                                                <a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="button button-small" title="Visualizar" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; padding: 0;">
+												<a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="button button-small" title="Visualizar" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; padding: 0;">
 													<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 														<path d="M8.00003 3.60002C6.37003 3.60002 5.03003 4.34002 4.00253 5.29252C3.04003 6.18752 2.37503 7.25002 2.03503 8.00002C2.37503 8.75002 3.04003 9.81252 4.00003 10.7075C5.03003 11.66 6.37003 12.4 8.00003 12.4C9.63003 12.4 10.97 11.66 11.9975 10.7075C12.96 9.81252 13.625 8.75002 13.965 8.00002C13.625 7.25002 12.96 6.18752 12 5.29252C10.97 4.34002 9.63003 3.60002 8.00003 3.60002ZM3.18503 4.41502C4.36253 3.32002 5.98003 2.40002 8.00003 2.40002C10.02 2.40002 11.6375 3.32002 12.815 4.41502C13.985 5.50252 14.7675 6.80002 15.14 7.69252C15.2225 7.89002 15.2225 8.11002 15.14 8.30752C14.7675 9.20002 13.985 10.5 12.815 11.585C11.6375 12.68 10.02 13.6 8.00003 13.6C5.98003 13.6 4.36253 12.68 3.18503 11.585C2.01503 10.5 1.23253 9.20002 0.862534 8.30752C0.780034 8.11002 0.780034 7.89002 0.862534 7.69252C1.23253 6.80002 2.01503 5.50002 3.18503 4.41502ZM8.00003 10C9.10503 10 10 9.10502 10 8.00002C10 6.89502 9.10503 6.00002 8.00003 6.00002C7.98253 6.00002 7.96753 6.00002 7.95003 6.00002C7.98253 6.12752 8.00003 6.26252 8.00003 6.40002C8.00003 7.28252 7.28253 8.00002 6.40003 8.00002C6.26253 8.00002 6.12753 7.98252 6.00003 7.95002C6.00003 7.96752 6.00003 7.98252 6.00003 8.00002C6.00003 9.10502 6.89503 10 8.00003 10ZM8.00003 4.80002C8.84873 4.80002 9.66266 5.13717 10.2628 5.73728C10.8629 6.3374 11.2 7.15133 11.2 8.00002C11.2 8.84872 10.8629 9.66265 10.2628 10.2628C9.66266 10.8629 8.84873 11.2 8.00003 11.2C7.15134 11.2 6.33741 10.8629 5.73729 10.2628C5.13718 9.66265 4.80003 8.84872 4.80003 8.00002C4.80003 7.15133 5.13718 6.3374 5.73729 5.73728C6.33741 5.13717 7.15134 4.80002 8.00003 4.80002Z" fill="#50575e"/>
 													</svg>
