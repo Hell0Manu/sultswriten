@@ -30,6 +30,8 @@ use Sults\Writen\Infrastructure\Media\GDWebPProcessor;
 use Sults\Writen\Contracts\ImageProcessorInterface;
 use Sults\Writen\Workflow\Media\ThumbnailDisabler;
 
+use Sults\Writen\Contracts\HookableInterface;
+
 /**
  * Classe principal que comanda o plugin Sults Writen.
  */
@@ -52,7 +54,6 @@ class Plugin {
 	public function __construct() {
 		$this->container = new Container();
 		$this->register_services();
-		// $this->init_hooks();
 	}
 
 	/**
@@ -60,6 +61,13 @@ class Plugin {
 	 * Aqui é o ÚNICO lugar onde usamos constantes globais e "new Class".
 	 */
 	private function register_services(): void {
+
+		$this->container->set(
+			HookManager::class,
+			function () {
+				return new HookManager(); }
+		);
+
 		$this->container->set(
 			\Sults\Writen\Contracts\WPUserProviderInterface::class,
 			function () {
@@ -161,7 +169,8 @@ class Plugin {
 			function ( $c ) {
 				return new \Sults\Writen\Workflow\Permissions\PostEditingBlocker(
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class )
+					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class ),
+					$c->get( \Sults\Writen\Infrastructure\RequestBlocker::class )
 				);
 			}
 		);
@@ -276,6 +285,13 @@ class Plugin {
 		);
 
 		$this->container->set(
+			\Sults\Writen\Infrastructure\RequestBlocker::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\RequestBlocker();
+			}
+		);
+
+		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
@@ -306,21 +322,29 @@ class Plugin {
 	 * @return void
 	 */
 	public function init(): void {
-		$status_manager = $this->container->get( StatusManager::class );
-		$this->container->get( LoginTheme::class )->register();
-		$status_manager->register();
+		$hook_manager = $this->container->get( HookManager::class );
 
-		$this->container->get( \Sults\Writen\Workflow\Media\MediaUploadManager::class )->register();
-		$this->container->get( \Sults\Writen\Workflow\Media\ThumbnailDisabler::class )->register();
+		$global_services = array(
+			$this->container->get( \Sults\Writen\Interface\Theme\LoginTheme::class ),
+			$this->container->get( \Sults\Writen\Workflow\StatusManager::class ),
+			$this->container->get( \Sults\Writen\Workflow\Media\MediaUploadManager::class ),
+			$this->container->get( \Sults\Writen\Workflow\Media\ThumbnailDisabler::class ),
+		);
 
-		if ( is_admin() && defined( 'AIOSEO_VERSION' ) ) {
-			$this->container->get( AIOSEOCleaner::class )->register();
-		}
+		$hook_manager->register_services( $global_services );
 
 		if ( is_admin() ) {
-			$this->container->get( WorkspaceController::class )->register();
-			$this->container->get( WorkspaceAssetsManager::class )->register();
-			$this->container->get( AdminMenuManager::class )->register();
+			$admin_services = array();
+
+			if ( defined( 'AIOSEO_VERSION' ) ) {
+				$admin_services[] = $this->container->get( \Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner::class );
+			}
+
+			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\WorkspaceController::class );
+			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager::class );
+			$admin_services[] = $this->container->get( \Sults\Writen\Interface\AdminMenuManager::class );
+
+			$hook_manager->register_services( $admin_services );
 		}
 	}
 

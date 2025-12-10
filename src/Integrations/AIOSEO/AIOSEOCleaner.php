@@ -12,8 +12,9 @@
 namespace Sults\Writen\Integrations\AIOSEO;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
+use Sults\Writen\Contracts\HookableInterface;
 
-class AIOSEOCleaner {
+class AIOSEOCleaner implements HookableInterface {
 
 	private WPUserProviderInterface $user_provider;
 

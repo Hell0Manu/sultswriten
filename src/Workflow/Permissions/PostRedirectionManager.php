@@ -23,14 +23,21 @@ class PostRedirectionManager {
 	}
 
 	public function maybe_redirect_from_edit_screen(): void {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! isset( $_GET['post'] ) || ! isset( $_GET['action'] ) || 'edit' !== $_GET['action'] ) {
+    	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! isset( $_GET['post'] ) || ! isset( $_GET['action'] ) ) {
 			return;
 		}
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$post_id = (int) $_GET['post'];
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$post_id = absint( $_GET['post'] );
 		if ( ! $post_id ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+
+		if ( 'edit' !== $action ) {
 			return;
 		}
 

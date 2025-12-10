@@ -5,8 +5,9 @@ use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\NotificationRepositoryInterface;
 use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
+use Sults\Writen\Contracts\HookableInterface;
 
-class WorkspaceController {
+class WorkspaceController implements HookableInterface {
 
 	private WPUserProviderInterface $user_provider;
 	private NotificationRepositoryInterface $notification_repo;
@@ -78,14 +79,25 @@ class WorkspaceController {
 			return;
 		}
 
-		$user_id = $this->user_provider->get_current_user_id();
+		$allowed_actions = array( 'clear_notifs', 'dismiss_notif' );
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$action = sanitize_text_field( wp_unslash( $_GET['sults_action'] ) );
 
+		if ( ! in_array( $action, $allowed_actions, true ) ) {
+			return;
+		}
+
+		$action  = sanitize_text_field( $raw_action );
+		$user_id = $this->user_provider->get_current_user_id();
+
 		if ( 'clear_notifs' === $action ) {
-			$this->notification_repo->clear_all_notifications( $user_id );
-		} elseif ( 'dismiss_notif' === $action && isset( $_GET['notif_id'] ) ) {
-			$notif_id = sanitize_text_field( wp_unslash( $_GET['notif_id'] ) );
+				$this->notification_repo->clear_all_notifications( $user_id );
+		} elseif ( 'dismiss_notif' === $action ) {
+			if ( empty( $_GET['notif_id'] ) ) {
+				return;
+			}
+			$notif_id = sanitize_key( wp_unslash( $_GET['notif_id'] ) );
 			$this->notification_repo->dismiss_notification( $user_id, $notif_id );
 		}
 

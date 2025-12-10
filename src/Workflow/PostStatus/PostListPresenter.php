@@ -82,7 +82,17 @@ class PostListPresenter {
 			return;
 		}
 
-		$current_status = $this->get_get_param( 'post_status' );
+		$input_status   = $this->get_get_param( 'post_status' );
+		$current_status = '';
+
+		$valid_statuses = array_merge(
+			array( 'publish', 'draft', 'pending' ),
+			array_keys( PostStatusRegistrar::get_custom_statuses() )
+		);
+
+		if ( in_array( $input_status, $valid_statuses, true ) ) {
+			$current_status = $input_status;
+		}
 
 		echo '<select name="post_status" id="filter-by-status">';
 		echo '<option value="">' . esc_html__( 'Todos os Status', 'sultswriten' ) . '</option>';
@@ -140,7 +150,7 @@ class PostListPresenter {
 
 	protected function get_get_param( string $key ): string {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! isset( $_GET[ $key ] ) ) {
+		if ( empty( $_GET[ $key ] ) ) {
 			return '';
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended

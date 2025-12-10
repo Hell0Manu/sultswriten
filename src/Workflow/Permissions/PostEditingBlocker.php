@@ -12,17 +12,21 @@ namespace Sults\Writen\Workflow\Permissions;
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\WPPostStatusProviderInterface;
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
+use Sults\Writen\Infrastructure\RequestBlocker;
 
 class PostEditingBlocker {
 	private WPUserProviderInterface $user_provider;
 	private WPPostStatusProviderInterface $status_provider;
+	private RequestBlocker $request_blocker;
 
 	public function __construct(
 		WPUserProviderInterface $user_provider,
-		WPPostStatusProviderInterface $status_provider
+		WPPostStatusProviderInterface $status_provider,
+		RequestBlocker $request_blocker
 	) {
 		$this->user_provider   = $user_provider;
 		$this->status_provider = $status_provider;
+		$this->request_blocker = $request_blocker;
 	}
 
 	public function register(): void {
@@ -63,9 +67,7 @@ class PostEditingBlocker {
 		$user_roles = $this->user_provider->get_current_user_roles();
 
 		if ( array_intersect( $roles_to_block, $user_roles ) ) {
-			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : '';
-
-			if ( 'POST' === $request_method ) {
+			if ( $this->request_blocker->is_post_method() ) {
 				return array( 'do_not_allow' );
 			}
 			return $caps;

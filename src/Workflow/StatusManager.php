@@ -20,8 +20,9 @@ use Sults\Writen\Workflow\Permissions\PostEditingBlocker;
 use Sults\Writen\Workflow\Permissions\RoleManager;
 use Sults\Writen\Workflow\Notifications\NotificationManager;
 use Sults\Writen\Workflow\Permissions\PostRedirectionManager;
+use Sults\Writen\Contracts\HookableInterface;
 
-class StatusManager {
+class StatusManager implements HookableInterface {
 
 	private PostStatusRegistrar $status_registrar;
 	private AdminAssetsManager $assets_manager;

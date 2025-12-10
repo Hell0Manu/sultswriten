@@ -2,8 +2,9 @@
 namespace Sults\Writen\Interface;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
+use Sults\Writen\Contracts\HookableInterface;
 
-class AdminMenuManager {
+class AdminMenuManager implements HookableInterface {
 
 	private WPUserProviderInterface $user_provider;
 

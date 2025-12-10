@@ -1,7 +1,9 @@
 <?php
 namespace Sults\Writen\Workflow\Media;
 
-class ThumbnailDisabler {
+use Sults\Writen\Contracts\HookableInterface;
+
+class ThumbnailDisabler implements HookableInterface {
 
 	public function register(): void {
 		add_filter( 'intermediate_image_sizes_advanced', '__return_empty_array' );

@@ -9,8 +9,9 @@
 namespace Sults\Writen\Interface\Theme;
 
 use Sults\Writen\Contracts\AssetLoaderInterface;
+use Sults\Writen\Contracts\HookableInterface;
 
-class LoginTheme {
+class LoginTheme implements HookableInterface {
 
 	private string $plugin_url;
 	private string $plugin_version;

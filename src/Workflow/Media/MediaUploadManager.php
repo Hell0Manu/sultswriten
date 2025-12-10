@@ -2,8 +2,9 @@
 namespace Sults\Writen\Workflow\Media;
 
 use Sults\Writen\Contracts\ImageProcessorInterface;
+use Sults\Writen\Contracts\HookableInterface;
 
-class MediaUploadManager {
+class MediaUploadManager implements HookableInterface {
 
 	private ImageProcessorInterface $image_processor;
 

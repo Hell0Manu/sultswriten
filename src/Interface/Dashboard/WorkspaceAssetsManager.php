@@ -2,8 +2,9 @@
 namespace Sults\Writen\Interface\Dashboard;
 
 use Sults\Writen\Contracts\AssetLoaderInterface;
+use Sults\Writen\Contracts\HookableInterface;
 
-class WorkspaceAssetsManager {
+class WorkspaceAssetsManager implements HookableInterface {
 
 	private string $plugin_url;
 	private string $plugin_version;
