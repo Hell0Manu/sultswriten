@@ -5,6 +5,7 @@
  */
 
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
+use Sults\Writen\Interface\CategoryColorManager; 
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -40,24 +41,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</tr>
 							</thead>
 							<tbody>
-								<?php
-								while ( $my_posts->have_posts() ) :
-									$my_posts->the_post();
+<?php
+                                while ( $my_posts->have_posts() ) :
+                                    $my_posts->the_post();
 
-									$sultswriten_categories = get_the_category();
-									$sultswriten_cat_name   = ! empty( $sultswriten_categories ) ? $sultswriten_categories[0]->name : '—';
+                                    $sultswriten_categories = get_the_category();
+                                    $sultswriten_cat_name   = '—';
+                                    
+                                    $sultswriten_cat_color  = CategoryColorManager::DEFAULT_COLOR; 
 
-									$sultswriten_post_status = get_post_status();
-									$sultswriten_status_obj  = get_post_status_object( $sultswriten_post_status );
+                                    if ( ! empty( $sultswriten_categories ) ) {
+                                        $sultswriten_cat_obj = $sultswriten_categories[0];
+                                        $sultswriten_cat_name = $sultswriten_cat_obj->name;
+                                        
+                                        $sultswriten_cat_color = CategoryColorManager::get_color( $sultswriten_cat_obj->term_id );
+                                    }
 
-									$sultswriten_status_lbl  = $sultswriten_status_obj ? $sultswriten_status_obj->label : $sultswriten_post_status;
-									$sultswriten_badge_class = 'sults-status-badge sults-status-' . esc_attr( $sultswriten_post_status );
+                                    $sultswriten_post_status = get_post_status();
+                                    $sultswriten_status_obj  = get_post_status_object( $sultswriten_post_status );
 
-									$sultswriten_is_locked = $sultswriten_is_restricted_user && in_array( $sultswriten_post_status, $sultswriten_restricted_statuses, true );
-									?>
+                                    $sultswriten_status_lbl  = $sultswriten_status_obj ? $sultswriten_status_obj->label : $sultswriten_post_status;
+                                    $sultswriten_badge_class = 'sults-status-badge sults-status-' . esc_attr( $sultswriten_post_status );
+
+                                    $sultswriten_is_locked = $sultswriten_is_restricted_user && in_array( $sultswriten_post_status, $sultswriten_restricted_statuses, true );
+                                    ?>
 									<tr>
 										<td>
-											<span style="background: #206DF3; color: white; padding: 0px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;">
+											<span style=" background: <?php echo esc_attr( $sultswriten_cat_color ); ?>; color: white; padding: 0px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;">
 												<?php echo esc_html( $sultswriten_cat_name ); ?>
 											</span>
 										</td>

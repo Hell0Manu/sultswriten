@@ -292,6 +292,15 @@ class Plugin {
 		);
 
 		$this->container->set(
+			\Sults\Writen\Interface\CategoryColorManager::class,
+			function ( $c ) {
+				return new \Sults\Writen\Interface\CategoryColorManager(
+					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
@@ -343,6 +352,7 @@ class Plugin {
 			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\WorkspaceController::class );
 			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager::class );
 			$admin_services[] = $this->container->get( \Sults\Writen\Interface\AdminMenuManager::class );
+			$admin_services[] = $this->container->get( \Sults\Writen\Interface\CategoryColorManager::class );
 
 			$hook_manager->register_services( $admin_services );
 		}
