@@ -5,7 +5,7 @@
  */
 
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
-use Sults\Writen\Interface\CategoryColorManager; 
+use Sults\Writen\Interface\CategoryColorManager;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -41,54 +41,66 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</tr>
 							</thead>
 							<tbody>
-<?php
-                                while ( $my_posts->have_posts() ) :
-                                    $my_posts->the_post();
+						<?php
+						while ( $my_posts->have_posts() ) :
+							$my_posts->the_post();
 
-                                    $sultswriten_categories = get_the_category();
-                                    $sultswriten_cat_name   = '—';
-                                    
-                                    $sultswriten_cat_color  = CategoryColorManager::DEFAULT_COLOR; 
+							$sultswriten_categories = get_the_category();
+							$sultswriten_cat_name   = '—';
 
-                                    if ( ! empty( $sultswriten_categories ) ) {
-                                        $sultswriten_cat_obj = $sultswriten_categories[0];
-                                        $sultswriten_cat_name = $sultswriten_cat_obj->name;
-                                        
-                                        $sultswriten_cat_color = CategoryColorManager::get_color( $sultswriten_cat_obj->term_id );
-                                    }
+							$sultswriten_cat_color = CategoryColorManager::DEFAULT_COLOR;
 
-                                    $sultswriten_post_status = get_post_status();
-                                    $sultswriten_status_obj  = get_post_status_object( $sultswriten_post_status );
+							if ( ! empty( $sultswriten_categories ) ) {
+								$sultswriten_cat_obj  = $sultswriten_categories[0];
+								$sultswriten_cat_name = $sultswriten_cat_obj->name;
 
-                                    $sultswriten_status_lbl  = $sultswriten_status_obj ? $sultswriten_status_obj->label : $sultswriten_post_status;
-                                    $sultswriten_badge_class = 'sults-status-badge sults-status-' . esc_attr( $sultswriten_post_status );
+								$sultswriten_cat_color = CategoryColorManager::get_color( $sultswriten_cat_obj->term_id );
+							}
 
-                                    $sultswriten_is_locked = $sultswriten_is_restricted_user && in_array( $sultswriten_post_status, $sultswriten_restricted_statuses, true );
-                                    ?>
+							$sultswriten_post_status = get_post_status();
+							$sultswriten_status_obj  = get_post_status_object( $sultswriten_post_status );
+
+							$sultswriten_status_lbl  = $sultswriten_status_obj ? $sultswriten_status_obj->label : $sultswriten_post_status;
+							$sultswriten_badge_class = 'sults-status-badge sults-status-' . esc_attr( $sultswriten_post_status );
+
+							$sultswriten_is_locked = $sultswriten_is_restricted_user && in_array( $sultswriten_post_status, $sultswriten_restricted_statuses, true );
+
+							$sultswriten_edit_url = get_edit_post_link();
+
+							if ( ! $sultswriten_edit_url ) { $sultswriten_is_locked = true;}
+							?>
 									<tr>
 										<td>
-											<span style=" background: <?php echo esc_attr( $sultswriten_cat_color ); ?>; color: white; padding: 0px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;">
-												<?php echo esc_html( $sultswriten_cat_name ); ?>
+											<span class="sults-status-badge" style=" background: <?php echo esc_attr( $sultswriten_cat_color ); ?>; color: white;">
+										<?php echo esc_html( $sultswriten_cat_name ); ?>
 											</span>
 										</td>
 										<td>
-											<strong><a href="<?php echo esc_url( get_edit_post_link() ); ?>" style="color: #1d2327; text-decoration: none;">
-												<?php the_title(); ?>
-											</a></strong>
+											<strong>
+												<?php if ( ! $sultswriten_is_locked && $sultswriten_edit_url ) : ?>
+													<a href="<?php echo esc_url( $sultswriten_edit_url ); ?>" style="color: #1d2327; text-decoration: none;">
+														<?php the_title(); ?>
+													</a>
+												<?php else : ?>
+													<span style="color: #1d2327;">
+														<?php the_title(); ?>
+													</span>
+												<?php endif; ?>
+											</strong>
 										</td>
 										<td>
-											<?php echo esc_html( get_the_modified_date( 'd/m/Y' ) ); ?>
+									<?php echo esc_html( get_the_modified_date( 'd/m/Y' ) ); ?>
 										</td>
 										<td style="text-align-last: center;">
 											<span class="<?php echo esc_attr( $sultswriten_badge_class ); ?>">
-												<?php echo esc_html( $sultswriten_status_lbl ); ?>
+										<?php echo esc_html( $sultswriten_status_lbl ); ?>
 											</span>
 										</td>
 										<td style="text-align: right;">
 											
-											<?php
-											if ( $sultswriten_is_locked ) :
-												?>
+									<?php
+									if ( $sultswriten_is_locked ) :
+										?>
 												
 												<a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="button button-small" title="Visualizar" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; padding: 0;">
 													<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

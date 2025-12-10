@@ -6,10 +6,12 @@ use Sults\Writen\Contracts\AssetLoaderInterface;
 
 class CategoryColorManager implements HookableInterface {
 
-	private const META_KEY = '_sults_category_color';
-	
-    public const DEFAULT_COLOR = '#206DF3';
-	
+	private const META_KEY     = '_sults_category_color';
+	private const NONCE_ACTION = 'sults_save_category_color';
+	private const NONCE_FIELD  = 'sults_category_color_nonce';
+
+	public const DEFAULT_COLOR = '#206DF3';
+
 	private AssetLoaderInterface $asset_loader;
 
 	public function __construct( AssetLoaderInterface $asset_loader ) {
@@ -35,11 +37,12 @@ class CategoryColorManager implements HookableInterface {
 
 		wp_enqueue_style( 'wp-color-picker' );
 		$script = "jQuery(document).ready(function($){ $('.sults-color-field').wpColorPicker(); });";
-		$this->asset_loader->enqueue_script( 'wp-color-picker', '', array(), false, true ); 
+		$this->asset_loader->enqueue_script( 'wp-color-picker', '', array(), false, true );
 		wp_add_inline_script( 'wp-color-picker', $script );
 	}
 
 	public function add_color_field(): void {
+		wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 		?>
 		<div class="form-field term-color-wrap">
 			<label for="sults-category-color">Cor do Badge</label>
@@ -51,8 +54,9 @@ class CategoryColorManager implements HookableInterface {
 
 	public function edit_color_field( \WP_Term $term ): void {
 		$color = get_term_meta( $term->term_id, self::META_KEY, true );
-
 		$color = ( ! empty( $color ) ) ? $color : self::DEFAULT_COLOR;
+
+		wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 		?>
 		<tr class="form-field term-color-wrap">
 			<th scope="row"><label for="sults-category-color">Cor do Badge</label></th>
@@ -65,8 +69,13 @@ class CategoryColorManager implements HookableInterface {
 	}
 
 	public function save_meta( int $term_id ): void {
+		if ( ! isset( $_POST[ self::NONCE_FIELD ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE_FIELD ] ) ), self::NONCE_ACTION ) ) {
+			return;
+		}
+
 		if ( isset( $_POST['sults_category_color'] ) ) {
-			$color = sanitize_hex_color( $_POST['sults_category_color'] );
+			$color = sanitize_hex_color( wp_unslash( $_POST['sults_category_color'] ) );
+
 			if ( $color ) {
 				update_term_meta( $term_id, self::META_KEY, $color );
 			} else {
@@ -74,7 +83,7 @@ class CategoryColorManager implements HookableInterface {
 			}
 		}
 	}
-	
+
 	public static function get_color( int $term_id ): string {
 		$color = get_term_meta( $term_id, self::META_KEY, true );
 		return $color ? $color : self::DEFAULT_COLOR;
