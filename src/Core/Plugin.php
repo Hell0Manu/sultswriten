@@ -140,7 +140,7 @@ class Plugin {
 			PostListVisibility::class,
 			function ( $c ) {
 				return new PostListVisibility(
-					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+					$c->get( \Sults\Writen\Workflow\Permissions\VisibilityPolicy::class )
 				);
 			}
 		);
@@ -204,8 +204,10 @@ class Plugin {
 
 		$this->container->set(
 			\Sults\Writen\Contracts\PostRepositoryInterface::class,
-			function () {
-				return new \Sults\Writen\Infrastructure\WPPostRepository();
+			function ( $c ) {
+				return new \Sults\Writen\Infrastructure\WPPostRepository(
+                    $c->get( \Sults\Writen\Workflow\Permissions\VisibilityPolicy::class )
+				);
 			}
 		);
 
@@ -301,6 +303,43 @@ class Plugin {
 		);
 
 		$this->container->set(
+			\Sults\Writen\Interface\Dashboard\ExportController::class,
+			function ( $c ) {
+				return new \Sults\Writen\Interface\Dashboard\ExportController(
+					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+            \Sults\Writen\Interface\Dashboard\ExportAssetsManager::class,
+            function ( $c ) {
+                return new \Sults\Writen\Interface\Dashboard\ExportAssetsManager(
+                    SULTSWRITEN_URL,
+                    SULTSWRITEN_VERSION,
+                    $c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+                );
+            }
+        );
+
+		$this->container->set(
+			\Sults\Writen\Workflow\Permissions\VisibilityPolicy::class,
+			function ( $c ) {
+				return new \Sults\Writen\Workflow\Permissions\VisibilityPolicy(
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+				);
+			}
+		);
+
+		$this->container->set(
+            \Sults\Writen\Infrastructure\FeatureDisabler::class,
+            function () {
+                return new \Sults\Writen\Infrastructure\FeatureDisabler();
+            }
+        );
+
+		$this->container->set(
 			StatusManager::class,
 			function ( $c ) {
 				return new StatusManager(
@@ -338,6 +377,7 @@ class Plugin {
 			$this->container->get( \Sults\Writen\Workflow\StatusManager::class ),
 			$this->container->get( \Sults\Writen\Workflow\Media\MediaUploadManager::class ),
 			$this->container->get( \Sults\Writen\Workflow\Media\ThumbnailDisabler::class ),
+			$this->container->get( \Sults\Writen\Infrastructure\FeatureDisabler::class ),
 		);
 
 		$hook_manager->register_services( $global_services );
@@ -353,6 +393,8 @@ class Plugin {
 			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager::class );
 			$admin_services[] = $this->container->get( \Sults\Writen\Interface\AdminMenuManager::class );
 			$admin_services[] = $this->container->get( \Sults\Writen\Interface\CategoryColorManager::class );
+			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\ExportController::class );
+			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\ExportAssetsManager::class );
 
 			$hook_manager->register_services( $admin_services );
 		}

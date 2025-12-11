@@ -2,6 +2,8 @@
 
 namespace Sults\Writen\Workflow\Permissions;
 
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
+
 class RoleCapabilityManager {
 
 	/**
@@ -9,11 +11,11 @@ class RoleCapabilityManager {
 	 * Define o que adicionar e o que remover para cada papel.
 	 */
 	private const CAPABILITIES_CONFIG = array(
-		'contributor' => array(  // Redator.
+		RoleDefinitions::REDATOR => array( 
 			'add'    => array( 'upload_files' ),
 			'remove' => array(),
 		),
-		'editor'      => array(  // Redator-Chefe.
+		RoleDefinitions::EDITOR_CHEFE => array( 
 			'add'    => array(),
 			'remove' => array(
 				'edit_pages',
@@ -26,7 +28,7 @@ class RoleCapabilityManager {
 				'edit_published_pages',
 			),
 		),
-		'author'      => array(  // Corretor.
+		RoleDefinitions::CORRETOR => array( 
 			'add'    => array( 'edit_others_posts' ),
 			'remove' => array(
 				'publish_posts',

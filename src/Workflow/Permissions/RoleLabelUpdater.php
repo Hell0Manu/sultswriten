@@ -2,6 +2,8 @@
 
 namespace Sults\Writen\Workflow\Permissions;
 
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
+
 /**
  * Responsável por renomear os rótulos dos papéis (roles) do WordPress.
  */
@@ -12,20 +14,20 @@ class RoleLabelUpdater {
 	}
 
 	public function rename_roles( array $roles ): array {
-		if ( isset( $roles['editor'] ) ) {
-			$roles['editor']['name'] = 'Redator-Chefe';
+		if (isset( $roles[ RoleDefinitions::EDITOR_CHEFE ] ) ) {
+			$roles[RoleDefinitions::EDITOR_CHEFE]['name'] = 'Redator-Chefe';
 		}
 
 		if ( isset( $roles['contributor'] ) ) {
 			$roles['contributor']['name'] = 'Redator';
 		}
 
-		if ( isset( $roles['author'] ) ) {
-			$roles['author']['name'] = 'Corretor';
+		if ( isset( $roles[RoleDefinitions::REDATOR] ) ) {
+			$roles[RoleDefinitions::REDATOR]['name'] = 'Corretor';
 		}
 
-		if ( isset( $roles['subscriber'] ) ) {
-			$roles['subscriber']['name'] = 'Visitante';
+		if ( isset( $roles[RoleDefinitions::VISITANTE] ) ) {
+			$roles[RoleDefinitions::VISITANTE]['name'] = 'Visitante';
 		}
 
 		return $roles;

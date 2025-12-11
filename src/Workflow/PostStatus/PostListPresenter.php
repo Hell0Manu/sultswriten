@@ -35,8 +35,21 @@ class PostListPresenter {
 			add_filter( 'manage_post_posts_columns', array( $this, 'add_status_column_header' ) );
 			add_action( 'manage_post_posts_custom_column', array( $this, 'fill_status_column_content' ), 10, 2 );
 			add_action( 'restrict_manage_posts', array( $this, 'add_custom_filters_to_post_list' ) );
+			add_filter( 'manage_post_posts_columns', array( $this, 'remove_unwanted_columns' ), 20 );
 		}
 	}
+
+	public function remove_unwanted_columns( array $columns ): array {
+        if ( isset( $columns['tags'] ) ) {
+            unset( $columns['tags'] );
+        }
+
+        if ( isset( $columns['comments'] ) ) {
+            unset( $columns['comments'] );
+        }
+
+        return $columns;
+    }
 
 	public function add_status_column_header( array $columns ): array {
 		$new = array();
