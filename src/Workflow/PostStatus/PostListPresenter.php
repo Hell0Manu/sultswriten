@@ -40,16 +40,16 @@ class PostListPresenter {
 	}
 
 	public function remove_unwanted_columns( array $columns ): array {
-        if ( isset( $columns['tags'] ) ) {
-            unset( $columns['tags'] );
-        }
+		if ( isset( $columns['tags'] ) ) {
+			unset( $columns['tags'] );
+		}
 
-        if ( isset( $columns['comments'] ) ) {
-            unset( $columns['comments'] );
-        }
+		if ( isset( $columns['comments'] ) ) {
+			unset( $columns['comments'] );
+		}
 
-        return $columns;
-    }
+		return $columns;
+	}
 
 	public function add_status_column_header( array $columns ): array {
 		$new = array();

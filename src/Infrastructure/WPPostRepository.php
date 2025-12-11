@@ -56,7 +56,7 @@ class WPPostRepository implements PostRepositoryInterface {
 			'orderby'        => 'modified',
 			'order'          => 'DESC',
 			'post_status'    => array_values( $workspace_statuses ),
-			'author'         => $author_id, 
+			'author'         => $author_id,
 		);
 
 		return new WP_Query( $args );
@@ -67,10 +67,10 @@ class WPPostRepository implements PostRepositoryInterface {
 	 */
 	public function get_finished_posts( array $filters ): WP_Query {
 		$paged = ( isset( $filters['paged'] ) ) ? absint( $filters['paged'] ) : 1;
-		
+
 		$args = array(
 			'post_type'      => 'post',
-			'post_status'    => 'finished', 
+			'post_status'    => 'finished',
 			'posts_per_page' => 20,
 			'paged'          => $paged,
 			'orderby'        => 'date',

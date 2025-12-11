@@ -1,0 +1,38 @@
+<?php
+namespace Sults\Writen\Workflow\Export\Transformers;
+
+use Sults\Writen\Contracts\DomTransformerInterface;
+use DOMDocument;
+use DOMXPath;
+
+class BlockquoteTransformer implements DomTransformerInterface {
+	public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
+		$quotes = $xpath->query( '//blockquote' );
+
+		foreach ( $quotes as $quote ) {
+			$cites = $quote->getElementsByTagName( 'cite' );
+			if ( $cites->length === 0 ) {
+				continue;
+			}
+
+			$old_cite  = $cites->item( 0 );
+			$full_text = rtrim( trim( $old_cite->textContent ), ' .' );
+
+			$old_cite->parentNode->removeChild( $old_cite );
+
+			$footer = $dom->createElement( 'footer' );
+			$parts  = explode( ',', $full_text, 2 );
+			$name   = trim( $parts[0] );
+
+			$footer->appendChild( $dom->createTextNode( "—{$name}" ) );
+
+			if ( isset( $parts[1] ) ) {
+				$footer->appendChild( $dom->createTextNode( ', ' ) );
+				$role_cite = $dom->createElement( 'cite', trim( $parts[1] ) );
+				$footer->appendChild( $role_cite );
+			}
+			$footer->appendChild( $dom->createTextNode( '.' ) );
+			$quote->appendChild( $footer );
+		}
+	}
+}

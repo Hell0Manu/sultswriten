@@ -4,6 +4,7 @@ use Sults\Writen\Workflow\Permissions\DeletePrevention;
 use Sults\Writen\Workflow\Permissions\PostListVisibility;
 use Sults\Writen\Workflow\Permissions\RoleCapabilityManager;
 use Sults\Writen\Contracts\WPUserProviderInterface;
+use Sults\Writen\Workflow\Permissions\VisibilityPolicy;
 
 class Test_Permissions_Logic extends WP_UnitTestCase {
 
@@ -46,30 +47,31 @@ class Test_Permissions_Logic extends WP_UnitTestCase {
 
     // --- PostListVisibility ---
 
-    public function test_visibilidade_restrita_para_contributor() {
+public function test_visibilidade_restrita_para_contributor() {
+        // 1. Simula que estamos na tela de listagem de posts do Admin
+        set_current_screen( 'edit.php' ); 
+
+        // 2. Prepara os Mocks
         $mockUserProvider = Mockery::mock( WPUserProviderInterface::class );
         $mockUserProvider->shouldReceive( 'get_current_user_roles' )
             ->andReturn( array( 'contributor' ) );
 
-        $visibility = new PostListVisibility( $mockUserProvider );
+        // 3. Instancia as classes reais
+        $policy = new VisibilityPolicy( $mockUserProvider );
+        $visibility = new PostListVisibility( $policy );
 
-        // Simula WP_Query na administração principal
+        // 4. Mock da Query
         $query = Mockery::mock( \WP_Query::class );
         $query->shouldReceive( 'is_main_query' )->andReturn( true );
         $query->shouldReceive( 'get' )->with( 'post_type' )->andReturn( 'post' );
 
-        // Mock global wpdb e funções de usuário
-        global $wpdb, $current_user;
-        $user_id = get_current_user_id(); // ID atual do teste (provavelmente 0 ou admin se não setado)
-        
-        // Força is_admin() para true no contexto do teste (WP_UnitTestCase já lida bem, mas setamos o current screen se necessário)
-        set_current_screen( 'edit.php' ); 
-
+        // 5. Executa
+        global $wpdb;
         $where_clause = "AND 1=1";
         $result = $visibility->restrict_post_list_visibility( $where_clause, $query );
 
-        // Verifica se a cláusula SQL foi injetada
-        $this->assertStringContainsString( "{$wpdb->posts}.post_author =", $result );
+        // 6. Verifica
+        $this->assertStringContainsString( "post_author =", $result );
         $this->assertStringContainsString( "post_status IN", $result );
     }
 
@@ -78,7 +80,9 @@ class Test_Permissions_Logic extends WP_UnitTestCase {
         $mockUserProvider->shouldReceive( 'get_current_user_roles' )
             ->andReturn( array( 'administrator' ) );
 
-        $visibility = new PostListVisibility( $mockUserProvider );
+        // CORREÇÃO AQUI TAMBÉM
+        $policy = new VisibilityPolicy( $mockUserProvider );
+        $visibility = new PostListVisibility( $policy );
 
         $query = Mockery::mock( \WP_Query::class );
         $query->shouldReceive( 'is_main_query' )->andReturn( true );

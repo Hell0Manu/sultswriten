@@ -32,6 +32,19 @@ use Sults\Writen\Workflow\Media\ThumbnailDisabler;
 
 use Sults\Writen\Contracts\HookableInterface;
 
+use Sults\Writen\Contracts\ContentSanitizerInterface;
+use Sults\Writen\Contracts\HtmlExtractorInterface;
+use Sults\Writen\Workflow\Export\HtmlExtractor;
+
+use Sults\Writen\Workflow\Export\Transformers\ImageTransformer;
+use Sults\Writen\Workflow\Export\Transformers\TableTransformer;
+use Sults\Writen\Workflow\Export\Transformers\SultsTipTransformer;
+use Sults\Writen\Workflow\Export\Transformers\BlockquoteTransformer;
+use Sults\Writen\Workflow\Export\Transformers\FileBlockTransformer;
+use Sults\Writen\Workflow\Export\Transformers\LinkTransformer;
+
+use Sults\Writen\Contracts\ConfigProviderInterface;
+
 /**
  * Classe principal que comanda o plugin Sults Writen.
  */
@@ -206,7 +219,7 @@ class Plugin {
 			\Sults\Writen\Contracts\PostRepositoryInterface::class,
 			function ( $c ) {
 				return new \Sults\Writen\Infrastructure\WPPostRepository(
-                    $c->get( \Sults\Writen\Workflow\Permissions\VisibilityPolicy::class )
+					$c->get( \Sults\Writen\Workflow\Permissions\VisibilityPolicy::class )
 				);
 			}
 		);
@@ -307,21 +320,22 @@ class Plugin {
 			function ( $c ) {
 				return new \Sults\Writen\Interface\Dashboard\ExportController(
 					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
-					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+					$c->get( \Sults\Writen\Contracts\HtmlExtractorInterface::class )
 				);
 			}
 		);
 
 		$this->container->set(
-            \Sults\Writen\Interface\Dashboard\ExportAssetsManager::class,
-            function ( $c ) {
-                return new \Sults\Writen\Interface\Dashboard\ExportAssetsManager(
-                    SULTSWRITEN_URL,
-                    SULTSWRITEN_VERSION,
-                    $c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
-                );
-            }
-        );
+			\Sults\Writen\Interface\Dashboard\ExportAssetsManager::class,
+			function ( $c ) {
+				return new \Sults\Writen\Interface\Dashboard\ExportAssetsManager(
+					SULTSWRITEN_URL,
+					SULTSWRITEN_VERSION,
+					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+				);
+			}
+		);
 
 		$this->container->set(
 			\Sults\Writen\Workflow\Permissions\VisibilityPolicy::class,
@@ -333,11 +347,50 @@ class Plugin {
 		);
 
 		$this->container->set(
-            \Sults\Writen\Infrastructure\FeatureDisabler::class,
-            function () {
-                return new \Sults\Writen\Infrastructure\FeatureDisabler();
-            }
-        );
+			\Sults\Writen\Contracts\ConfigProviderInterface::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\WPConfigProvider();
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Contracts\HtmlExtractorInterface::class,
+			function ( $c ) {
+				$attachment_provider = $c->get( \Sults\Writen\Contracts\AttachmentProviderInterface::class );
+				$config_provider     = $c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class ); // <--- Pega o config
+
+				$transformers = array(
+					new ImageTransformer( $attachment_provider, $config_provider ),
+					new LinkTransformer( $config_provider ),
+					new TableTransformer(),
+					new SultsTipTransformer( $config_provider ),
+					new BlockquoteTransformer(),
+					new FileBlockTransformer( $attachment_provider, $config_provider ),
+				);
+				return new HtmlExtractor( $transformers, $config_provider );
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Contracts\ContentSanitizerInterface::class,
+			function () {
+				return new HtmlSanitizer();
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Contracts\AttachmentProviderInterface::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\WPAttachmentProvider();
+			}
+		);
+
+		$this->container->set(
+			\Sults\Writen\Infrastructure\FeatureDisabler::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\FeatureDisabler();
+			}
+		);
 
 		$this->container->set(
 			StatusManager::class,

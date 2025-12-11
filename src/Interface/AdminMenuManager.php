@@ -25,7 +25,7 @@ class AdminMenuManager implements HookableInterface {
 
 	public function cleanup_menus(): void {
 		remove_menu_page( 'edit-comments.php' );
-		
+
 		$roles = $this->user_provider->get_current_user_roles();
 
 		if ( in_array( 'administrator', $roles, true ) ) {

@@ -67,7 +67,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 							$sultswriten_edit_url = get_edit_post_link();
 
-							if ( ! $sultswriten_edit_url ) { $sultswriten_is_locked = true;}
+							if ( ! $sultswriten_edit_url ) {
+								$sultswriten_is_locked = true;}
 							?>
 									<tr>
 										<td>

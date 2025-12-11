@@ -11,11 +11,11 @@ class RoleCapabilityManager {
 	 * Define o que adicionar e o que remover para cada papel.
 	 */
 	private const CAPABILITIES_CONFIG = array(
-		RoleDefinitions::REDATOR => array( 
+		RoleDefinitions::REDATOR      => array(
 			'add'    => array( 'upload_files' ),
 			'remove' => array(),
 		),
-		RoleDefinitions::EDITOR_CHEFE => array( 
+		RoleDefinitions::EDITOR_CHEFE => array(
 			'add'    => array(),
 			'remove' => array(
 				'edit_pages',
@@ -28,7 +28,7 @@ class RoleCapabilityManager {
 				'edit_published_pages',
 			),
 		),
-		RoleDefinitions::CORRETOR => array( 
+		RoleDefinitions::CORRETOR     => array(
 			'add'    => array( 'edit_others_posts' ),
 			'remove' => array(
 				'publish_posts',

@@ -1,0 +1,89 @@
+.sults-preview-flex-container {
+	display: flex; 
+	gap: 20px; 
+	height: calc(100vh - 180px);
+	min-height: 500px; 
+	margin-top: 20px; 
+}
+
+.sults-code-pane {
+	flex: 1; 
+	display: flex; 
+	flex-direction: column; 
+	min-width: 0; 
+	border: 1px solid #dcdcde; 
+	border-radius: 8px; 
+	overflow: hidden; 
+	box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+}
+
+.sults-editor-wrapper {
+	flex: 1; 
+	position: relative; 
+	overflow: hidden;
+}
+
+.sults-editor-wrapper .CodeMirror {
+	height: 100% !important;
+	width: 100% !important; 
+	position: absolute; 
+	top: 0;
+	left: 0;
+	font-size: 13px;
+	line-height: 1.5; 
+}
+
+
+.sults-copy-btn {
+	position: absolute;
+	top: 10px;         
+	right: 25px;       
+	z-index: 20;       
+	
+	display: flex;
+	align-items: center;
+	gap: 6px;         
+
+	background: rgba(255, 255, 255, 0.95); 
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 6px 12px;
+	
+	color: #50575e;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+
+.sults-copy-btn:hover {
+	background: #fff;
+	color: var(--color-primary); 
+	border-color: var(--color-primary);
+	box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.sults-copy-btn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+
+}
+
+.sults-copy-btn.copied {
+	border-color: #46b450; 
+	color: #46b450;
+	background: #f0fbf2;
+}
+
+@media (max-width: 782px) {
+	.sults-preview-flex-container {
+		flex-direction: column; 
+		height: auto; 
+	}
+	
+	.sults-code-pane {
+		height: 500px; 
+	}
+}
