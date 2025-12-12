@@ -1,0 +1,56 @@
+<?php
+namespace Sults\Writen\Providers;
+
+use Sults\Writen\Contracts\ServiceProviderInterface;
+use Sults\Writen\Core\Container;
+use Sults\Writen\Core\HookManager;
+use Sults\Writen\Infrastructure\WPUserProvider;
+use Sults\Writen\Infrastructure\WPAssetLoader;
+use Sults\Writen\Infrastructure\WPPostStatusProvider;
+use Sults\Writen\Infrastructure\WPNotificationRepository;
+use Sults\Writen\Infrastructure\WPPostRepository;
+use Sults\Writen\Infrastructure\WPAttachmentProvider;
+use Sults\Writen\Infrastructure\WPConfigProvider;
+use Sults\Writen\Infrastructure\RequestBlocker;
+use Sults\Writen\Infrastructure\AssetPathResolver;
+use Sults\Writen\Infrastructure\FeatureDisabler;
+
+class InfrastructureServiceProvider implements ServiceProviderInterface {
+
+	public function register( Container $container ): void {
+		
+		// Gerenciador de Hooks
+		$container->set( HookManager::class, fn() => new HookManager() );
+
+		// Provedores de Dados do WP (Wrappers)
+		$container->set( \Sults\Writen\Contracts\WPUserProviderInterface::class, fn() => new WPUserProvider() );
+		$container->set( \Sults\Writen\Contracts\AssetLoaderInterface::class, fn() => new WPAssetLoader() );
+		$container->set( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class, fn() => new WPPostStatusProvider() );
+		$container->set( \Sults\Writen\Contracts\NotificationRepositoryInterface::class, fn() => new WPNotificationRepository() );
+		$container->set( \Sults\Writen\Contracts\AttachmentProviderInterface::class, fn() => new WPAttachmentProvider() );
+		
+		// Configuração e Requests
+		$container->set( \Sults\Writen\Contracts\ConfigProviderInterface::class, fn() => new WPConfigProvider() );
+		$container->set( \Sults\Writen\Contracts\RequestProviderInterface::class, fn() => new RequestBlocker() );
+
+		// Repositório de Posts
+		$container->set(
+			\Sults\Writen\Contracts\PostRepositoryInterface::class,
+			function ( $c ) {
+				return new WPPostRepository(
+					$c->get( \Sults\Writen\Workflow\Permissions\VisibilityPolicy::class )
+				);
+			}
+		);
+
+		// Utilitários
+		$container->set( FeatureDisabler::class, fn() => new FeatureDisabler() );
+
+		$container->set(
+			AssetPathResolver::class,
+			function () {
+				return new AssetPathResolver( SULTSWRITEN_URL, SULTSWRITEN_VERSION );
+			}
+		);
+	}
+}

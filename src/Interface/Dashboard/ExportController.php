@@ -87,8 +87,15 @@ class ExportController implements HookableInterface {
 	}
 
 	private function render_preview_screen(): void {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( ! isset( $_GET['_wpnonce'] ) ) {
+            wp_die( 'Requisição inválida: Nonce ausente.', 'Erro de Segurança', array( 'response' => 403 ) );
+        }
+
 		$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0;
+
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'sults_preview_' . $post_id ) ) {
+            wp_die( 'Link expirado ou inválido.', 'Erro de Segurança', array( 'response' => 403 ) );
+        }
 
 		$post = get_post( $post_id );
 

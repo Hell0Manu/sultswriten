@@ -17,6 +17,18 @@ define( 'SULTSWRITEN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SULTSWRITEN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SULTSWRITEN_VERSION', '0.1.0' );
 
+if ( ! defined( 'SULTSWRITEN_INTERNAL_DOMAIN' ) ) {
+	define( 'SULTSWRITEN_INTERNAL_DOMAIN', 'sults.com.br' );
+}
+
+if ( ! defined( 'SULTSWRITEN_DOWNLOADS_PATH' ) ) {
+	define( 'SULTSWRITEN_DOWNLOADS_PATH', '/sults/downloads/artigos/checklist/' );
+}
+
+if ( ! defined( 'SULTSWRITEN_TIPS_ICON' ) ) {
+	define( 'SULTSWRITEN_TIPS_ICON', '/sults/images/icones/produtos/modulo-checklist.webp' );
+}
+
 if ( file_exists( SULTSWRITEN_PATH . 'vendor/autoload.php' ) ) {
 	require SULTSWRITEN_PATH . 'vendor/autoload.php';
 }

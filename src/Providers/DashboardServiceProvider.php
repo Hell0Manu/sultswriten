@@ -1,0 +1,102 @@
+<?php
+namespace Sults\Writen\Providers;
+
+use Sults\Writen\Contracts\ServiceProviderInterface;
+use Sults\Writen\Core\Container;
+
+// Dashboard & Export
+use Sults\Writen\Interface\Dashboard\WorkspaceController;
+use Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager;
+use Sults\Writen\Interface\Dashboard\ExportController;
+use Sults\Writen\Interface\Dashboard\ExportAssetsManager;
+use Sults\Writen\Interface\AdminMenuManager;
+use Sults\Writen\Interface\CategoryColorManager;
+use Sults\Writen\Interface\Theme\LoginTheme;
+use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
+
+// Export Helpers
+use Sults\Writen\Workflow\Export\HtmlExtractor;
+use Sults\Writen\Workflow\Export\Transformers\ImageTransformer;
+use Sults\Writen\Workflow\Export\Transformers\LinkTransformer;
+use Sults\Writen\Workflow\Export\Transformers\TableTransformer;
+use Sults\Writen\Workflow\Export\Transformers\SultsTipTransformer;
+use Sults\Writen\Workflow\Export\Transformers\BlockquoteTransformer;
+use Sults\Writen\Workflow\Export\Transformers\FileBlockTransformer;
+
+class DashboardServiceProvider implements ServiceProviderInterface {
+
+	public function register( Container $container ): void {
+		
+		// Assets do Workspace
+		$container->set( WorkspaceAssetsManager::class, function ( $c ) {
+			return new WorkspaceAssetsManager(
+				$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
+				$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
+			);
+		});
+
+		// Workspace Controller
+		$container->set( WorkspaceController::class, function ( $c ) {
+			return new WorkspaceController(
+				$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+				$c->get( \Sults\Writen\Contracts\NotificationRepositoryInterface::class ),
+				$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
+				$c->get( \Sults\Writen\Workflow\WorkflowPolicy::class )
+			);
+		});
+
+		// Export Assets
+		$container->set( ExportAssetsManager::class, function ( $c ) {
+			return new ExportAssetsManager(
+				$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
+				$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
+			);
+		});
+
+		// Html Extractor (Complexo)
+		$container->set( \Sults\Writen\Contracts\HtmlExtractorInterface::class, function ( $c ) {
+			$attachment_provider = $c->get( \Sults\Writen\Contracts\AttachmentProviderInterface::class );
+			$config_provider     = $c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class );
+
+			$transformers = array(
+				new ImageTransformer( $attachment_provider, $config_provider ),
+				new LinkTransformer( $config_provider ),
+				new TableTransformer(),
+				new SultsTipTransformer( $config_provider ),
+				new BlockquoteTransformer(),
+				new FileBlockTransformer( $attachment_provider, $config_provider ),
+			);
+			return new HtmlExtractor( $transformers, $config_provider );
+		});
+
+		// Export Controller
+		$container->set( ExportController::class, function ( $c ) {
+			return new ExportController(
+				$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
+				$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+				$c->get( \Sults\Writen\Contracts\HtmlExtractorInterface::class )
+			);
+		});
+
+		// Outros componentes visuais
+		$container->set( LoginTheme::class, function ( $c ) {
+			return new LoginTheme(
+				$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
+				$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
+			);
+		});
+
+		$container->set( AdminMenuManager::class, function ( $c ) {
+			return new AdminMenuManager( $c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ) );
+		});
+
+		$container->set( CategoryColorManager::class, function ( $c ) {
+			return new CategoryColorManager( $c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ) );
+		});
+
+		// Integrations
+		$container->set( AIOSEOCleaner::class, function ( $c ) {
+			return new AIOSEOCleaner( $c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ) );
+		});
+	}
+}
