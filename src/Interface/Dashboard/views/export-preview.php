@@ -30,22 +30,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</a>
 	</nav>
 	<div class="sults-preview-flex-container">
+		
 		<div class="sults-code-pane">
 			<div class="sults-editor-wrapper">
 				<button type="button" class="sults-copy-btn" data-target="left">
-				<span class="dashicons dashicons-clipboard"></span> 
-				<span class="btn-text">Copiar</span>
-			</button>
+					<span class="dashicons dashicons-clipboard"></span> 
+					<span class="btn-text">Copiar</span>
+				</button>
 				<textarea id="code-left" name="code-left"></textarea>
 			</div>
 		</div>
 
 		<div class="sults-code-pane">
 			<div class="sults-editor-wrapper">
-				<button type="button" class="sults-copy-btn" data-target="left">
-				<span class="dashicons dashicons-clipboard"></span> 
-				<span class="btn-text">Copiar</span>
-			</button>
+				<button type="button" class="sults-copy-btn" data-target="right">
+					<span class="dashicons dashicons-clipboard"></span> 
+					<span class="btn-text">Copiar</span>
+				</button>
 				<textarea id="code-right" name="code-right"></textarea>
 			</div>
 		</div>

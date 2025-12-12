@@ -88,7 +88,9 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 				return new ExportController(
 					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\HtmlExtractorInterface::class )
+					$c->get( \Sults\Writen\Contracts\HtmlExtractorInterface::class ),
+					$c->get( \Sults\Writen\Contracts\JspBuilderInterface::class ),
+					$c->get( \Sults\Writen\Contracts\SeoDataProviderInterface::class )
 				);
 			}
 		);
@@ -124,5 +126,19 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 				return new AIOSEOCleaner( $c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ) );
 			}
 		);
+
+		// Integrations: AIOSEO Data Provider.
+		$container->set(
+			\Sults\Writen\Contracts\SeoDataProviderInterface::class,
+			function ( $c ) {
+				return new \Sults\Writen\Integrations\AIOSEO\AioseoDataProvider();
+			}
+		);
+
+		// JSP Builder.
+		$container->set( 
+            \Sults\Writen\Contracts\JspBuilderInterface::class, 
+            fn() => new \Sults\Writen\Workflow\Export\JspBuilder() 
+        );
 	}
 }

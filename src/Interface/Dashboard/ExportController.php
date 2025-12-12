@@ -5,23 +5,31 @@ use Sults\Writen\Contracts\HookableInterface;
 use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\HtmlExtractorInterface;
+use Sults\Writen\Contracts\JspBuilderInterface;
+use Sults\Writen\Contracts\SeoDataProviderInterface;
 
 class ExportController implements HookableInterface {
 
-	private PostRepositoryInterface $post_repo;
+private PostRepositoryInterface $post_repo;
 	private WPUserProviderInterface $user_provider;
 	private HtmlExtractorInterface $extractor;
+	private JspBuilderInterface $jsp_builder;
+	private SeoDataProviderInterface $seo_provider;
 
 	public const PAGE_SLUG = 'sults-writen-export';
 
 	public function __construct(
 		PostRepositoryInterface $post_repo,
 		WPUserProviderInterface $user_provider,
-		HtmlExtractorInterface $extractor
+		HtmlExtractorInterface $extractor,
+		JspBuilderInterface $jsp_builder,
+		SeoDataProviderInterface $seo_provider
 	) {
 		$this->post_repo     = $post_repo;
 		$this->user_provider = $user_provider;
 		$this->extractor     = $extractor;
+		$this->jsp_builder   = $jsp_builder;
+		$this->seo_provider  = $seo_provider;
 	}
 
 	public function register(): void {
@@ -105,10 +113,11 @@ class ExportController implements HookableInterface {
 
 		$html_raw   = $post->post_content;
 		$html_clean = $this->extractor->extract( $post );
+		
+		$page_title = get_the_title( $post );
+		$seo_data   = $this->seo_provider->get_seo_data( $post_id );
 
-		$jsp_content = "\n" .
-						"<jsp:include page='...'>\n" . $html_clean . "\n</jsp:include>";
-
+		$jsp_content = $this->jsp_builder->build( $html_clean, $page_title, $seo_data );
 		$back_url = remove_query_arg( array( 'action', 'post_id', '_wpnonce' ) );
 
 		require __DIR__ . '/views/export-preview.php';
