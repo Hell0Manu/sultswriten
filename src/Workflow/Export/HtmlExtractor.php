@@ -3,6 +3,7 @@ namespace Sults\Writen\Workflow\Export;
 
 use Sults\Writen\Contracts\HtmlExtractorInterface;
 use Sults\Writen\Contracts\ConfigProviderInterface;
+use Sults\Writen\Contracts\DomTransformerInterface;
 use DOMDocument;
 use DOMXPath;
 use WP_Post;
@@ -21,6 +22,7 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		$this->transformers = $transformers;
 		$this->config       = $config;
 	}
+
 	/**
 	 * Lista de classes do Gutenberg/WordPress que permitimos manter.
 	 * Todo o resto será removido para limpar o HTML.

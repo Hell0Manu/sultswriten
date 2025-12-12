@@ -20,7 +20,7 @@ class AIOSEOCleaner implements HookableInterface {
 
 	private WPUserProviderInterface $user_provider;
 
-/**
+	/**
 	 * Roles que terão acesso restrito ao AIOSEO.
 	 * Centralizado via RoleDefinitions.
 	 *

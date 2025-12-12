@@ -5,6 +5,7 @@ use Sults\Writen\Contracts\DomTransformerInterface;
 use Sults\Writen\Contracts\ConfigProviderInterface;
 use DOMDocument;
 use DOMXPath;
+use DOMElement;
 
 class LinkTransformer implements DomTransformerInterface {
 
@@ -19,6 +20,10 @@ class LinkTransformer implements DomTransformerInterface {
 		$internal_domain = $this->config->get_internal_domain();
 
 		foreach ( $links as $link ) {
+			if ( ! $link instanceof DOMElement ) {
+				continue;
+			}
+
 			$href = trim( $link->getAttribute( 'href' ) );
 			if ( ! $href ) {
 				continue;

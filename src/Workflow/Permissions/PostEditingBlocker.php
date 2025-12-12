@@ -22,16 +22,16 @@ class PostEditingBlocker {
 	private WorkflowPolicy $policy;
 
 	public function __construct(
-        WPUserProviderInterface $user_provider,
-        WPPostStatusProviderInterface $status_provider,
-        RequestProviderInterface $request_provider, 
-        WorkflowPolicy $policy
-    ) {
-        $this->user_provider    = $user_provider;
-        $this->status_provider  = $status_provider;
-        $this->request_provider = $request_provider; 
-        $this->policy           = $policy;
-    }
+		WPUserProviderInterface $user_provider,
+		WPPostStatusProviderInterface $status_provider,
+		RequestProviderInterface $request_provider,
+		WorkflowPolicy $policy
+	) {
+		$this->user_provider    = $user_provider;
+		$this->status_provider  = $status_provider;
+		$this->request_provider = $request_provider;
+		$this->policy           = $policy;
+	}
 
 	public function register(): void {
 			add_filter( 'map_meta_cap', array( $this, 'filter_map_meta_cap' ), 10, 4 );
@@ -59,7 +59,7 @@ class PostEditingBlocker {
 				return array( 'do_not_allow' );
 			}
 		}
-		
+
 		return $caps;
 	}
 }

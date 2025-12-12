@@ -1,9 +1,16 @@
 <?php
+/**
+ * View da Home de Exportação.
+ *
+ * @var \WP_Query $query
+ * @var array $filters
+ * @var string $categories_dropdown
+ * @var string $author_dropdown
+ */
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
-// Variáveis disponíveis: $query, $filters, $categories_dropdown, $author_dropdown.
+	exit;
+}
 ?>
-
 <div class="wrap sults-page-container">
 	
 	<form method="get" class="sults-filter-bar">
@@ -42,7 +49,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<table class="sults-modern-table">
 			<thead>
 				<tr>
-					<th class="sults-checkbox-col"><input type="checkbox" id="cb-select-all-1"></th>
 					<th>Categoria</th>
 					<th>Título da página</th>
 					<th>Link para a página no site</th>
@@ -70,8 +76,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 					}
 					?>
 					<tr>
-						<td><input type="checkbox" name="post[]" value="<?php the_ID(); ?>"></td>
-						
 						<td>
 							<span class="sults-status-badge" style="background-color: <?php echo esc_attr( $sultswriten_cat_color ); ?>; color: #fff;">
 								<?php echo esc_html( $sultswriten_cat_name ); ?>

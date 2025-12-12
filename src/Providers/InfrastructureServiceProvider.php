@@ -18,22 +18,22 @@ use Sults\Writen\Infrastructure\FeatureDisabler;
 class InfrastructureServiceProvider implements ServiceProviderInterface {
 
 	public function register( Container $container ): void {
-		
-		// Gerenciador de Hooks
+
+		// Gerenciador de Hooks.
 		$container->set( HookManager::class, fn() => new HookManager() );
 
-		// Provedores de Dados do WP (Wrappers)
+		// Provedores de Dados do WP (Wrappers).
 		$container->set( \Sults\Writen\Contracts\WPUserProviderInterface::class, fn() => new WPUserProvider() );
 		$container->set( \Sults\Writen\Contracts\AssetLoaderInterface::class, fn() => new WPAssetLoader() );
 		$container->set( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class, fn() => new WPPostStatusProvider() );
 		$container->set( \Sults\Writen\Contracts\NotificationRepositoryInterface::class, fn() => new WPNotificationRepository() );
 		$container->set( \Sults\Writen\Contracts\AttachmentProviderInterface::class, fn() => new WPAttachmentProvider() );
-		
-		// Configuração e Requests
+
+		// Configuração e Requests.
 		$container->set( \Sults\Writen\Contracts\ConfigProviderInterface::class, fn() => new WPConfigProvider() );
 		$container->set( \Sults\Writen\Contracts\RequestProviderInterface::class, fn() => new RequestBlocker() );
 
-		// Repositório de Posts
+		// Repositório de Posts.
 		$container->set(
 			\Sults\Writen\Contracts\PostRepositoryInterface::class,
 			function ( $c ) {
@@ -43,7 +43,7 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Utilitários
+		// Utilitários.
 		$container->set( FeatureDisabler::class, fn() => new FeatureDisabler() );
 
 		$container->set(

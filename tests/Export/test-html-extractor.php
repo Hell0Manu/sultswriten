@@ -1,14 +1,12 @@
 <?php
 
 use Sults\Writen\Workflow\Export\HtmlExtractor;
-// Importa os Transformers
 use Sults\Writen\Workflow\Export\Transformers\ImageTransformer;
 use Sults\Writen\Workflow\Export\Transformers\TableTransformer;
 use Sults\Writen\Workflow\Export\Transformers\SultsTipTransformer;
 use Sults\Writen\Workflow\Export\Transformers\BlockquoteTransformer;
 use Sults\Writen\Workflow\Export\Transformers\FileBlockTransformer;
 use Sults\Writen\Workflow\Export\Transformers\LinkTransformer;
-// Importa Interfaces para Mock
 use Sults\Writen\Contracts\AttachmentProviderInterface;
 use Sults\Writen\Contracts\ConfigProviderInterface;
 
@@ -21,31 +19,26 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
     public function setUp(): void {
         parent::setUp();
 
-        // 1. Mock do ConfigProvider (Simula as configurações)
         $this->mockConfigProvider = Mockery::mock( ConfigProviderInterface::class );
         $this->mockConfigProvider->shouldReceive('get_home_url')->andReturn('http://example.org');
         $this->mockConfigProvider->shouldReceive('get_internal_domain')->andReturn('sults.com.br');
         $this->mockConfigProvider->shouldReceive('get_downloads_base_path')->andReturn('/sults/downloads/artigos/checklist/');
+        $this->mockConfigProvider->shouldReceive('get_tips_icon_path')->andReturn('/images/tip.png'); // Adicionado
 
-        // 2. Mock do AttachmentProvider (Simula o WP Media)
         $this->mockAttachmentProvider = Mockery::mock( AttachmentProviderInterface::class );
-        // Define retornos padrão "seguros" para não quebrar testes que não usam imagens
         $this->mockAttachmentProvider->shouldReceive('get_attachment_id_by_url')->andReturn(0);
         $this->mockAttachmentProvider->shouldReceive('get_image_src')->andReturn(null);
         $this->mockAttachmentProvider->shouldReceive('get_attachment_url')->andReturn(null);
 
-        // 3. Instancia os Transformers REAIS injetando os MOCKS
-        // Isso configura nosso pipeline completo de teste
         $transformers = array(
             new ImageTransformer( $this->mockAttachmentProvider, $this->mockConfigProvider ),
             new LinkTransformer( $this->mockConfigProvider ),
             new TableTransformer(),
-            new SultsTipTransformer(),
+            new SultsTipTransformer( $this->mockConfigProvider ), // <--- CORRIGIDO: Passando a config
             new BlockquoteTransformer(),
             new FileBlockTransformer( $this->mockAttachmentProvider, $this->mockConfigProvider ),
         );
 
-        // 4. Instancia o Extractor com o Pipeline montado
         $this->extractor = new HtmlExtractor( $transformers, $this->mockConfigProvider );
     }
 
@@ -73,7 +66,6 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
         $result = $this->extractor->extract( $post );
 
-        // Como usamos DOMDocument, as aspas nos atributos podem variar, mas normalizamos para simples no final do extract
         $this->assertStringContainsString( "class='dica-sults'", $result );
         $this->assertStringContainsString( '<h3>Dica Sults</h3>', $result );
         $this->assertStringContainsString( '<p>Esta é uma dica importante.</p>', $result );
@@ -90,7 +82,6 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
     }
 
     public function test_deve_adicionar_target_blank_em_links_externos() {
-        // http://google.com é externo (configuramos interno como sults.com.br no mock)
         $content = '<a href="https://google.com">Google</a>';
         $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
 
@@ -101,7 +92,6 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
     }
 
     public function test_nao_deve_alterar_links_internos() {
-        // Link interno simulado
         $content = '<a href="https://sults.com.br/contato">Contato</a>';
         $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
 
@@ -116,7 +106,6 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
         $result = $this->extractor->extract( get_post( $post_id ) );
 
-        // Verifica se manteve a aspa simples
         $this->assertStringContainsString( "class='aligncenter'", $result );
     }
 }

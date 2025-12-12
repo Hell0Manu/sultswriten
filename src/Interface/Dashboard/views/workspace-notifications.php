@@ -1,7 +1,9 @@
 <?php
 /**
  * Partial: Painel de Notificações.
- * Espera as variáveis: $notifications (array) e $unread_count (int).
+ *
+ * @var array $notifications
+ * @var int $unread_count
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

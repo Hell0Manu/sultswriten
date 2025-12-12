@@ -6,6 +6,7 @@ use Sults\Writen\Contracts\AttachmentProviderInterface;
 use Sults\Writen\Contracts\ConfigProviderInterface;
 use DOMDocument;
 use DOMXPath;
+use DOMElement;
 
 class FileBlockTransformer implements DomTransformerInterface {
 
@@ -25,6 +26,10 @@ class FileBlockTransformer implements DomTransformerInterface {
 		$base_path = $this->config->get_downloads_base_path();
 
 		foreach ( $nodes as $node ) {
+			if ( ! $node instanceof DOMElement ) {
+				continue;
+			}
+
 			$links = $node->getElementsByTagName( 'a' );
 			if ( $links->length === 0 ) {
 				continue;
@@ -32,10 +37,14 @@ class FileBlockTransformer implements DomTransformerInterface {
 
 			$best_link = $links->item( 0 );
 			foreach ( $links as $link ) {
-				if ( $link->hasAttribute( 'download' ) ) {
+				if ( $link instanceof DOMElement && $link->hasAttribute( 'download' ) ) {
 					$best_link = $link;
 					break;
 				}
+			}
+
+			if ( ! $best_link instanceof DOMElement ) {
+				continue;
 			}
 
 			$href     = $best_link->getAttribute( 'href' );
@@ -81,7 +90,9 @@ class FileBlockTransformer implements DomTransformerInterface {
 
 			$btn->appendChild( $icon );
 
-			$node->parentNode->replaceChild( $btn, $node );
+			if ( $node->parentNode ) {
+				$node->parentNode->replaceChild( $btn, $node );
+			}
 		}
 	}
 }

@@ -4,6 +4,7 @@ namespace Sults\Writen\Interface\Dashboard;
 use Sults\Writen\Contracts\AssetLoaderInterface;
 use Sults\Writen\Contracts\HookableInterface;
 use Sults\Writen\Infrastructure\AssetPathResolver;
+use Sults\Writen\Workflow\PostStatus\StatusConfig;
 
 class ExportAssetsManager implements HookableInterface {
 
@@ -43,6 +44,15 @@ class ExportAssetsManager implements HookableInterface {
 			array( 'sults-writen-variables-css' ),
 			$version
 		);
+
+		$this->asset_loader->enqueue_style(
+			'sults-writen-status-css',
+			$this->asset_resolver->get_css_url( 'statusManager.css' ),
+			array( 'sults-writen-variables-css' ),
+			$version
+		);
+
+		$this->asset_loader->add_inline_style( 'sults-writen-status-css', StatusConfig::get_css_rules() );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['action'] ) && 'preview' === $_GET['action'] ) {

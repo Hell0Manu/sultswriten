@@ -34,23 +34,23 @@ class PostStatusRegistrar {
 
 	public function register_custom_statuses(): void {
 		$all_configs = StatusConfig::get_all();
-			
+
 		foreach ( $all_configs as $slug => $config ) {
 			$args = $config['wp_args'];
 
-			$label = $config['label'];
+			$label         = $config['label'];
 			$args['label'] = $label;
 
-			// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralSingular, WordPress.WP.I18n.NonSingularStringLiteralPlural
+			// phpcs:disable WordPress.WP.I18n.NonSingularStringLiteralSingular, WordPress.WP.I18n.NonSingularStringLiteralPlural
 			$args['label_count'] = _n_noop(
 				$label . ' <span class="count">(%s)</span>',
 				$label . ' <span class="count">(%s)</span>',
 				'sultswriten'
 			);
+			// phpcs:enable
 
 			$this->status_provider->register( $slug, $args );
 		}
-		
 	}
 
 	public static function get_custom_statuses(): array {

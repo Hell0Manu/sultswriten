@@ -2,6 +2,7 @@
 
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 use Sults\Writen\Contracts\WPPostStatusProviderInterface;
+use Sults\Writen\Workflow\PostStatus\StatusConfig;
 
 class Test_PostStatusRegistrar extends WP_UnitTestCase {
 
@@ -13,7 +14,8 @@ class Test_PostStatusRegistrar extends WP_UnitTestCase {
 	public function test_deve_registrar_todos_os_status_customizados() {
 		$mockProvider = Mockery::mock( WPPostStatusProviderInterface::class );
 
-		$statuses       = PostStatusRegistrar::CUSTOM_STATUSES;
+		// Correção: Usar StatusConfig em vez da constante removida
+		$statuses       = StatusConfig::get_all();
 		$total_statuses = count( $statuses );
 
 		$mockProvider->shouldReceive( 'register' )

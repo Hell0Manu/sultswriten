@@ -1,0 +1,18 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 2
+    inferPrivatePropertyTypeFromConstructor: true
+    paths:
+        - src/
+        - sultswriten.php
+    scanFiles:
+        # Se houver outros arquivos fora de src que precisam ser lidos
+    excludePaths:
+        - vendor/
+        - tests/
+        - node_modules (?)
+    ignoreErrors:
+        # Ignora erro comum de constante não definida se o arquivo for lido fora do WP
+        - '#Constant SULTSWRITEN_.* not found.#'

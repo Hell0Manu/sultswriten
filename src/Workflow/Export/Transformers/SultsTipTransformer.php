@@ -2,10 +2,17 @@
 namespace Sults\Writen\Workflow\Export\Transformers;
 
 use Sults\Writen\Contracts\DomTransformerInterface;
+use Sults\Writen\Contracts\ConfigProviderInterface;
 use DOMDocument;
 use DOMXPath;
 
 class SultsTipTransformer implements DomTransformerInterface {
+
+	private ConfigProviderInterface $config;
+
+	public function __construct( ConfigProviderInterface $config ) {
+		$this->config = $config;
+	}
 
 	public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
 		$nodes = $xpath->query( '//pre' );
@@ -17,6 +24,7 @@ class SultsTipTransformer implements DomTransformerInterface {
 			$img = $dom->createElement( 'img' );
 
 			$icon_path = $this->config->get_tips_icon_path();
+			$img->setAttribute( 'src', $icon_path );
 			$img->setAttribute( 'alt', 'Dica Sults' );
 			$aside->appendChild( $img );
 
@@ -29,7 +37,10 @@ class SultsTipTransformer implements DomTransformerInterface {
 			$div->appendChild( $p );
 
 			$aside->appendChild( $div );
-			$node->parentNode->replaceChild( $aside, $node );
+
+			if ( $node->parentNode ) {
+				$node->parentNode->replaceChild( $aside, $node );
+			}
 		}
 	}
 }

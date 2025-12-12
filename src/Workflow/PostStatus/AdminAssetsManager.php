@@ -48,6 +48,9 @@ class AdminAssetsManager {
 			$version
 		);
 
+		$custom_css = StatusConfig::get_css_rules();
+		$this->asset_loader->add_inline_style( 'sultswriten-status-css', $custom_css );
+
 		$this->asset_loader->enqueue_script(
 			'sultswriten-statuses',
 			$this->asset_resolver->get_js_url( 'statusManager.js' ),

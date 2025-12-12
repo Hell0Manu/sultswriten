@@ -47,7 +47,7 @@ class Plugin {
 	public function init(): void {
 		$hook_manager = $this->container->get( HookManager::class );
 
-		// Serviços Globais (Rodam em todo lugar)
+		// Serviços Globais.
 		$global_services = array(
 			$this->container->get( \Sults\Writen\Interface\Theme\LoginTheme::class ),
 			$this->container->get( \Sults\Writen\Workflow\StatusManager::class ),
@@ -58,7 +58,7 @@ class Plugin {
 
 		$hook_manager->register_services( $global_services );
 
-		// Serviços apenas do Admin
+		// Serviços apenas do Admin.
 		if ( is_admin() ) {
 			$admin_services = array();
 

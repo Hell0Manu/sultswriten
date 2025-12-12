@@ -4,6 +4,7 @@ namespace Sults\Writen\Workflow\Export\Transformers;
 use Sults\Writen\Contracts\DomTransformerInterface;
 use DOMDocument;
 use DOMXPath;
+use DOMElement;
 
 class TableTransformer implements DomTransformerInterface {
 	public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
@@ -11,15 +12,17 @@ class TableTransformer implements DomTransformerInterface {
 
 		foreach ( $tables as $table ) {
 			$parent = $table->parentNode;
-			if ( $parent && $parent->nodeName === 'div' && $parent->getAttribute( 'class' ) === 'table-content' ) {
+			if ( $parent instanceof DOMElement && $parent->nodeName === 'div' && $parent->getAttribute( 'class' ) === 'table-content' ) {
 				continue;
 			}
 
 			$wrapper = $dom->createElement( 'div' );
 			$wrapper->setAttribute( 'class', 'table-content' );
 
-			$parent->replaceChild( $wrapper, $table );
-			$wrapper->appendChild( $table );
+			if ( $parent ) {
+				$parent->replaceChild( $wrapper, $table );
+				$wrapper->appendChild( $table );
+			}
 		}
 	}
 }

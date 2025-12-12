@@ -12,7 +12,7 @@ class WorkspaceController implements HookableInterface {
 	private WPUserProviderInterface $user_provider;
 	private NotificationRepositoryInterface $notification_repo;
 	private PostRepositoryInterface $post_repo;
-	private WorkflowPolicy $policy; 
+	private WorkflowPolicy $policy;
 
 	public const PAGE_SLUG = 'sults-writen-workspace';
 
@@ -20,7 +20,7 @@ class WorkspaceController implements HookableInterface {
 		WPUserProviderInterface $user_provider,
 		NotificationRepositoryInterface $notification_repo,
 		PostRepositoryInterface $post_repo,
-		WorkflowPolicy $policy 
+		WorkflowPolicy $policy
 	) {
 		$this->user_provider     = $user_provider;
 		$this->notification_repo = $notification_repo;
@@ -128,5 +128,9 @@ class WorkspaceController implements HookableInterface {
 	private function is_admin(): bool {
 		$roles = $this->user_provider->get_current_user_roles();
 		return in_array( 'administrator', $roles, true );
+	}
+
+	public function get_policy(): WorkflowPolicy {
+		return $this->policy;
 	}
 }

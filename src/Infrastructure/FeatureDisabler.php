@@ -7,8 +7,8 @@ class FeatureDisabler implements HookableInterface {
 
 	public function register(): void {
 		add_action( 'init', array( $this, 'disable_features' ) );
-		add_filter( 'comments_open', '__return_false', 20, 2 );
-		add_filter( 'pings_open', '__return_false', 20, 2 );
+		add_filter( 'comments_open', '__return_false', 20 );
+		add_filter( 'pings_open', '__return_false', 20 );
 	}
 
 	public function disable_features(): void {

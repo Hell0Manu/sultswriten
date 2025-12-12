@@ -31,7 +31,7 @@ class PostListVisibility {
 	 * Aplica filtro SQL WHERE se o usuário for restrito.
 	 *
 	 * @param string   $where Cláusula WHERE atual.
-	 * @param WP_Query $query Objeto da query.
+	 * @param \WP_Query $query Objeto da query.
 	 * @return string Cláusula WHERE modificada.
 	 */
 	public function restrict_post_list_visibility( string $where, \WP_Query $query ): string {

@@ -6,6 +6,7 @@ use Sults\Writen\Contracts\AttachmentProviderInterface;
 use Sults\Writen\Contracts\ConfigProviderInterface;
 use DOMDocument;
 use DOMXPath;
+use DOMElement;
 
 class ImageTransformer implements DomTransformerInterface {
 
@@ -25,6 +26,10 @@ class ImageTransformer implements DomTransformerInterface {
 		$home_url = $this->config->get_home_url();
 
 		foreach ( $images as $img ) {
+			if ( ! $img instanceof DOMElement ) {
+				continue;
+			}
+
 			$src = trim( $img->getAttribute( 'src' ) );
 			if ( ! $src ) {
 				continue;
@@ -36,15 +41,12 @@ class ImageTransformer implements DomTransformerInterface {
 
 			if ( ! $img->hasAttribute( 'alt' ) || trim( $img->getAttribute( 'alt' ) ) === '' ) {
 				$headings = $xpath->query(
-					'preceding::h1[1] |
-                     preceding::h2[1] | 
-                     preceding::h3[1] | 
-                     preceding::h4[1] | 
-                     preceding::h5[1] |
-                     preceding::h6[1]',
+					'preceding::h1[1] | preceding::h2[1] | preceding::h3[1] | preceding::h4[1] | preceding::h5[1] | preceding::h6[1]',
 					$img
 				);
-				$alt_text = ( $headings->length > 0 ) ? trim( $headings->item( 0 )->textContent ) : 'Imagem SULTS';
+				$alt_text = ( $headings->length > 0 && $headings->item( 0 ) )
+					? trim( $headings->item( 0 )->textContent )
+					: 'Imagem SULTS';
 				$img->setAttribute( 'alt', $alt_text );
 			}
 
@@ -61,10 +63,10 @@ class ImageTransformer implements DomTransformerInterface {
 				$image_data = $this->attachment_provider->get_image_src( $attachment_id, 'full' );
 				if ( $image_data ) {
 					if ( ! $img->hasAttribute( 'width' ) ) {
-						$img->setAttribute( 'width', $image_data[1] );
+						$img->setAttribute( 'width', (string) $image_data[1] );
 					}
 					if ( ! $img->hasAttribute( 'height' ) ) {
-						$img->setAttribute( 'height', $image_data[2] );
+						$img->setAttribute( 'height', (string) $image_data[2] );
 					}
 				}
 			}

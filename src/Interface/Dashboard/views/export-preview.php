@@ -1,6 +1,16 @@
 <?php
+/**
+ * View de Prévia de Exportação.
+ *
+ * @var \WP_Post $post
+ * @var string $back_url
+ * @var string $html_raw
+ * @var string $html_clean
+ * @var string $jsp_content
+ */
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
 ?>
 
 <div class="wrap sults-preview-wrap">

@@ -12,6 +12,7 @@
 .sults-filters-left {
     display: flex;
     gap: 10px;
+    align-self: flex-start;
 }
 
 .sults-actions{
@@ -165,8 +166,8 @@
         display: none;
     }
 
-    .sults-modern-table tbody td:nth-child(2),
     .sults-modern-table tbody td:nth-child(3),
+    .sults-modern-table tbody td:nth-child(4),
     .sults-modern-table tbody td:nth-child(5) {
         display: none;
     }
