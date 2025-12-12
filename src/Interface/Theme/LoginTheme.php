@@ -1,30 +1,21 @@
 <?php
-/**
- * Gerencia a personalização da tela de login do WordPress.
- *
- * @package    Sults\Writen
- * @subpackage Sults\Writen\Interface\Theme
- */
-
 namespace Sults\Writen\Interface\Theme;
 
 use Sults\Writen\Contracts\AssetLoaderInterface;
 use Sults\Writen\Contracts\HookableInterface;
+use Sults\Writen\Infrastructure\AssetPathResolver;
 
 class LoginTheme implements HookableInterface {
 
-	private string $plugin_url;
-	private string $plugin_version;
 	private AssetLoaderInterface $asset_loader;
+	private AssetPathResolver $asset_resolver;
 
 	public function __construct(
-		string $plugin_url,
-		string $plugin_version,
-		AssetLoaderInterface $asset_loader
+		AssetLoaderInterface $asset_loader,
+		AssetPathResolver $asset_resolver
 	) {
-		$this->plugin_url     = $plugin_url;
-		$this->plugin_version = $plugin_version;
 		$this->asset_loader   = $asset_loader;
+		$this->asset_resolver = $asset_resolver;
 	}
 
 	public function register(): void {
@@ -34,21 +25,23 @@ class LoginTheme implements HookableInterface {
 	}
 
 	public function enqueue_styles(): void {
+		$version = $this->asset_resolver->get_version();
+
 		$this->asset_loader->enqueue_style(
 			'sultswriten-variables',
-			$this->plugin_url . 'src/assets/css/variables.css',
+			$this->asset_resolver->get_css_url( 'variables.css' ),
 			array(),
-			$this->plugin_version
+			$version
 		);
 
 		$this->asset_loader->enqueue_style(
 			'sultswriten-login',
-			$this->plugin_url . 'src/assets/css/login.css',
+			$this->asset_resolver->get_css_url( 'login.css' ),
 			array( 'sultswriten-variables', 'login' ),
-			$this->plugin_version
+			$version
 		);
 
-		$logo_url   = $this->plugin_url . 'src/assets/images/sults-logo.png';
+		$logo_url   = $this->asset_resolver->get_image_url( 'sults-logo.png' );
 		$custom_css = "
             #login h1 a, .login h1 a {
                 background-image: url('{$logo_url}') !important;

@@ -44,6 +44,7 @@ use Sults\Writen\Workflow\Export\Transformers\FileBlockTransformer;
 use Sults\Writen\Workflow\Export\Transformers\LinkTransformer;
 
 use Sults\Writen\Contracts\ConfigProviderInterface;
+use Sults\Writen\Workflow\WorkflowPolicy;
 
 /**
  * Classe principal que comanda o plugin Sults Writen.
@@ -115,10 +116,9 @@ class Plugin {
 			AdminAssetsManager::class,
 			function ( $c ) {
 				return new AdminAssetsManager(
-					SULTSWRITEN_URL,
-					SULTSWRITEN_VERSION,
 					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class )
+					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
 				);
 			}
 		);
@@ -183,7 +183,8 @@ class Plugin {
 				return new \Sults\Writen\Workflow\Permissions\PostEditingBlocker(
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class ),
-					$c->get( \Sults\Writen\Infrastructure\RequestBlocker::class )
+					$c->get( \Sults\Writen\Infrastructure\RequestBlocker::class ),
+					$c->get( \Sults\Writen\Workflow\WorkflowPolicy::class )
 				);
 			}
 		);
@@ -228,9 +229,8 @@ class Plugin {
 			WorkspaceAssetsManager::class,
 			function ( $c ) {
 				return new WorkspaceAssetsManager(
-					SULTSWRITEN_URL,
-					SULTSWRITEN_VERSION,
-					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
+					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
 				);
 			}
 		);
@@ -241,7 +241,8 @@ class Plugin {
 				return new WorkspaceController(
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\NotificationRepositoryInterface::class ),
-					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class )
+					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
+					$c->get( \Sults\Writen\Workflow\WorkflowPolicy::class )
 				);
 			}
 		);
@@ -260,9 +261,8 @@ class Plugin {
 			LoginTheme::class,
 			function ( $c ) {
 				return new LoginTheme(
-					SULTSWRITEN_URL,
-					SULTSWRITEN_VERSION,
-					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
+					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
 				);
 			}
 		);
@@ -330,9 +330,8 @@ class Plugin {
 			\Sults\Writen\Interface\Dashboard\ExportAssetsManager::class,
 			function ( $c ) {
 				return new \Sults\Writen\Interface\Dashboard\ExportAssetsManager(
-					SULTSWRITEN_URL,
-					SULTSWRITEN_VERSION,
-					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class )
+					$c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
+					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
 				);
 			}
 		);
@@ -350,6 +349,23 @@ class Plugin {
 			\Sults\Writen\Contracts\ConfigProviderInterface::class,
 			function () {
 				return new \Sults\Writen\Infrastructure\WPConfigProvider();
+			}
+		);
+
+		$this->container->set(
+            \Sults\Writen\Workflow\WorkflowPolicy::class,
+            function () {
+                return new \Sults\Writen\Workflow\WorkflowPolicy();
+            }
+        );
+
+		$this->container->set(
+			\Sults\Writen\Infrastructure\AssetPathResolver::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\AssetPathResolver(
+					SULTSWRITEN_URL,
+					SULTSWRITEN_VERSION
+				);
 			}
 		);
 

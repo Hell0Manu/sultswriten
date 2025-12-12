@@ -4,25 +4,28 @@ namespace Sults\Writen\Interface\Dashboard;
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\NotificationRepositoryInterface;
 use Sults\Writen\Contracts\PostRepositoryInterface;
-use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 use Sults\Writen\Contracts\HookableInterface;
+use Sults\Writen\Workflow\WorkflowPolicy;
 
 class WorkspaceController implements HookableInterface {
 
 	private WPUserProviderInterface $user_provider;
 	private NotificationRepositoryInterface $notification_repo;
 	private PostRepositoryInterface $post_repo;
+	private WorkflowPolicy $policy; 
 
 	public const PAGE_SLUG = 'sults-writen-workspace';
 
 	public function __construct(
 		WPUserProviderInterface $user_provider,
 		NotificationRepositoryInterface $notification_repo,
-		PostRepositoryInterface $post_repo
+		PostRepositoryInterface $post_repo,
+		WorkflowPolicy $policy 
 	) {
 		$this->user_provider     = $user_provider;
 		$this->notification_repo = $notification_repo;
 		$this->post_repo         = $post_repo;
+		$this->policy            = $policy;
 	}
 
 	public function register(): void {
@@ -82,13 +85,13 @@ class WorkspaceController implements HookableInterface {
 		$allowed_actions = array( 'clear_notifs', 'dismiss_notif' );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$action = sanitize_text_field( wp_unslash( $_GET['sults_action'] ) );
+		$raw_action = sanitize_text_field( wp_unslash( $_GET['sults_action'] ) );
 
-		if ( ! in_array( $action, $allowed_actions, true ) ) {
+		if ( ! in_array( $raw_action, $allowed_actions, true ) ) {
 			return;
 		}
 
-		$action  = sanitize_text_field( $raw_action );
+		$action  = $raw_action;
 		$user_id = $this->user_provider->get_current_user_id();
 
 		if ( 'clear_notifs' === $action ) {
@@ -113,12 +116,7 @@ class WorkspaceController implements HookableInterface {
 		$notifications = $this->notification_repo->get_notifications( $user_id );
 		$unread_count  = $this->count_unread_notifications( $notifications );
 
-		$roles = $this->user_provider->get_current_user_roles();
-
-		$sultswriten_restricted_statuses = apply_filters( 'sultswriten_blocked_statuses', PostStatusRegistrar::get_restricted_statuses() );
-		$restricted_roles                = apply_filters( 'sultswriten_blocked_roles', PostStatusRegistrar::get_restricted_roles() );
-
-		$sultswriten_is_restricted_user = ! empty( array_intersect( $restricted_roles, $roles ) );
+		$current_user_roles = $this->user_provider->get_current_user_roles();
 
 		require __DIR__ . '/views/workspace-home.php';
 	}

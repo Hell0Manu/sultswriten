@@ -2,7 +2,8 @@
 /**
  * Gerencia as modificações de interface para o plugin AIOSEO.
  *
- * Oculta funcionalidades avançadas do AIOSEO para redatores e corretores.
+ * Oculta funcionalidades avançadas do AIOSEO para redatores e corretores
+ * utilizando as definições centrais de papéis.
  *
  * @package    Sults\Writen
  * @subpackage Sults\Writen\Integrations\AIOSEO
@@ -13,17 +14,22 @@ namespace Sults\Writen\Integrations\AIOSEO;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\HookableInterface;
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
 
 class AIOSEOCleaner implements HookableInterface {
 
 	private WPUserProviderInterface $user_provider;
 
-	/**
+/**
 	 * Roles que terão acesso restrito ao AIOSEO.
+	 * Centralizado via RoleDefinitions.
 	 *
 	 * @var array
 	 */
-	private array $restricted_roles = array( 'contributor', 'author', 'redator', 'corretor' );
+	private array $restricted_roles = array(
+		RoleDefinitions::REDATOR,  // 'contributor'
+		RoleDefinitions::CORRETOR, // 'author'
+	);
 
 	public function __construct( WPUserProviderInterface $user_provider ) {
 		$this->user_provider = $user_provider;

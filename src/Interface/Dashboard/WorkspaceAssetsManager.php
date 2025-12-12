@@ -3,21 +3,19 @@ namespace Sults\Writen\Interface\Dashboard;
 
 use Sults\Writen\Contracts\AssetLoaderInterface;
 use Sults\Writen\Contracts\HookableInterface;
+use Sults\Writen\Infrastructure\AssetPathResolver;
 
 class WorkspaceAssetsManager implements HookableInterface {
 
-	private string $plugin_url;
-	private string $plugin_version;
 	private AssetLoaderInterface $asset_loader;
+	private AssetPathResolver $asset_resolver;
 
 	public function __construct(
-		string $plugin_url,
-		string $plugin_version,
-		AssetLoaderInterface $asset_loader
+		AssetLoaderInterface $asset_loader,
+		AssetPathResolver $asset_resolver
 	) {
-		$this->plugin_url     = $plugin_url;
-		$this->plugin_version = $plugin_version;
 		$this->asset_loader   = $asset_loader;
+		$this->asset_resolver = $asset_resolver;
 	}
 
 	public function register(): void {
@@ -29,25 +27,27 @@ class WorkspaceAssetsManager implements HookableInterface {
 			return;
 		}
 
+		$version = $this->asset_resolver->get_version();
+
 		$this->asset_loader->enqueue_style(
 			'sults-writen-variables-css',
-			$this->plugin_url . 'src/assets/css/variables.css',
+			$this->asset_resolver->get_css_url( 'variables.css' ),
 			array(),
-			$this->plugin_version
+			$version
 		);
 
 		$this->asset_loader->enqueue_style(
 			'sults-writen-workspace-css',
-			$this->plugin_url . 'src/assets/css/workspace.css',
+			$this->asset_resolver->get_css_url( 'workspace.css' ),
 			array( 'sults-writen-variables-css' ),
-			$this->plugin_version
+			$version
 		);
 
 		$this->asset_loader->enqueue_style(
 			'sults-writen-status-css',
-			$this->plugin_url . 'src/assets/css/statusManager.css',
+			$this->asset_resolver->get_css_url( 'statusManager.css' ),
 			array( 'sults-writen-workspace-css' ),
-			$this->plugin_version
+			$version
 		);
 	}
 }

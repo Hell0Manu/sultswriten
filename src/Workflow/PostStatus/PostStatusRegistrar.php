@@ -13,24 +13,13 @@
 namespace Sults\Writen\Workflow\PostStatus;
 
 use Sults\Writen\Contracts\WPPostStatusProviderInterface;
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
+use Sults\Writen\Workflow\PostStatus\StatusConfig;
 
 class PostStatusRegistrar {
 
-	public const CUSTOM_STATUSES = array(
-		'suspended'           => 'Suspenso',
-		'requires_adjustment' => 'Precisa de Ajustes',
-		'review_in_progress'  => 'Revisão em andamento',
-		'finished'            => 'Finalizado',
-	);
-
-	public const RESTRICTED_ROLES = array(
-		'contributor', // Redator.
-	);
-
-	public const RESTRICTED_STATUSES = array(
-		'review_in_progress',
-		'suspended',
-		'finished',
+	private const RESTRICTED_ROLES_LIST = array(
+		RoleDefinitions::REDATOR,
 	);
 
 	private WPPostStatusProviderInterface $status_provider;
@@ -44,38 +33,45 @@ class PostStatusRegistrar {
 	}
 
 	public function register_custom_statuses(): void {
-		foreach ( self::CUSTOM_STATUSES as $slug => $label ) {
-			$this->status_provider->register(
-				$slug,
-				array(
-					'label'                     => $label,
-					'public'                    => false,
-					'internal'                  => false,
-					'exclude_from_search'       => true,
-					'show_in_admin_all_list'    => true,
-					'show_in_admin_status_list' => true,
-					'protected'                 => true,
-					'label_count'               => _n_noop(
-						// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralSingular
-						$label . ' <span class="count">(%s)</span>',
-						// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralPlural
-						$label . ' <span class="count">(%s)</span>',
-						'sultswriten'
-					),
-				)
+		$all_configs = StatusConfig::get_all();
+			
+		foreach ( $all_configs as $slug => $config ) {
+			$args = $config['wp_args'];
+
+			$label = $config['label'];
+			$args['label'] = $label;
+
+			// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralSingular, WordPress.WP.I18n.NonSingularStringLiteralPlural
+			$args['label_count'] = _n_noop(
+				$label . ' <span class="count">(%s)</span>',
+				$label . ' <span class="count">(%s)</span>',
+				'sultswriten'
 			);
+
+			$this->status_provider->register( $slug, $args );
 		}
+		
 	}
 
 	public static function get_custom_statuses(): array {
-		return self::CUSTOM_STATUSES;
+		$output = array();
+		foreach ( StatusConfig::get_all() as $slug => $config ) {
+			$output[ $slug ] = $config['label'];
+		}
+		return $output;
 	}
 
 	public static function get_restricted_roles(): array {
-		return self::RESTRICTED_ROLES;
+		return self::RESTRICTED_ROLES_LIST;
 	}
 
 	public static function get_restricted_statuses(): array {
-		return self::RESTRICTED_STATUSES;
+		$locked = array();
+		foreach ( StatusConfig::get_all() as $slug => $config ) {
+			if ( ! empty( $config['flow_rules']['is_locked'] ) ) {
+				$locked[] = $slug;
+			}
+		}
+		return $locked;
 	}
 }
