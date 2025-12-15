@@ -13,7 +13,7 @@ class ZipArchiver implements ArchiverInterface {
 
 		$zip = new ZipArchive();
 
-        if ( $zip->open( $output_path, ZipArchive::CREATE | ZipArchive::OVERWRITE ) !== true ) {
+		if ( $zip->open( $output_path, ZipArchive::CREATE | ZipArchive::OVERWRITE ) !== true ) {
 			return false;
 		}
 

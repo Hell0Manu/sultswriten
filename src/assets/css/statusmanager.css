@@ -11,3 +11,42 @@
     color: #50575e;
     background: #e2e4e7;
 }
+
+.wp-list-table .column-title {
+    width: 45%; 
+}
+
+.wp-list-table .column-author {
+    width: 10%;
+}
+
+.wp-list-table .column-categories {
+    width: 10%;
+}
+
+.wp-list-table .column-date {
+    width: 10%;
+}
+
+.column-cb_comments_status {
+    width: 5%;
+}
+
+.column-post_status_custom {
+    width: 10%;
+}
+
+.column-aioseo-details {
+    width: 10%;
+}
+
+@media screen and (max-width: 1100px) {
+    .wp-list-table .column-author,
+    .wp-list-table .column-categories, .column-aioseo-details{
+        display: none; 
+    }
+    
+    .wp-list-table .column-title {
+        width: auto;
+    }
+}

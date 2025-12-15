@@ -9,6 +9,7 @@ use Sults\Writen\Workflow\Export\Transformers\FileBlockTransformer;
 use Sults\Writen\Workflow\Export\Transformers\LinkTransformer;
 use Sults\Writen\Contracts\AttachmentProviderInterface;
 use Sults\Writen\Contracts\ConfigProviderInterface;
+use Sults\Writen\Workflow\Export\ExportConfig; // Importante para o teste saber as classes permitidas
 
 class Test_HtmlExtractor extends WP_UnitTestCase {
 
@@ -23,7 +24,7 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
         $this->mockConfigProvider->shouldReceive('get_home_url')->andReturn('http://example.org');
         $this->mockConfigProvider->shouldReceive('get_internal_domain')->andReturn('sults.com.br');
         $this->mockConfigProvider->shouldReceive('get_downloads_base_path')->andReturn('/sults/downloads/artigos/checklist/');
-        $this->mockConfigProvider->shouldReceive('get_tips_icon_path')->andReturn('/images/tip.png'); // Adicionado
+        $this->mockConfigProvider->shouldReceive('get_tips_icon_path')->andReturn('/images/tip.png');
 
         $this->mockAttachmentProvider = Mockery::mock( AttachmentProviderInterface::class );
         $this->mockAttachmentProvider->shouldReceive('get_attachment_id_by_url')->andReturn(0);
@@ -34,7 +35,7 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
             new ImageTransformer( $this->mockAttachmentProvider, $this->mockConfigProvider ),
             new LinkTransformer( $this->mockConfigProvider ),
             new TableTransformer(),
-            new SultsTipTransformer( $this->mockConfigProvider ), // <--- CORRIGIDO: Passando a config
+            new SultsTipTransformer( $this->mockConfigProvider ),
             new BlockquoteTransformer(),
             new FileBlockTransformer( $this->mockAttachmentProvider, $this->mockConfigProvider ),
         );
@@ -66,7 +67,8 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
         $result = $this->extractor->extract( $post );
 
-        $this->assertStringContainsString( "class='dica-sults'", $result );
+        // CORREÇÃO: Aspas duplas, pois é saída padrão do DOMDocument
+        $this->assertStringContainsString( 'class="dica-sults"', $result );
         $this->assertStringContainsString( '<h3>Dica Sults</h3>', $result );
         $this->assertStringContainsString( '<p>Esta é uma dica importante.</p>', $result );
     }
@@ -77,7 +79,8 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
         
         $result = $this->extractor->extract( get_post( $post_id ) );
 
-        $this->assertStringContainsString( "class='table-content'", $result );
+        // CORREÇÃO: Aspas duplas
+        $this->assertStringContainsString( 'class="table-content"', $result );
         $this->assertStringContainsString( '<table>', $result );
     }
 
@@ -87,12 +90,13 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
         $result = $this->extractor->extract( get_post( $post_id ) );
 
-        $this->assertStringContainsString( "target='_blank'", $result );
-        $this->assertStringContainsString( "rel='noopener noreferrer'", $result );
+        // CORREÇÃO: Aspas duplas
+        $this->assertStringContainsString( 'target="_blank"', $result );
+        $this->assertStringContainsString( 'rel="noopener noreferrer"', $result );
     }
 
     public function test_nao_deve_alterar_links_internos() {
-        $content = '<a href="https://sults.com.br/contato">Contato</a>';
+        $content = "<a href='https://sults.com.br/contato'>Contato</a>";
         $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
 
         $result = $this->extractor->extract( get_post( $post_id ) );
@@ -100,12 +104,17 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
         $this->assertStringNotContainsString( "target='_blank'", $result );
     }
     
-    public function test_deve_substituir_aspas_duplas_por_simples_no_html_final() {
-        $content = '<p class="aligncenter">Texto</p>';
+    public function test_deve_manter_classes_permitidas() {
+        // CORREÇÃO: Este teste substitui o antigo "substituir aspas", 
+        // pois a conversão de aspas agora é no JspBuilder.
+        // Aqui testamos se o Extractor mantém as classes corretas (agora via DOM).
+        
+        $content = "<p class='aligncenter'>Texto</p>";
         $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
 
         $result = $this->extractor->extract( get_post( $post_id ) );
 
-        $this->assertStringContainsString( "class='aligncenter'", $result );
+        // Espera aspas duplas, padrão do HTML
+        $this->assertStringContainsString( 'class="aligncenter"', $result );
     }
 }

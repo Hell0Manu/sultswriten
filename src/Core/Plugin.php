@@ -55,6 +55,7 @@ class Plugin {
 			$this->container->get( \Sults\Writen\Workflow\Media\ThumbnailDisabler::class ),
 			$this->container->get( \Sults\Writen\Infrastructure\FeatureDisabler::class ),
 			$this->container->get( \Sults\Writen\Interface\Editor\GutenbergManager::class ),
+			$this->container->get( \Sults\Writen\Interface\GlobalAssetsManager::class ),
 		);
 
 		$hook_manager->register_services( $global_services );

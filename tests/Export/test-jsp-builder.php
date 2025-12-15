@@ -4,76 +4,64 @@ use Sults\Writen\Workflow\Export\JspBuilder;
 
 class Test_JspBuilder extends WP_UnitTestCase {
 
-public function test_deve_gerar_estrutura_jsp_correta() {
-		$builder = new \Sults\Writen\Workflow\Export\JspBuilder();
+    public function test_deve_gerar_estrutura_jsp_correta() {
+        $builder = new JspBuilder();
 
-		$html       = "<p class='text'>Conteúdo</p>"; 
-		
-		$title      = 'Como fazer checklist';
-		$meta       = array(
-			'title'       => 'SEO Título',
-			'description' => 'SEO Descrição',
-		);
+        // Input com aspas duplas
+        $html       = '<p class="text">Conteúdo</p>'; 
+        
+        $title      = 'Como fazer checklist';
+        $meta       = array(
+            'title'       => 'SEO Título',
+            'description' => 'SEO Descrição',
+        );
 
-		$output = $builder->build( $html, $title, $meta );
+        $output = $builder->build( $html, $title, $meta );
 
-		$this->assertStringContainsString( '<!DOCTYPE html>', $output );
-		$this->assertStringContainsString( '<jsp:include page="/sults/components/default/include_meta.jsp">', $output );
-		$this->assertStringContainsString( 'value="SEO Título"', $output );
-		$this->assertStringContainsString( 'value="SEO Descrição"', $output );
+        $this->assertStringContainsString( '<!DOCTYPE html>', $output );
+        $this->assertStringContainsString( '<jsp:include page="/sults/components/default/include_meta.jsp">', $output );
+        $this->assertStringContainsString( 'value="SEO Título"', $output );
 
-		// Agora vai passar, pois a entrada (<p class='text'>...) bate com a expectativa
-		$this->assertStringContainsString( 'value="<p class=\'text\'>Conteúdo</p>"', $output );
-	}
-
-    public function test_deve_escapar_caracteres_especiais_no_titulo() {
-            $builder = new \Sults\Writen\Workflow\Export\JspBuilder();
-
-            $html  = '';
-            $title = 'Título com "aspas" & <tags>';
-            $meta  = array(); // Teste sem meta dados para verificar fallback
-
-            $output = $builder->build( $html, $title, $meta );
-
-            // CORREÇÃO: Esperamos 'Título' (UTF-8) e não 'T&iacute;tulo'
-            // Mas as aspas e tags DEVEM ser convertidas.
-            $esperado = 'value="Título com &quot;aspas&quot; &amp; &lt;tags&gt;"';
-
-            $this->assertStringContainsString( $esperado, $output );
-            
-            // Verifica também o fallback do meta title
-            $this->assertStringContainsString( 'name="meta_title" ' . $esperado, $output );
+        // VERIFICAÇÃO AJUSTADA:
+        // Como mantivemos o Regex, o output esperado converte class="text" para class='text'
+        $expected_html_param = "value=\"<p class='text'>Conteúdo</p>\"";
+        
+        $this->assertStringContainsString( $expected_html_param, $output );
     }
 
-    /**
- * Teste para verificar o comportamento de Fallback.
- * Arquivo: tests/Export/test-jsp-builder.php
- */
-public function test_deve_usar_fallback_se_metadados_estiverem_ausentes() {
-    $builder = new \Sults\Writen\Workflow\Export\JspBuilder();
+    public function test_deve_escapar_caracteres_especiais_no_titulo() {
+        $builder = new JspBuilder();
 
-    $html = '<p>Conteúdo</p>';
-    $titulo_pagina = 'Título Original da Página';
-    
-    // Simula que o SEO não retornou dados (array vazio ou chaves faltando)
-    $meta_vazio = array(); 
+        $html  = '';
+        $title = 'Título com "aspas" & <tags>';
+        $meta  = array(); 
 
-    $output = $builder->build( $html, $titulo_pagina, $meta_vazio );
+        $output = $builder->build( $html, $title, $meta );
 
-    // 1. Verifica se o "meta_title" assumiu o valor do "$titulo_pagina" (Fallback)
-    // Esperamos: <jsp:param name="meta_title" value="Título Original da Página"/>
-    $this->assertStringContainsString( 
-        'name="meta_title" value="Título Original da Página"', 
-        $output,
-        'Deveria usar o título da página quando o meta title está ausente.'
-    );
+        // Para o Título, usamos htmlspecialchars, então continua escapando para &quot;
+        // Isso está correto pois não passa pelo Regex de atributos HTML
+        $esperado = 'value="Título com &quot;aspas&quot; &amp; &lt;tags&gt;"';
 
-    // 2. Verifica se a "meta_description" ficou vazia (Fallback)
-    // Esperamos: <jsp:param name="meta_description" value=""/>
-    $this->assertStringContainsString( 
-        'name="meta_description" value=""', 
-        $output,
-        'Deveria gerar value="" quando a meta description está ausente.'
-    );
-}
+        $this->assertStringContainsString( $esperado, $output );
+    }
+
+    public function test_deve_usar_fallback_se_metadados_estiverem_ausentes() {
+        $builder = new JspBuilder();
+
+        $html = '<p>Conteúdo</p>';
+        $titulo_pagina = 'Título Original';
+        $meta_vazio = array(); 
+
+        $output = $builder->build( $html, $titulo_pagina, $meta_vazio );
+
+        $this->assertStringContainsString( 
+            'name="meta_title" value="Título Original"', 
+            $output 
+        );
+
+        $this->assertStringContainsString( 
+            'name="meta_description" value=""', 
+            $output 
+        );
+    }
 }

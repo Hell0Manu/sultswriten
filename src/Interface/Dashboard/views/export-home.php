@@ -89,8 +89,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</td>
 
 						<td>
+							<?php
+							$sultswriten_path_slug = $post->post_name;
+							$sultswriten_path_cat  = '';
+
+							if ( ! empty( $sultswriten_categories ) ) {
+								$sultswriten_path_cat = $sultswriten_categories[0]->slug;
+							} else {
+								$sultswriten_path_cat = 'sem-categoria';
+							}
+
+							$sultswriten_display_path = sprintf( '/%s/%s/', $sultswriten_path_cat, $sultswriten_path_slug );
+							?>
+
 							<a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" style="color: #3c434a; text-decoration: none; font-size: 12px;">
-								<?php echo esc_url( get_permalink() ); ?>
+								<?php echo esc_html( $sultswriten_display_path ); ?>
 							</a>
 						</td>
 
@@ -118,13 +131,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 							$sultswriten_download_url = add_query_arg(
 								array(
-									'page'    => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
-									'action'  => 'download',
-									'post_id' => get_the_ID(),
+									'page'     => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
+									'action'   => 'download',
+									'post_id'  => $post->ID,
+									'_wpnonce' => wp_create_nonce( 'sults_export_' . $post->ID ),
 								),
 								admin_url( 'admin.php' )
 							);
-							$sultswriten_download_url = wp_nonce_url( $sultswriten_download_url, 'sults_export_' . get_the_ID() );
 							?>
 
 							<a href="<?php echo esc_url( $sultswriten_preview_url ); ?>" class="sults-icon-btn" title="Visualizar Código (Antes/Depois)">

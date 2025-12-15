@@ -1,0 +1,14 @@
+/* =========================================
+   GLOBAL: Resets e Estilos Gerais
+   ========================================= */
+
+.wp-block-image img,
+.wp-block-image .components-resizable-box__container,
+img {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+}
+
+.wp-block-image {
+    filter: none !important;
+}

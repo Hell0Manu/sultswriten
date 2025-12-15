@@ -6,6 +6,8 @@ use Sults\Writen\Contracts\ConfigProviderInterface;
 use Sults\Writen\Contracts\DomTransformerInterface;
 use DOMDocument;
 use DOMXPath;
+use DOMElement;
+use DOMNode;
 use WP_Post;
 
 class HtmlExtractor implements HtmlExtractorInterface {
@@ -24,25 +26,6 @@ class HtmlExtractor implements HtmlExtractorInterface {
 	}
 
 	/**
-	 * Lista de classes do Gutenberg/WordPress que permitimos manter.
-	 * Todo o resto será removido para limpar o HTML.
-	 */
-	private const ALLOWED_CLASSES = array(
-		'wp-block-columns',
-		'wp-block-column',
-		'wp-block-image',
-		'wp-block-table',
-		'wp-block-separator',
-		'wp-block-quote',
-		'aligncenter',
-		'alignleft',
-		'alignright',
-		'is-style-default',
-		'has-text-align-center',
-		'dica-sults',
-	);
-
-	/**
 	 * Executa o pipeline de extração: Obtém -> Limpa -> Melhora.
 	 *
 	 * @param WP_Post $post O post original.
@@ -52,45 +35,15 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		$html = $post->post_content;
 
 		$html = $this->remove_gutenberg_comments( $html );
-		$html = $this->remove_classes_ids( $html );
-		$html = $this->remove_tags_figures( $html );
-		$html = $this->remove_empty_tags( $html );
 		$html = $this->clear_white_spaces( $html );
 		$html = $this->normalize_urls( $html );
-
-		$html = $this->improve_markup_with_dom( $html );
-
-		// $html = str_replace( '"', "'", $html );
+		$html = $this->process_with_dom( $html );
 
 		return $html;
 	}
 
-	// MÉTODOS DE LIMPEZA (CLEANER).
 	private function remove_gutenberg_comments( string $html ): string {
 		return preg_replace( '/<!--.*?-->/s', '', $html );
-	}
-
-	private function remove_classes_ids( string $html ): string {
-		$html = preg_replace( '/\s+id=["\'][^"\']*["\']/', '', $html );
-		$html = preg_replace_callback(
-			'/ class=["\'](.*?)["\']/',
-			function ( $matches ) {
-				$all_classes  = explode( ' ', $matches[1] );
-				$kept_classes = array();
-				foreach ( $all_classes as $cls ) {
-					$cls = trim( $cls );
-					if ( in_array( $cls, self::ALLOWED_CLASSES, true ) ) {
-						$kept_classes[] = $cls;
-					}
-				}
-				if ( empty( $kept_classes ) ) {
-					return '';
-				}
-				return ' class="' . implode( ' ', $kept_classes ) . '"';
-			},
-			$html
-		);
-		return $html ?? '';
 	}
 
 	private function remove_tags_figures( string $html ): string {
@@ -117,9 +70,10 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		return $html ?? '';
 	}
 
-
-	// MÉTODOS DE MELHORIA (IMPROVER).
-	private function improve_markup_with_dom( string $html ): string {
+	/**
+	 * Carrega o HTML no DOM, aplica limpeza e transformadores.
+	 */
+	private function process_with_dom( string $html ): string {
 		if ( empty( $html ) ) {
 			return '';
 		}
@@ -132,15 +86,114 @@ class HtmlExtractor implements HtmlExtractorInterface {
 
 		$xpath = new DOMXPath( $dom );
 
+		$this->clean_classes_and_ids( $xpath );
+		$this->clean_figures( $dom, $xpath );
+		$this->clean_empty_tags( $xpath );
+
 		foreach ( $this->transformers as $transformer ) {
 			$transformer->transform( $dom, $xpath );
 		}
 
 		$output = $dom->saveHTML();
+
 		if ( ! $output ) {
 			return '';
 		}
+		$output = preg_replace( '/^<\?xml.+?\?>\s*/i', '', $output );
 
 		return html_entity_decode( $output, ENT_QUOTES, 'UTF-8' );
+	}
+
+	/**
+	 * Remove IDs e filtra classes permitidas.
+	 */
+	private function clean_classes_and_ids( DOMXPath $xpath ): void {
+		$nodes = $xpath->query( '//*[@id] | //*[@class]' );
+
+		foreach ( $nodes as $node ) {
+			if ( ! $node instanceof DOMElement ) {
+				continue;
+			}
+
+			$node->removeAttribute( 'id' );
+
+			if ( $node->hasAttribute( 'class' ) ) {
+				$raw_classes = $node->getAttribute( 'class' );
+				$classes     = array_filter( explode( ' ', $raw_classes ) );
+				$kept        = array();
+
+				foreach ( $classes as $c ) {
+					$c = trim( $c );
+					if ( in_array( $c, ExportConfig::ALLOWED_CLASSES, true ) ) {
+						$kept[] = $c;
+					}
+				}
+
+				if ( ! empty( $kept ) ) {
+					$node->setAttribute( 'class', implode( ' ', $kept ) );
+				} else {
+					$node->removeAttribute( 'class' );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Remove tags <figure> (mantendo conteúdo) e remove <figcaption> (inteiro).
+	 */
+	private function clean_figures( DOMDocument $dom, DOMXPath $xpath ): void {
+		$captions = $xpath->query( '//figcaption' );
+		foreach ( $captions as $caption ) {
+			$caption->parentNode->removeChild( $caption );
+		}
+
+		$figures = $xpath->query( '//figure' );
+		foreach ( $figures as $figure ) {
+			if ( ! $figure instanceof DOMElement ) {
+				continue;
+			}
+
+			while ( $figure->firstChild ) {
+				$figure->parentNode->insertBefore( $figure->firstChild, $figure );
+			}
+			$figure->parentNode->removeChild( $figure );
+		}
+	}
+
+	/**
+	 * Remove tags vazias específicas (p, h1-h6, span, li).
+	 */
+	private function clean_empty_tags( DOMXPath $xpath ): void {
+
+		$query = '//p | //h1 | //h2 | //h3 | //h4 | //h5 | //h6 | //span | //li';
+		$nodes = $xpath->query( $query );
+
+		for ( $i = $nodes->length - 1; $i >= 0; $i-- ) {
+			$node = $nodes->item( $i );
+
+			if ( $this->has_element_children( $node ) ) {
+				continue;
+			}
+
+			$text = trim( $node->textContent );
+			$text = str_replace( "\xc2\xa0", '', $text );
+			$text = trim( $text );
+
+			if ( empty( $text ) ) {
+				$node->parentNode->removeChild( $node );
+			}
+		}
+	}
+
+	private function has_element_children( DOMNode $node ): bool {
+		if ( ! $node->hasChildNodes() ) {
+			return false;
+		}
+		foreach ( $node->childNodes as $child ) {
+			if ( $child->nodeType === XML_ELEMENT_NODE ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

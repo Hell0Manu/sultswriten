@@ -3,11 +3,8 @@
 use Sults\Writen\Interface\Dashboard\ExportController;
 use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Contracts\WPUserProviderInterface;
-use Sults\Writen\Contracts\HtmlExtractorInterface;
-use Sults\Writen\Contracts\JspBuilderInterface;
-use Sults\Writen\Contracts\SeoDataProviderInterface;
-use Sults\Writen\Workflow\Export\ExportAssetsManager; // Adicionar USE
-use Sults\Writen\Workflow\Export\ExportPayload; // Adicionar USE
+use Sults\Writen\Contracts\ArchiverInterface; // Novo
+use Sults\Writen\Workflow\Export\ExportProcessor; // Novo
 
 class Test_ExportController extends WP_UnitTestCase {
 
@@ -16,16 +13,12 @@ class Test_ExportController extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test_render_preview_screen_deve_gerar_jsp() {
+	public function test_render_preview_screen_deve_chamar_processor_e_exibir_view() {
 		// 1. Mocks
 		$mockRepo      = Mockery::mock( PostRepositoryInterface::class );
 		$mockUser      = Mockery::mock( WPUserProviderInterface::class );
-		$mockExtractor = Mockery::mock( HtmlExtractorInterface::class );
-		$mockBuilder   = Mockery::mock( JspBuilderInterface::class );
-		$mockSeo       = Mockery::mock( SeoDataProviderInterface::class );
-		
-		// NOVO MOCK para o AssetsManager
-		$mockAssets    = Mockery::mock( ExportAssetsManager::class );
+		$mockArchiver  = Mockery::mock( ArchiverInterface::class ); // Novo Mock
+		$mockProcessor = Mockery::mock( ExportProcessor::class );   // Novo Mock principal
 
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Titulo Teste' ) );
 		
@@ -35,36 +28,29 @@ class Test_ExportController extends WP_UnitTestCase {
 		$_GET['_wpnonce'] = wp_create_nonce( 'sults_preview_' . $post_id );
 
 		// 2. Expectativas
-		$mockExtractor->shouldReceive( 'extract' )->once()->andReturn( '<p>HTML Limpo</p>' );
-		
-		// Configura o Mock do Assets Manager para retornar um Payload fake
-		$mockAssets->shouldReceive( 'process' )
+		// O Controller agora apenas chama o Processor->execute()
+		$mockProcessor->shouldReceive( 'execute' )
 			->once()
-			->with( '<p>HTML Limpo</p>', Mockery::any() ) // Aceita qualquer path no 2o argumento
-			->andReturn( new ExportPayload( '<p>HTML Processado</p>', array() ) );
+			->with( $post_id, Mockery::type('string') ) // Verifica se passa ID e um path prefix
+			->andReturn( array(
+				'jsp_content' => '<jsp>Final</jsp>',
+				'files_map'   => array(),
+				'html_clean'  => '<p>Clean</p>',
+				'html_raw'    => '<p>Raw</p>'
+			));
 
-		$mockSeo->shouldReceive( 'get_seo_data' )
-			->once()
-			->with( $post_id )
-			->andReturn( array( 'title' => 'SEO', 'description' => 'Desc' ) );
-
-		// O Builder deve receber o HTML que saiu do AssetsManager ("HTML Processado")
-		$mockBuilder->shouldReceive( 'build' )
-			->once()
-			->with( '<p>HTML Processado</p>', 'Titulo Teste', array( 'title' => 'SEO', 'description' => 'Desc' ) )
-			->andReturn( '<jsp>Final</jsp>' );
-
-		// 3. Execução (Adicionando o $mockAssets no final)
-		$controller = new ExportController( $mockRepo, $mockUser, $mockExtractor, $mockBuilder, $mockSeo, $mockAssets );
+		// 3. Execução (Passando as dependências corretas)
+		$controller = new ExportController( $mockRepo, $mockUser, $mockArchiver, $mockProcessor );
 		
 		ob_start();
 		try {
 			$controller->render();
 		} catch ( \Exception $e ) {
-			// Ignora erro de view
+			// Ignora erro de view não encontrada se houver, ou output
 		}
-		ob_end_clean();
+		$output = ob_get_clean();
 
+		// Se não houve exceção fatal, o teste passou na integração com o Processor
 		$this->assertTrue( true );
 	}
 }

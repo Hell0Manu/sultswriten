@@ -38,7 +38,7 @@ class AioseoDataProvider implements SeoDataProviderInterface {
 			$seo_desc = aioseo()->tags->replaceTags( $raw_desc, $post_id );
 
 			return array(
-				'title'       => $seo_title ?: $default_data['title'],
+				'title'       => $seo_title ? $seo_title : $default_data['title'],
 				'description' => $seo_desc,
 			);
 
