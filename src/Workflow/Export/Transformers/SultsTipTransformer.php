@@ -5,42 +5,63 @@ use Sults\Writen\Contracts\DomTransformerInterface;
 use Sults\Writen\Contracts\ConfigProviderInterface;
 use DOMDocument;
 use DOMXPath;
+use DOMNode;
 
 class SultsTipTransformer implements DomTransformerInterface {
 
-	private ConfigProviderInterface $config;
+    private ConfigProviderInterface $config;
 
-	public function __construct( ConfigProviderInterface $config ) {
-		$this->config = $config;
-	}
+    public function __construct( ConfigProviderInterface $config ) {
+        $this->config = $config;
+    }
 
-	public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
-		$nodes = $xpath->query( '//pre' );
+    public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
+        $pre_nodes = $xpath->query( '//pre' );
+        foreach ( $pre_nodes as $node ) {
+            $this->replace_with_tip( $dom, $node, $node->nodeValue );
+        }
 
-		foreach ( $nodes as $node ) {
-			$aside = $dom->createElement( 'aside' );
-			$aside->setAttribute( 'class', 'dica-sults' );
+        $tables = $xpath->query( '//table' );
+        foreach ( $tables as $table ) {
+            if ( stripos( $table->textContent, 'Dica SULTS' ) !== false ) {
+                
+                $clean_text = str_ireplace( array( 'Dica SULTS:', 'Dica SULTS' ), '', $table->textContent );
+                $clean_text = trim( $clean_text );
 
-			$img = $dom->createElement( 'img' );
+                $this->replace_with_tip( $dom, $table, $clean_text );
+            }
+        }
+    }
 
-			$icon_path = $this->config->get_tips_icon_path();
-			$img->setAttribute( 'src', $icon_path );
-			$img->setAttribute( 'alt', 'Dica Sults' );
-			$aside->appendChild( $img );
 
-			$div = $dom->createElement( 'div' );
-			$h3  = $dom->createElement( 'h3', 'Dica Sults' );
-			$div->appendChild( $h3 );
+    private function replace_with_tip( DOMDocument $dom, DOMNode $target_node, string $text_content ): void {
+        $aside = $dom->createElement( 'aside' );
+        $aside->setAttribute( 'class', 'dica-sults' );
 
-			$p = $dom->createElement( 'p' );
-			$p->appendChild( $dom->createTextNode( trim( $node->nodeValue ) ) );
-			$div->appendChild( $p );
+        $img = $dom->createElement( 'img' );
+        $icon_path = $this->config->get_tips_icon_path();
+        
+        if ( empty( $icon_path ) ) {
+            $icon_path = SULTSWRITEN_TIPS_ICON;
+        }
+        
+        $img->setAttribute( 'src', $icon_path );
+        $img->setAttribute( 'alt', 'Dica Sults' );
+        $aside->appendChild( $img );
 
-			$aside->appendChild( $div );
+        $div = $dom->createElement( 'div' );
+        
+        $h3 = $dom->createElement( 'h3', 'Dica Sults' );
+        $div->appendChild( $h3 );
 
-			if ( $node->parentNode ) {
-				$node->parentNode->replaceChild( $aside, $node );
-			}
-		}
-	}
+        $p = $dom->createElement( 'p' );
+        $p->appendChild( $dom->createTextNode( $text_content ) );
+        $div->appendChild( $p );
+
+        $aside->appendChild( $div );
+
+        if ( $target_node->parentNode ) {
+            $target_node->parentNode->replaceChild( $aside, $target_node );
+        }
+    }
 }

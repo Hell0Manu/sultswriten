@@ -114,14 +114,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 								),
 								admin_url( 'admin.php' )
 							);
-
 							$sultswriten_preview_url = wp_nonce_url( $sultswriten_preview_url, 'sults_preview_' . get_the_ID() );
+
+							$sultswriten_download_url = add_query_arg(
+								array(
+									'page'    => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
+									'action'  => 'download',
+									'post_id' => get_the_ID(),
+								),
+								admin_url( 'admin.php' )
+							);
+							$sultswriten_download_url = wp_nonce_url( $sultswriten_download_url, 'sults_export_' . get_the_ID() );
 							?>
 
 							<a href="<?php echo esc_url( $sultswriten_preview_url ); ?>" class="sults-icon-btn" title="Visualizar Código (Antes/Depois)">
-								<span class="dashicons dashicons-visibility"></span> </a>
+								<span class="dashicons dashicons-visibility"></span> 
+							</a>
 
-							<a href="#" class="sults-icon-btn" title="Baixar ZIP">
+							<a href="<?php echo esc_url( $sultswriten_download_url ); ?>" class="sults-icon-btn" title="Baixar ZIP">
 								<span class="dashicons dashicons-download"></span>
 							</a>
 						</div>

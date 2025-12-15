@@ -52,5 +52,13 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 				return new AssetPathResolver( SULTSWRITEN_URL, SULTSWRITEN_VERSION );
 			}
 		);
+
+		// Zip Archiver.
+		$container->set(
+			\Sults\Writen\Contracts\ArchiverInterface::class,
+			function () {
+				return new \Sults\Writen\Infrastructure\ZipArchiver();
+			}
+		);
 	}
 }

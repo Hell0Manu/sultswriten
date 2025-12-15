@@ -13,6 +13,7 @@ use Sults\Writen\Interface\AdminMenuManager;
 use Sults\Writen\Interface\CategoryColorManager;
 use Sults\Writen\Interface\Theme\LoginTheme;
 use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
+use Sults\Writen\Interface\Editor\GutenbergManager; 
 
 // Export Helpers.
 use Sults\Writen\Workflow\Export\HtmlExtractor;
@@ -72,6 +73,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 				$transformers = array(
 					new ImageTransformer( $attachment_provider, $config_provider ),
 					new LinkTransformer( $config_provider ),
+					
 					new TableTransformer(),
 					new SultsTipTransformer( $config_provider ),
 					new BlockquoteTransformer(),
@@ -90,7 +92,9 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\HtmlExtractorInterface::class ),
 					$c->get( \Sults\Writen\Contracts\JspBuilderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\SeoDataProviderInterface::class )
+					$c->get( \Sults\Writen\Contracts\SeoDataProviderInterface::class ),
+					$c->get( \Sults\Writen\Workflow\Export\ExportAssetsManager::class ),
+					$c->get( \Sults\Writen\Contracts\ArchiverInterface::class )
 				);
 			}
 		);
@@ -139,6 +143,35 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 		$container->set( 
             \Sults\Writen\Contracts\JspBuilderInterface::class, 
             fn() => new \Sults\Writen\Workflow\Export\JspBuilder() 
+        );
+
+		// Export Assets Manager.
+		$container->set(
+			\Sults\Writen\Workflow\Export\ExportAssetsManager::class,
+			function ( $c ) {
+				return new \Sults\Writen\Workflow\Export\ExportAssetsManager();
+			}
+		);
+
+		$container->set( LinkTransformer::class, function( $c ) {
+			return new LinkTransformer( $c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class ) );
+		});
+
+		$container->set( ImageTransformer::class, function( $c ) {
+			return new ImageTransformer(
+				$c->get( \Sults\Writen\Contracts\AttachmentProviderInterface::class ),
+				$c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class )
+			);
+		});
+
+		$container->set(
+            GutenbergManager::class,
+            function ( $c ) {
+                return new GutenbergManager(
+                    $c->get( \Sults\Writen\Contracts\AssetLoaderInterface::class ),
+                    $c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class )
+                );
+            }
         );
 	}
 }

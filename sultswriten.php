@@ -29,6 +29,10 @@ if ( ! defined( 'SULTSWRITEN_TIPS_ICON' ) ) {
 	define( 'SULTSWRITEN_TIPS_ICON', '/sults/images/icones/produtos/modulo-checklist.webp' );
 }
 
+if ( ! defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ) {
+    define( 'SULTSWRITEN_EXPORT_ZIP_PATH', 'sults/images/ilustracoes/secundaria/produtos/checklist/artigos' );
+}
+
 if ( file_exists( SULTSWRITEN_PATH . 'vendor/autoload.php' ) ) {
 	require SULTSWRITEN_PATH . 'vendor/autoload.php';
 }

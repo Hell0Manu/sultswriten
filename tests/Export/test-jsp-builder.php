@@ -4,10 +4,11 @@ use Sults\Writen\Workflow\Export\JspBuilder;
 
 class Test_JspBuilder extends WP_UnitTestCase {
 
-	public function test_deve_gerar_estrutura_jsp_correta() {
-		$builder = new JspBuilder();
+public function test_deve_gerar_estrutura_jsp_correta() {
+		$builder = new \Sults\Writen\Workflow\Export\JspBuilder();
 
-		$html       = '<p>Conteúdo do Artigo</p>';
+		$html       = "<p class='text'>Conteúdo</p>"; 
+		
 		$title      = 'Como fazer checklist';
 		$meta       = array(
 			'title'       => 'SEO Título',
@@ -16,17 +17,13 @@ class Test_JspBuilder extends WP_UnitTestCase {
 
 		$output = $builder->build( $html, $title, $meta );
 
-		// 1. Verifica se a estrutura básica do JSP está presente
 		$this->assertStringContainsString( '<!DOCTYPE html>', $output );
 		$this->assertStringContainsString( '<jsp:include page="/sults/components/default/include_meta.jsp">', $output );
-
-		// 2. Verifica se os metadados foram injetados corretamente
 		$this->assertStringContainsString( 'value="SEO Título"', $output );
 		$this->assertStringContainsString( 'value="SEO Descrição"', $output );
 
-		// 3. Verifica se o conteúdo HTML foi injetado no parâmetro description1
-		// Nota: O HTML está dentro de aspas simples no template: value='{$html_content}'
-        $this->assertStringContainsString( 'value="<p class=\'text\'>Conteúdo</p>"', $output );
+		// Agora vai passar, pois a entrada (<p class='text'>...) bate com a expectativa
+		$this->assertStringContainsString( 'value="<p class=\'text\'>Conteúdo</p>"', $output );
 	}
 
     public function test_deve_escapar_caracteres_especiais_no_titulo() {

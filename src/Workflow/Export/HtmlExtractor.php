@@ -39,6 +39,7 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		'alignright',
 		'is-style-default',
 		'has-text-align-center',
+		'dica-sults',
 	);
 
 	/**
@@ -59,7 +60,7 @@ class HtmlExtractor implements HtmlExtractorInterface {
 
 		$html = $this->improve_markup_with_dom( $html );
 
-		$html = str_replace( '"', "'", $html );
+		// $html = str_replace( '"', "'", $html );
 
 		return $html;
 	}

@@ -11,12 +11,28 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+$download_url = add_query_arg(
+	array(
+		'page'     => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
+		'action'   => 'download',
+		'post_id'  => $post->ID,
+		'_wpnonce' => wp_create_nonce( 'sults_export_' . $post->ID ),
+	),
+	admin_url( 'admin.php' )
+);
 ?>
 
 <div class="wrap sults-preview-wrap">
 	
 	<h1><?php echo esc_html( get_the_title( $post ) ); ?></h1>
-	<a href="<?php echo esc_url( $back_url ); ?>" class="page-title-action">Voltar à lista</a>  
+	<div class="sults-actions-bar" style="margin-bottom: 20px;">
+		<a href="<?php echo esc_url( $back_url ); ?>" class="button">Voltar à lista</a>
+		
+		<a href="<?php echo esc_url( $download_url ); ?>" class="button button-primary button-large">
+			<span class="dashicons dashicons-download" style="margin-top:4px;"></span> Baixar ZIP
+		</a>
+	</div>
 
 	<nav class="nav-tab-wrapper wp-clearfix" style="margin-top: 20px;">   
 		<a href="#" class="nav-tab nav-tab-active sults-view-toggle" data-mode="conversion">
@@ -36,6 +52,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="button" class="sults-copy-btn" data-target="left">
 					<span class="dashicons dashicons-clipboard"></span> 
 					<span class="btn-text">Copiar</span>
+
 				</button>
 				<textarea id="code-left" name="code-left"></textarea>
 			</div>

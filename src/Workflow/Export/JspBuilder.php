@@ -5,17 +5,20 @@ use Sults\Writen\Contracts\JspBuilderInterface;
 
 class JspBuilder implements JspBuilderInterface {
 
-	public function build( string $html_content, string $page_title, array $meta_data ): string {
-		
-		$seo_title = isset( $meta_data['title'] ) ? $meta_data['title'] : $page_title;
-		$seo_desc  = isset( $meta_data['description'] ) ? $meta_data['description'] : '';
+    public function build( string $html_content, string $page_title, array $meta_data ): string {
+        
+        $seo_title = isset( $meta_data['title'] ) ? $meta_data['title'] : $page_title;
+        $seo_desc  = isset( $meta_data['description'] ) ? $meta_data['description'] : '';
 
-		$safe_seo_title = htmlspecialchars( $seo_title, ENT_QUOTES, 'UTF-8' );
-		$safe_seo_desc  = htmlspecialchars( $seo_desc, ENT_QUOTES, 'UTF-8' );
-		
-		$safe_page_title = htmlspecialchars( $page_title, ENT_QUOTES, 'UTF-8' );
+        $safe_seo_title = htmlspecialchars( $seo_title, ENT_QUOTES, 'UTF-8' );
+        $safe_seo_desc  = htmlspecialchars( $seo_desc, ENT_QUOTES, 'UTF-8' );
+        $safe_page_title = htmlspecialchars( $page_title, ENT_QUOTES, 'UTF-8' );
 
-		return <<<JSP
+        $html_attributes_fixed = preg_replace( '/( [a-zA-Z0-9_\-]+)=["\']([^"\']*)["\']/', '$1=\'$2\'', $html_content );
+        
+        $safe_html_content = str_replace( '"', '&#34;', $html_attributes_fixed );
+
+        return <<<JSP
         <!DOCTYPE html>
         <html lang="pt-br">
         <head>
@@ -32,7 +35,7 @@ class JspBuilder implements JspBuilderInterface {
             <main>
                 <jsp:include page="/sults/components/content/include_content_page_checklist.jsp">
                     <jsp:param name="page_title" value="{$safe_page_title}"/>
-                    <jsp:param name="description1" value="{$html_content}"/>
+                    <jsp:param name="description1" value="{$safe_html_content}"/>
                 </jsp:include>
             </main>
 
@@ -42,5 +45,5 @@ class JspBuilder implements JspBuilderInterface {
         </body>
         </html>
         JSP;
-	}
+    }
 }

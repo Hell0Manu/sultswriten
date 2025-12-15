@@ -7,30 +7,39 @@ use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\HtmlExtractorInterface;
 use Sults\Writen\Contracts\JspBuilderInterface;
 use Sults\Writen\Contracts\SeoDataProviderInterface;
+use Sults\Writen\Workflow\Export\ExportAssetsManager;
+use Sults\Writen\Contracts\ArchiverInterface;
 
 class ExportController implements HookableInterface {
 
-private PostRepositoryInterface $post_repo;
-	private WPUserProviderInterface $user_provider;
-	private HtmlExtractorInterface $extractor;
-	private JspBuilderInterface $jsp_builder;
-	private SeoDataProviderInterface $seo_provider;
+    private ArchiverInterface $archiver; 
 
-	public const PAGE_SLUG = 'sults-writen-export';
+    private PostRepositoryInterface $post_repo;
+    private WPUserProviderInterface $user_provider;
+    private HtmlExtractorInterface $extractor;
+    private JspBuilderInterface $jsp_builder;
+    private SeoDataProviderInterface $seo_provider;
+    private ExportAssetsManager $assets_manager;
 
-	public function __construct(
-		PostRepositoryInterface $post_repo,
-		WPUserProviderInterface $user_provider,
-		HtmlExtractorInterface $extractor,
-		JspBuilderInterface $jsp_builder,
-		SeoDataProviderInterface $seo_provider
-	) {
-		$this->post_repo     = $post_repo;
-		$this->user_provider = $user_provider;
-		$this->extractor     = $extractor;
-		$this->jsp_builder   = $jsp_builder;
-		$this->seo_provider  = $seo_provider;
-	}
+    public const PAGE_SLUG = 'sults-writen-export';
+
+    public function __construct(
+        PostRepositoryInterface $post_repo,
+        WPUserProviderInterface $user_provider,
+        HtmlExtractorInterface $extractor,
+        JspBuilderInterface $jsp_builder,
+        SeoDataProviderInterface $seo_provider,
+        ExportAssetsManager $assets_manager,
+        ArchiverInterface $archiver
+    ) {
+        $this->post_repo      = $post_repo;
+        $this->user_provider  = $user_provider;
+        $this->extractor      = $extractor;
+        $this->jsp_builder    = $jsp_builder;
+        $this->seo_provider   = $seo_provider;
+        $this->assets_manager = $assets_manager;
+        $this->archiver       = $archiver;
+    }
 
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
@@ -51,9 +60,11 @@ private PostRepositoryInterface $post_repo;
 	public function render(): void {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$action = isset( $_GET['action'] ) ? sanitize_key( $_GET['action'] ) : 'list';
-
+		
 		if ( 'preview' === $action ) {
 			$this->render_preview_screen();
+		} elseif ( 'download' === $action ) { 
+			$this->handle_download();
 		} else {
 			$this->render_list_screen();
 		}
@@ -113,13 +124,94 @@ private PostRepositoryInterface $post_repo;
 
 		$html_raw   = $post->post_content;
 		$html_clean = $this->extractor->extract( $post );
+
+		$zip_path_prefix = defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) 
+			? SULTSWRITEN_EXPORT_ZIP_PATH 
+			: 'sults/images/';
+		$assets_payload = $this->assets_manager->process( $html_clean, $zip_path_prefix );
+		$final_html_for_jsp = $assets_payload->html_content;
 		
 		$page_title = get_the_title( $post );
 		$seo_data   = $this->seo_provider->get_seo_data( $post_id );
 
-		$jsp_content = $this->jsp_builder->build( $html_clean, $page_title, $seo_data );
+		$jsp_content = $this->jsp_builder->build( $final_html_for_jsp, $page_title, $seo_data );
 		$back_url = remove_query_arg( array( 'action', 'post_id', '_wpnonce' ) );
 
 		require __DIR__ . '/views/export-preview.php';
 	}
+
+	private function handle_download(): void {
+        if ( ! isset( $_GET['_wpnonce'] ) || ! isset( $_GET['post_id'] ) ) {
+            wp_die( 'Requisição inválida.' );
+        }
+
+        $post_id = absint( $_GET['post_id'] );
+        
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'sults_export_' . $post_id ) ) {
+            wp_die( 'Link expirado.', 'Erro de Segurança', array( 'response' => 403 ) );
+        }
+
+        $post = get_post( $post_id );
+        if ( ! $post ) wp_die( 'Post não encontrado.' );
+
+        
+        $raw_title = get_the_title( $post );
+        
+        $base_name = sanitize_title( $raw_title );
+
+        $char_limit = 50;
+        if ( strlen( $base_name ) > $char_limit ) {
+            $base_name = substr( $base_name, 0, $char_limit );
+            $base_name = rtrim( $base_name, '-' ); 
+        }
+
+        if ( empty( $base_name ) ) {
+            $base_name = 'exportacao-sults';
+        }
+
+        $zip_images_prefix = $base_name . '/images/';
+        $jsp_filename_inside_zip = $base_name . '/' . $base_name . '.jsp';
+
+
+        $html_clean = $this->extractor->extract( $post );
+        
+        $assets_payload  = $this->assets_manager->process( $html_clean, $zip_images_prefix );
+
+        $seo_data = $this->seo_provider->get_seo_data( $post_id );
+        
+        $jsp_content = $this->jsp_builder->build( $assets_payload->html_content, get_the_title( $post ), $seo_data );
+
+        $files_map  = $assets_payload->files_to_zip;
+        
+        $string_map = array( $jsp_filename_inside_zip => $jsp_content );
+
+        $upload_dir = wp_upload_dir();
+
+        $zip_filename_download = $base_name . '.zip';
+        $zip_path   = $upload_dir['basedir'] . '/' . $zip_filename_download;
+
+        if ( $this->archiver->create( $zip_path, $files_map, $string_map ) ) {
+            
+            if ( file_exists( $zip_path ) ) {
+
+                if ( ob_get_length() ) {
+                    ob_end_clean();
+                }
+            
+                header( 'Content-Description: File Transfer' );
+                header( 'Content-Type: application/zip' );
+                header( 'Content-Disposition: attachment; filename="' . basename( $zip_path ) . '"' );
+                header( 'Expires: 0' );
+                header( 'Cache-Control: must-revalidate' );
+                header( 'Pragma: public' );
+                header( 'Content-Length: ' . filesize( $zip_path ) );
+                readfile( $zip_path );
+                
+                unlink( $zip_path );
+                exit;
+            }
+        } else {
+            wp_die( 'Erro ao gerar o arquivo ZIP. Verifique as permissões da pasta uploads.' );
+        }
+    }
 }

@@ -1,0 +1,110 @@
+/* =========================================
+   BLOCO: Citação (Pullquote)
+   ========================================= */
+.wp-block-pullquote {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.wp-block-pullquote blockquote {
+    position: relative;
+    background: var(--color-verdigris-100) !important;
+    padding: 24px 28px !important;
+    margin: 32px 0 !important;
+    
+    border-left: 5px solid var(--color-primary) !important;
+    
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: all .3s ease;
+    text-align: left !important;
+    color: var(--color-text-main) !important;
+}
+
+
+.wp-block-pullquote blockquote:hover {
+    background: #fff !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.wp-block-pullquote blockquote::before, .editor-styles-wrapper .wp-block-pullquote blockquote::before {
+    content: '"';
+    font-size: 150px;
+    line-height: 0.8;
+    position: absolute;
+    top: -70px;
+    left: 10px;
+    
+    color: var(--color-primary);
+    opacity: 0.10;
+    
+    pointer-events: none; 
+    z-index: 0;
+}
+
+.wp-block-pullquote blockquote p {
+    position: relative;
+    z-index: 2; 
+    font-size: 1.1rem !important;
+    color: var(--color-text-main) !important;
+    line-height: 1.5 !important;
+    margin-bottom: 14px !important;
+}
+
+.wp-block-pullquote blockquote cite {
+    position: relative;
+    z-index: 2;
+    display: block;
+    text-align: right;
+    font-size: 0.95rem !important;
+    font-weight: 600;
+    color: var(--color-primary) !important;
+    font-style: normal;
+}
+
+/* =========================================
+   BLOCO: Dica SULTS (.dica-sults)
+   ========================================= */
+
+.dica-sults {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    
+    background-color: var(--color-verdigris-100); 
+    border-left: 5px solid var(--color-primary); 
+    
+    border-radius: 8px;
+    padding: 24px;
+    margin: 32px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dica-sults img {
+    width: 60px;
+    height: auto;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.dica-sults div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.dica-sults h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color:#032d60;
+}
+
+.dica-sults p {
+    margin: 0;
+    color: var(--color-neutral-700); 
+    line-height: 1.5;
+}
