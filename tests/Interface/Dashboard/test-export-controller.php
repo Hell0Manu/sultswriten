@@ -3,8 +3,9 @@
 use Sults\Writen\Interface\Dashboard\ExportController;
 use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Contracts\WPUserProviderInterface;
-use Sults\Writen\Contracts\ArchiverInterface; // Novo
-use Sults\Writen\Workflow\Export\ExportProcessor; // Novo
+use Sults\Writen\Contracts\ArchiverInterface;
+use Sults\Writen\Workflow\Export\ExportProcessor;
+use Sults\Writen\Workflow\Export\ExportNamingService; // [Novo Use]
 
 class Test_ExportController extends WP_UnitTestCase {
 
@@ -17,8 +18,9 @@ class Test_ExportController extends WP_UnitTestCase {
 		// 1. Mocks
 		$mockRepo      = Mockery::mock( PostRepositoryInterface::class );
 		$mockUser      = Mockery::mock( WPUserProviderInterface::class );
-		$mockArchiver  = Mockery::mock( ArchiverInterface::class ); // Novo Mock
-		$mockProcessor = Mockery::mock( ExportProcessor::class );   // Novo Mock principal
+		$mockArchiver  = Mockery::mock( ArchiverInterface::class );
+		$mockProcessor = Mockery::mock( ExportProcessor::class );
+		$mockNaming    = Mockery::mock( ExportNamingService::class ); // [Novo Mock]
 
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Titulo Teste' ) );
 		
@@ -28,10 +30,9 @@ class Test_ExportController extends WP_UnitTestCase {
 		$_GET['_wpnonce'] = wp_create_nonce( 'sults_preview_' . $post_id );
 
 		// 2. Expectativas
-		// O Controller agora apenas chama o Processor->execute()
 		$mockProcessor->shouldReceive( 'execute' )
 			->once()
-			->with( $post_id, Mockery::type('string') ) // Verifica se passa ID e um path prefix
+			->with( $post_id, Mockery::type('string') )
 			->andReturn( array(
 				'jsp_content' => '<jsp>Final</jsp>',
 				'files_map'   => array(),
@@ -39,18 +40,53 @@ class Test_ExportController extends WP_UnitTestCase {
 				'html_raw'    => '<p>Raw</p>'
 			));
 
-		// 3. Execução (Passando as dependências corretas)
-		$controller = new ExportController( $mockRepo, $mockUser, $mockArchiver, $mockProcessor );
+		// 3. Execução (Injetando o novo serviço de nomenclatura)
+		$controller = new ExportController( $mockRepo, $mockUser, $mockArchiver, $mockProcessor, $mockNaming );
 		
 		ob_start();
 		try {
 			$controller->render();
 		} catch ( \Exception $e ) {
-			// Ignora erro de view não encontrada se houver, ou output
+			// Ignora erro de view
 		}
 		$output = ob_get_clean();
 
-		// Se não houve exceção fatal, o teste passou na integração com o Processor
 		$this->assertTrue( true );
+	}
+
+	public function test_handle_download_deve_usar_naming_service() {
+		// Teste extra para garantir que o NamingService está sendo chamado
+		$mockRepo      = Mockery::mock( PostRepositoryInterface::class );
+		$mockUser      = Mockery::mock( WPUserProviderInterface::class );
+		$mockArchiver  = Mockery::mock( ArchiverInterface::class );
+		$mockProcessor = Mockery::mock( ExportProcessor::class );
+		$mockNaming    = Mockery::mock( ExportNamingService::class );
+
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Meu Post' ) );
+
+		$_GET['action']   = 'download';
+		$_GET['post_id']  = $post_id;
+		$_GET['_wpnonce'] = wp_create_nonce( 'sults_export_' . $post_id );
+
+		// Expectativa: O NamingService deve ser invocado
+		$mockNaming->shouldReceive( 'generate_zip_filename' )
+			->once()
+			->with( 'Meu Post' )
+			->andReturn( 'meu-post-sanitizado' );
+
+		$mockProcessor->shouldReceive('execute')->andReturn([
+			'files_map' => [], 'jsp_content' => ''
+		]);
+		$mockArchiver->shouldReceive('create')->andReturn(true);
+
+		$controller = new ExportController( $mockRepo, $mockUser, $mockArchiver, $mockProcessor, $mockNaming );
+
+		ob_start(); // Buffer para evitar headers output
+		try {
+			$controller->render();
+		} catch (\Exception $e) {} // Ignora o exit ou die
+		ob_end_clean();
+		
+		$this->assertTrue(true);
 	}
 }

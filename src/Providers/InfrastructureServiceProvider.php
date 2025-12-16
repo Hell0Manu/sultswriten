@@ -36,7 +36,7 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 		$container->set( \Sults\Writen\Contracts\ConfigProviderInterface::class, fn() => new WPConfigProvider() );
 		$container->set( \Sults\Writen\Contracts\RequestProviderInterface::class, fn() => new RequestBlocker() );
 
-		// Redirectors
+		// Redirectors.
 		$container->set( HomeRedirector::class, fn() => new HomeRedirector() );
 		$container->set( NotFoundRedirector::class, fn() => new NotFoundRedirector() );
 

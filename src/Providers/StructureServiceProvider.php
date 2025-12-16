@@ -13,18 +13,18 @@ use Sults\Writen\Workflow\WorkflowPolicy;
 
 class StructureServiceProvider implements ServiceProviderInterface {
 
-    public function register( Container $container ): void {
-        $container->set(
-            StructureManager::class,
-            function ( Container $c ) {
-                return new StructureManager(
-                    $c->get( WPUserProviderInterface::class ),
-                    $c->get( AssetLoaderInterface::class ),
-                    $c->get( WPPostStatusProviderInterface::class ),
-                    $c->get( CategoryColorManager::class ),
-                    $c->get( WorkflowPolicy::class )
-                );
-            }
-        );
-    }
+	public function register( Container $container ): void {
+		$container->set(
+			StructureManager::class,
+			function ( Container $c ) {
+				return new StructureManager(
+					$c->get( WPUserProviderInterface::class ),
+					$c->get( AssetLoaderInterface::class ),
+					$c->get( WPPostStatusProviderInterface::class ),
+					$c->get( CategoryColorManager::class ),
+					$c->get( WorkflowPolicy::class )
+				);
+			}
+		);
+	}
 }

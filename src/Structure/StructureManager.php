@@ -13,250 +13,289 @@ use Sults\Writen\Workflow\Permissions\RoleDefinitions;
 
 class StructureManager implements HookableInterface {
 
-    private $user_provider;
-    private $asset_loader;
-    private $status_provider;
-    private $color_manager;
-    private $policy;
+	private $user_provider;
+	private $asset_loader;
+	private $status_provider;
+	private $color_manager;
+	private $policy;
 
-    public function __construct(
-        WPUserProviderInterface $user_provider,
-        AssetLoaderInterface $asset_loader,
-        WPPostStatusProviderInterface $status_provider,
-        CategoryColorManager $color_manager,
-        WorkflowPolicy $policy
-    ) {
-        $this->user_provider   = $user_provider;
-        $this->asset_loader    = $asset_loader;
-        $this->status_provider = $status_provider;
-        $this->color_manager   = $color_manager;
-        $this->policy          = $policy;
-    }
+	public function __construct(
+		WPUserProviderInterface $user_provider,
+		AssetLoaderInterface $asset_loader,
+		WPPostStatusProviderInterface $status_provider,
+		CategoryColorManager $color_manager,
+		WorkflowPolicy $policy
+	) {
+		$this->user_provider   = $user_provider;
+		$this->asset_loader    = $asset_loader;
+		$this->status_provider = $status_provider;
+		$this->color_manager   = $color_manager;
+		$this->policy          = $policy;
+	}
 
-    private function can_manage_structure(): bool {
-        $user = wp_get_current_user();
-        $allowed_roles = [ 'administrator', 'editor_chefe' ]; 
-        return (bool) array_intersect( $allowed_roles, (array) $user->roles );
-    }
+	private function can_manage_structure(): bool {
+		$user          = wp_get_current_user();
+		$allowed_roles = array( 'administrator', 'editor_chefe' );
+		return (bool) array_intersect( $allowed_roles, (array) $user->roles );
+	}
 
-public function register(): void {
-        add_action( 'admin_menu', [ $this, 'register_menu' ] );
-        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
-        
-        add_action( 'wp_ajax_sults_update_structure', [ $this, 'ajax_handle_move' ] );
-        add_action( 'wp_ajax_sults_get_post_details', [ $this, 'ajax_get_post_details' ] );
-        add_action( 'wp_ajax_sults_create_post', [ $this, 'ajax_create_post' ] ); // <--- NOVO
-    }
+	public function register(): void {
+		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 
-    public function register_menu(): void {
-        add_menu_page(
-            __( 'Estrutura', 'sults-writen' ),
-            __( 'Estrutura', 'sults-writen' ),
-            'edit_posts',
-            'sults-writen-structure',
-            [ $this, 'render_page' ],
-            'dashicons-networking',
-            30
-        );
-    }
+		add_action( 'wp_ajax_sults_update_structure', array( $this, 'ajax_handle_move' ) );
+		add_action( 'wp_ajax_sults_get_post_details', array( $this, 'ajax_get_post_details' ) );
+		add_action( 'wp_ajax_sults_create_post', array( $this, 'ajax_create_post' ) );
+	}
 
-    public function enqueue_assets( $hook ): void {
-        if ( strpos( $hook, 'sults-writen-structure' ) === false ) return;
+	public function register_menu(): void {
+		add_menu_page(
+			__( 'Estrutura', 'sultswriten' ),
+			__( 'Estrutura', 'sultswriten' ),
+			'edit_posts',
+			'sults-writen-structure',
+			array( $this, 'render_page' ),
+			'dashicons-networking',
+			30
+		);
+	}
 
-        $plugin_url = plugin_dir_url( dirname( dirname( __DIR__ ) ) . '/sults-writen.php' ); 
-        
-        wp_enqueue_style( 'sults-variables-css', $plugin_url . 'src/assets/css/variables.css', [], '1.0.0' );
-        wp_enqueue_script( 'jquery-ui-sortable' );
-        wp_enqueue_style( 'sults-status-manager-css', $plugin_url . 'src/assets/css/statusmanager.css', [], '1.0.0' );
-        
-        wp_enqueue_style( 'sults-structure-css', $plugin_url . 'src/assets/css/structure.css', [], '2.9.0' );
-        wp_add_inline_style( 'sults-structure-css', "
+	public function enqueue_assets( $hook ): void {
+		if ( strpos( $hook, 'sults-writen-structure' ) === false ) {
+			return;
+		}
+
+		$plugin_url = plugin_dir_url( dirname( dirname( __DIR__ ) ) . '/sults-writen.php' );
+
+		wp_enqueue_style( 'sults-variables-css', $plugin_url . 'src/assets/css/variables.css', array(), '1.0.0' );
+		wp_enqueue_script( 'jquery-ui-sortable' );
+		wp_enqueue_style( 'sults-status-manager-css', $plugin_url . 'src/assets/css/statusmanager.css', array(), '1.0.0' );
+
+		wp_enqueue_style( 'sults-structure-css', $plugin_url . 'src/assets/css/structure.css', array(), '2.9.0' );
+		wp_add_inline_style(
+			'sults-structure-css',
+			'
             .sults-card.disabled { opacity: 0.6; background: #fcfcfc; }
             .sults-card.disabled .sults-card-title { pointer-events: none; color: #a0a5aa; text-decoration: none; cursor: default; }
             .sults-card.disabled:hover { border-color: #e2e4e7; box-shadow: none; }
             .sults-action-icon.disabled { pointer-events: none; cursor: default; color: #d63638; }
             ul.sults-sortable-nested:empty { min-height: 10px; padding: 0; margin: 0; border: none; }
-        " );
-        
-        if ( class_exists( StatusConfig::class ) ) {
-            $status_css = StatusConfig::get_css_rules();
-            wp_add_inline_style( 'sults-structure-css', $status_css );
-        }
+        '
+		);
 
-        wp_enqueue_script( 'sults-structure-js', $plugin_url . 'src/assets/js/structure.js', ['jquery', 'jquery-ui-sortable'], '2.2.0', true );
+		if ( class_exists( StatusConfig::class ) ) {
+			// StatusVisuals deve ser usado aqui se já estiver disponível, caso contrário manter.
+			// Assumindo que o código original usava StatusConfig::get_css_rules() mas refatoramos para StatusVisuals.
+			// Para manter compatibilidade com o report de erro, vamos assumir que a chamada aqui ainda é válida ou foi atualizada.
+			// Se StatusVisuals existe, use-o.
+			if ( class_exists( \Sults\Writen\Workflow\PostStatus\StatusVisuals::class ) ) {
+				$status_css = \Sults\Writen\Workflow\PostStatus\StatusVisuals::get_css_rules();
+			} else {
+				$status_css = StatusConfig::get_css_rules();
+			}
+			wp_add_inline_style( 'sults-structure-css', $status_css );
+		}
 
-        wp_localize_script( 'sults-structure-js', 'sultsStructureParams', [
-             'ajax_url'   => admin_url( 'admin-ajax.php' ),
-             'nonce'      => wp_create_nonce( 'sults_structure_nonce' ),
-             'can_manage' => $this->can_manage_structure() 
-        ]);
-    }
+		wp_enqueue_script( 'sults-structure-js', $plugin_url . 'src/assets/js/structure.js', array( 'jquery', 'jquery-ui-sortable' ), '2.2.0', true );
 
-    public function ajax_handle_move() {
-        check_ajax_referer( 'sults_structure_nonce', 'security' );
-        if ( ! $this->can_manage_structure() ) wp_send_json_error( 'Sem permissão.' );
+		wp_localize_script(
+			'sults-structure-js',
+			'sultsStructureParams',
+			array(
+				'ajax_url'   => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'sults_structure_nonce' ),
+				'can_manage' => $this->can_manage_structure(),
+			)
+		);
+	}
 
-        $post_id   = intval( $_POST['post_id'] );
-        $parent_id = intval( $_POST['parent_id'] );
-        $order     = isset($_POST['order']) ? $_POST['order'] : [];
+	public function ajax_handle_move() {
+		check_ajax_referer( 'sults_structure_nonce', 'security' );
+		if ( ! $this->can_manage_structure() ) {
+			wp_send_json_error( 'Sem permissão.' );
+		}
 
-        if ( $post_id === $parent_id ) wp_send_json_error( 'Loop.' );
+		$post_id   = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
+		$order     = isset( $_POST['order'] ) ? array_map( 'absint', wp_unslash( $_POST['order'] ) ) : array();
 
-        wp_update_post( [ 'ID' => $post_id, 'post_parent' => $parent_id ] );
+		if ( $post_id === $parent_id ) {
+			wp_send_json_error( 'Loop.' );
+		}
 
-        if ( ! empty( $order ) && is_array( $order ) ) {
-            foreach ( $order as $index => $sibling_id ) {
-                wp_update_post( [ 'ID' => intval( $sibling_id ), 'menu_order' => $index ] );
-            }
-        }
-        wp_send_json_success();
-    }
+		wp_update_post(
+			array(
+				'ID'          => $post_id,
+				'post_parent' => $parent_id,
+			)
+		);
 
-    public function ajax_get_post_details() {
-        check_ajax_referer( 'sults_structure_nonce', 'security' );
-        
-        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
-        $post = get_post($post_id);
+		if ( ! empty( $order ) && is_array( $order ) ) {
+			foreach ( $order as $index => $sibling_id ) {
+				wp_update_post(
+					array(
+						'ID'         => absint( $sibling_id ),
+						'menu_order' => $index,
+					)
+				);
+			}
+		}
+		wp_send_json_success();
+	}
 
-        if (!$post) {
-            wp_send_json_error('Post não encontrado');
-        }
+	public function ajax_get_post_details() {
+		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
-        $author_id = $post->post_author;
-        $author_name = get_the_author_meta('display_name', $author_id);
-        $author_avatar = get_avatar_url($author_id, ['size' => 64]);
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$post    = get_post( $post_id );
 
-        $status_slug = $post->post_status;
-        $status_obj = get_post_status_object($status_slug);
-        $status_label = $status_obj ? $status_obj->label : $status_slug;
-        $status_html = sprintf(
-            '<span class="sults-status-badge sults-status-%s">%s</span>',
-            esc_attr($status_slug),
-            esc_html($status_label)
-        );
+		if ( ! $post ) {
+			wp_send_json_error( 'Post não encontrado' );
+		}
 
-        $cats = get_the_category($post_id);
-        $cat_data = ['name' => 'Sem Categoria', 'color' => '#ccc'];
-        if (!empty($cats)) {
-            $primary_cat = $cats[0];
-            $cat_data['name'] = $primary_cat->name;
-            $cat_data['color'] = $this->color_manager->get_color($primary_cat->term_id);
-        }
+		$author_id     = $post->post_author;
+		$author_name   = get_the_author_meta( 'display_name', $author_id );
+		$author_avatar = get_avatar_url( $author_id, array( 'size' => 64 ) );
 
-        $permalink = get_permalink($post_id);
-        $home_url = home_url();
-        $relative_path = str_replace($home_url, '', $permalink);
-        if (strpos($relative_path, '?p=') !== false && !empty($post->post_name)) {
-            $sample = get_sample_permalink($post_id);
-            if (!empty($sample[0]) && !empty($sample[1])) {
-                $pretty_url = str_replace('%postname%', $sample[1], $sample[0]);
-                $relative_path = str_replace($home_url, '', $pretty_url);
-            }
-        }
-        $relative_path = rtrim($relative_path, '/');
-        if(empty($relative_path)) $relative_path = '/';
+		$status_slug  = $post->post_status;
+		$status_obj   = get_post_status_object( $status_slug );
+		$status_label = $status_obj ? $status_obj->label : $status_slug;
+		$status_html  = sprintf(
+			'<span class="sults-status-badge sults-status-%s">%s</span>',
+			esc_attr( $status_slug ),
+			esc_html( $status_label )
+		);
 
-        $edit_link = get_edit_post_link($post_id);
-        $view_link = $permalink;
-        $user_roles = $this->user_provider->get_current_user_roles();
-        $can_edit = !$this->policy->is_editing_locked($status_slug, $user_roles) && current_user_can('edit_post', $post_id);
+		$cats     = get_the_category( $post_id );
+		$cat_data = array(
+			'name'  => 'Sem Categoria',
+			'color' => '#ccc',
+		);
+		if ( ! empty( $cats ) ) {
+			$primary_cat       = $cats[0];
+			$cat_data['name']  = $primary_cat->name;
+			$cat_data['color'] = $this->color_manager->get_color( $primary_cat->term_id );
+		}
+
+		$permalink     = get_permalink( $post_id );
+		$home_url      = home_url();
+		$relative_path = str_replace( $home_url, '', $permalink );
+		if ( strpos( $relative_path, '?p=' ) !== false && ! empty( $post->post_name ) ) {
+			$sample = get_sample_permalink( $post_id );
+			if ( ! empty( $sample[0] ) && ! empty( $sample[1] ) ) {
+				$pretty_url    = str_replace( '%postname%', $sample[1], $sample[0] );
+				$relative_path = str_replace( $home_url, '', $pretty_url );
+			}
+		}
+		$relative_path = rtrim( $relative_path, '/' );
+		if ( empty( $relative_path ) ) {
+			$relative_path = '/';
+		}
+
+		$edit_link  = get_edit_post_link( $post_id );
+		$view_link  = $permalink;
+		$user_roles = $this->user_provider->get_current_user_roles();
+		$can_edit   = ! $this->policy->is_editing_locked( $status_slug, $user_roles ) && current_user_can( 'edit_post', $post_id );
+
+		$seo_title = get_post_meta( $post_id, '_aioseo_title', true );
+		$seo_desc  = get_post_meta( $post_id, '_aioseo_description', true );
+
+		if ( empty( $seo_title ) ) {
+			$seo_title = get_the_title( $post ) . ' - ' . get_bloginfo( 'name' );
+		}
+		if ( empty( $seo_desc ) ) {
+			$seo_desc = get_the_excerpt( $post );
+			if ( empty( $seo_desc ) ) {
+				$seo_desc = wp_trim_words( strip_shortcodes( $post->post_content ), 25 );
+			}
+		}
+
+		$response = array(
+			'id'          => $post_id,
+			'title'       => get_the_title( $post ),
+			'status_html' => $status_html,
+			'author'      => array(
+				'name'   => $author_name,
+				'avatar' => $author_avatar,
+			),
+			'date'        => get_the_date( 'd M, Y', $post ),
+			'category'    => $cat_data,
+			'path'        => $relative_path,
+			'seo'         => array(
+				'title'       => $seo_title,
+				'description' => $seo_desc,
+			),
+			'links'       => array(
+				'edit'     => $edit_link,
+				'view'     => $view_link,
+				'can_edit' => $can_edit,
+			),
+		);
+
+		wp_send_json_success( $response );
+	}
 
 
-        $seo_title = get_post_meta($post_id, '_aioseo_title', true);
-        $seo_desc  = get_post_meta($post_id, '_aioseo_description', true);
+	public function ajax_create_post() {
+		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
-        if (empty($seo_title)) {
-            $seo_title = get_the_title($post) . ' - ' . get_bloginfo('name');
-        }
-        if (empty($seo_desc)) {
-            $seo_desc = get_the_excerpt($post);
-            if (empty($seo_desc)) {
-                $seo_desc = wp_trim_words(strip_shortcodes($post->post_content), 25);
-            }
-        }
+		if ( ! $this->can_manage_structure() ) {
+			wp_send_json_error( 'Sem permissão.' );
+		}
 
-        $response = [
-            'id' => $post_id,
-            'title' => get_the_title($post),
-            'status_html' => $status_html,
-            'author' => [
-                'name' => $author_name,
-                'avatar' => $author_avatar
-            ],
-            'date' => get_the_date('d M, Y', $post),
-            'category' => $cat_data,
-            'path' => $relative_path,
-            'seo' => [ 
-                'title' => $seo_title,
-                'description' => $seo_desc
-            ],
-            'links' => [
-                'edit' => $edit_link,
-                'view' => $view_link,
-                'can_edit' => $can_edit
-            ]
-        ];
+		$title     = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		$parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
+		$cat_id    = isset( $_POST['cat_id'] ) ? absint( $_POST['cat_id'] ) : 0;
+		$slug      = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
 
-        wp_send_json_success($response);
-    }
+		if ( empty( $title ) ) {
+			wp_send_json_error( 'O título é obrigatório.' );
+		}
 
+		$post_data = array(
+			'post_title'  => $title,
+			'post_name'   => $slug,
+			'post_status' => 'draft',
+			'post_type'   => 'post',
+			'post_parent' => $parent_id,
+		);
 
-    public function ajax_create_post() {
-        check_ajax_referer( 'sults_structure_nonce', 'security' );
+		$post_id = wp_insert_post( $post_data );
 
-        if ( ! $this->can_manage_structure() ) {
-            wp_send_json_error( 'Sem permissão.' );
-        }
+		if ( is_wp_error( $post_id ) ) {
+			wp_send_json_error( $post_id->get_error_message() );
+		}
 
-        $title     = sanitize_text_field( $_POST['title'] );
-        $parent_id = intval( $_POST['parent_id'] );
-        $cat_id    = intval( $_POST['cat_id'] );
-        $slug      = sanitize_title( $_POST['slug'] );
+		if ( $cat_id > 0 ) {
+			wp_set_post_terms( $post_id, array( $cat_id ), 'category' );
+		}
 
-        if ( empty( $title ) ) {
-            wp_send_json_error( 'O título é obrigatório.' );
-        }
+		$redirect_url = get_edit_post_link( $post_id, 'raw' );
 
-        $post_data = [
-            'post_title'   => $title,
-            'post_name'    => $slug,
-            'post_status'  => 'draft', 
-            'post_type'    => 'post',
-            'post_parent'  => $parent_id
-        ];
+		wp_send_json_success(
+			array(
+				'id'           => $post_id,
+				'redirect_url' => $redirect_url,
+			)
+		);
+	}
 
-        $post_id = wp_insert_post( $post_data );
+	public function render_page(): void {
+		$tree_html = $this->get_tree_html();
 
-        if ( is_wp_error( $post_id ) ) {
-            wp_send_json_error( $post_id->get_error_message() );
-        }
+		$categories = get_categories( array( 'hide_empty' => false ) );
 
-        if ( $cat_id > 0 ) {
-            wp_set_post_terms( $post_id, [ $cat_id ], 'category' );
-        }
+		$potential_parents = get_posts(
+			array(
+				'post_type'      => 'post',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'post_status'    => 'any',
+			)
+		);
 
-        $redirect_url = get_edit_post_link( $post_id, 'raw' ); 
-
-        wp_send_json_success( [ 
-            'id'           => $post_id,
-            'redirect_url' => $redirect_url 
-        ] );
-    }
-
-    public function render_page(): void {
-        $tree_html = $this->get_tree_html();
-        
-        $categories = get_categories( [ 'hide_empty' => false ] );
-        
-        $potential_parents = get_posts( [ 
-            'post_type'      => 'post', 
-            'posts_per_page' => -1, 
-            'orderby'        => 'title', 
-            'order'          => 'ASC',
-            'post_status'    => 'any' 
-        ] );
-        
-        echo '<div class="wrap">
+		echo '<div class="wrap">
                 <div class="sults-header-row">
                     <h1>Estrutura de Conteúdo</h1>
                     <button id="btn-open-new-post" class="button button-primary sults-btn-large">
@@ -264,7 +303,13 @@ public function register(): void {
                     </button>
                 </div>
                 
-                <div class="sults-structure-wrapper">' . $tree_html . '</div>
+                <div class="sults-structure-wrapper">';
+
+		// O HTML gerado por get_tree_html é construído internamente com esc_html e esc_attr.
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $tree_html;
+
+		echo '</div>
                 
                 <div id="sults-drawer-backdrop" class="sults-drawer-backdrop"></div>
                 <div id="sults-detail-drawer" class="sults-drawer">
@@ -332,12 +377,12 @@ public function register(): void {
                                     <label for="new-post-parent">Post Pai (Raiz)</label>
                                     <select id="new-post-parent" name="parent_id" class="sults-input">
                                         <option value="0" selected>Nenhum (Raiz)</option>';
-                                        foreach ($potential_parents as $p) {
-                                            $cats = get_the_category($p->ID);
-                                            $cat_id = !empty($cats) ? $cats[0]->term_id : 0;
-                                            echo '<option value="' . $p->ID . '" data-cat-id="' . $cat_id . '">' . esc_html($p->post_title) . '</option>';
-                                        }
-        echo '                      </select>
+		foreach ( $potential_parents as $p ) {
+			$cats   = get_the_category( $p->ID );
+			$cat_id = ! empty( $cats ) ? $cats[0]->term_id : 0;
+			echo '<option value="' . esc_attr( $p->ID ) . '" data-cat-id="' . esc_attr( $cat_id ) . '">' . esc_html( $p->post_title ) . '</option>';
+		}
+		echo '                      </select>
                                     <p class="description">Se selecionar um pai, a categoria será herdada automaticamente.</p>
                                 </div>
 
@@ -350,10 +395,10 @@ public function register(): void {
                                     <label for="new-post-category">Categoria</label>
                                     <select id="new-post-category" name="cat_id" class="sults-input">
                                         <option value="0" data-slug="">Sem Categoria</option>';
-                                        foreach ($categories as $cat) {
-                                            echo '<option value="' . $cat->term_id . '" data-slug="' . esc_attr($cat->slug) . '">' . esc_html($cat->name) . '</option>';
-                                        }
-        echo '                      </select>
+		foreach ( $categories as $cat ) {
+			echo '<option value="' . esc_attr( $cat->term_id ) . '" data-slug="' . esc_attr( $cat->slug ) . '">' . esc_html( $cat->name ) . '</option>';
+		}
+		echo '                      </select>
                                 </div>
 
                                 <div class="sults-form-group">
@@ -373,197 +418,198 @@ public function register(): void {
                     </div>
                 </div>
               </div>';
-    }
+	}
 
-    private function get_tree_html(): string {
-        
-        $statuses = $this->status_provider->get_all_status_slugs(); 
-        $args = [ 
-            'post_type'      => 'post', 
-            'posts_per_page' => -1, 
-            'orderby'        => 'menu_order title', 
-            'order'          => 'ASC', 
-            'post_status'    => $statuses 
-        ];
-        $posts = get_posts( $args );
+	private function get_tree_html(): string {
 
-        $current_user_roles = $this->user_provider->get_current_user_roles();
+		$statuses = $this->status_provider->get_all_status_slugs();
+		$args     = array(
+			'post_type'      => 'post',
+			'posts_per_page' => -1,
+			'orderby'        => 'menu_order title',
+			'order'          => 'ASC',
+			'post_status'    => $statuses,
+		);
+		$posts    = get_posts( $args );
 
-        $posts_by_parent = [];
-        $all_posts_map = [];
-        foreach ($posts as $p) {
-            $all_posts_map[$p->ID] = $p;
-            $posts_by_parent[$p->post_parent][] = $p;
-        }
+		$current_user_roles = $this->user_provider->get_current_user_roles();
 
-        foreach ($posts as $post) {
-            if ($post->post_parent > 0 && !isset($all_posts_map[$post->post_parent])) {
-                $post->post_parent = 0;
-                $posts_by_parent[0][] = $post;
-            }
-        }
+		$posts_by_parent = array();
+		$all_posts_map   = array();
+		foreach ( $posts as $p ) {
+			$all_posts_map[ $p->ID ]              = $p;
+			$posts_by_parent[ $p->post_parent ][] = $p;
+		}
 
-        $root_posts = $posts_by_parent[0] ?? [];
-        $category_buckets = []; 
-        $uncategorized_posts = [];
+		foreach ( $posts as $post ) {
+			if ( $post->post_parent > 0 && ! isset( $all_posts_map[ $post->post_parent ] ) ) {
+				$post->post_parent    = 0;
+				$posts_by_parent[0][] = $post;
+			}
+		}
 
-        foreach ($root_posts as $post) {
-            $cats = get_the_category($post->ID);
-            if (empty($cats)) {
-                $uncategorized_posts[] = $post;
-            } else {
-                $primary_cat = $cats[0]; 
-                $category_buckets[$primary_cat->term_id][] = $post;
-            }
-        }
+		$root_posts          = $posts_by_parent[0] ?? array();
+		$category_buckets    = array();
+		$uncategorized_posts = array();
 
-        $active_categories_data = [];
-        $all_categories = get_categories(['hide_empty' => false]);
+		foreach ( $root_posts as $post ) {
+			$cats = get_the_category( $post->ID );
+			if ( empty( $cats ) ) {
+				$uncategorized_posts[] = $post;
+			} else {
+				$primary_cat                                 = $cats[0];
+				$category_buckets[ $primary_cat->term_id ][] = $post;
+			}
+		}
 
-        foreach ($all_categories as $cat) {
-            if (!empty($category_buckets[$cat->term_id])) {
-                $active_categories_data[] = [
-                    'term' => $cat,
-                    'posts' => $category_buckets[$cat->term_id]
-                ];
-            }
-        }
+		$active_categories_data = array();
+		$all_categories         = get_categories( array( 'hide_empty' => false ) );
 
-        $total_groups = count($active_categories_data) + (!empty($uncategorized_posts) ? 1 : 0);
+		foreach ( $all_categories as $cat ) {
+			if ( ! empty( $category_buckets[ $cat->term_id ] ) ) {
+				$active_categories_data[] = array(
+					'term'  => $cat,
+					'posts' => $category_buckets[ $cat->term_id ],
+				);
+			}
+		}
 
-        if ($total_groups === 0) {
-            return '<div class="notice notice-info inline"><p>Nenhum post encontrado na estrutura.</p></div>';
-        }
+		$total_groups = count( $active_categories_data ) + ( ! empty( $uncategorized_posts ) ? 1 : 0 );
 
-        $html = '';
+		if ( $total_groups === 0 ) {
+			return '<div class="notice notice-info inline"><p>Nenhum post encontrado na estrutura.</p></div>';
+		}
 
-        if ($total_groups > 1) {
-            
-            foreach ($active_categories_data as $data) {
-                $cat = $data['term'];
-                $cat_posts = $data['posts'];
+		$html = '';
 
-                $cat_color = $this->color_manager->get_color($cat->term_id);
-                if (!$cat_color) $cat_color = '#646970'; 
+		if ( $total_groups > 1 ) {
 
-                $style_border  = "border-left: 4px solid {$cat_color};";
-                $style_title   = "color: {$cat_color};";
-                $style_bg_soft = "background-color: " . $this->hex2rgba($cat_color, 0.03) . ";";
+			foreach ( $active_categories_data as $data ) {
+				$cat       = $data['term'];
+				$cat_posts = $data['posts'];
 
-                $html .= '<div class="sults-category-folder" style="' . $style_border . ' ' . $style_bg_soft . '">';
-                $html .= '<div class="sults-category-header" style="' . $style_title . '">
+				$cat_color = $this->color_manager->get_color( $cat->term_id );
+				if ( ! $cat_color ) {
+					$cat_color = '#646970';
+				}
+
+				$style_border  = "border-left: 4px solid {$cat_color};";
+				$style_title   = "color: {$cat_color};";
+				$style_bg_soft = 'background-color: ' . $this->hex2rgba( $cat_color, 0.03 ) . ';';
+
+				$html .= '<div class="sults-category-folder" style="' . $style_border . ' ' . $style_bg_soft . '">';
+				$html .= '<div class="sults-category-header" style="' . $style_title . '">
                             <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
                             <span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
-                            <strong>' . esc_html($cat->name) . '</strong>
-                            <span class="count" style="color: #646970;">(' . count($cat_posts) . ')</span>
+                            <strong>' . esc_html( $cat->name ) . '</strong>
+                            <span class="count" style="color: #646970;">(' . count( $cat_posts ) . ')</span>
                           </div>';
-                
-                $html .= '<div class="sults-category-content">';
-                $html .= '<ul class="sults-sortable-root" data-category-id="' . $cat->term_id . '">';
-                foreach ($cat_posts as $root_post) {
-                    $html .= $this->build_html_item($root_post, $posts_by_parent, $current_user_roles);
-                }
-                $html .= '</ul></div></div>';
-            }
 
-            if (!empty($uncategorized_posts)) {
-                $html .= '<div class="sults-category-folder" style="border-left: 4px solid #646970; background-color: #f9f9f9;">';
-                $html .= '<div class="sults-category-header" style="color: #444;">
+				$html .= '<div class="sults-category-content">';
+				$html .= '<ul class="sults-sortable-root" data-category-id="' . $cat->term_id . '">';
+				foreach ( $cat_posts as $root_post ) {
+					$html .= $this->build_html_item( $root_post, $posts_by_parent, $current_user_roles );
+				}
+				$html .= '</ul></div></div>';
+			}
+
+			if ( ! empty( $uncategorized_posts ) ) {
+				$html .= '<div class="sults-category-folder" style="border-left: 4px solid #646970; background-color: #f9f9f9;">';
+				$html .= '<div class="sults-category-header" style="color: #444;">
                             <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
                             <span class="dashicons dashicons-admin-generic" style="margin-right:5px; opacity: 0.7;"></span> 
                             <strong>Geral / Sem Categoria</strong>
-                            <span class="count">(' . count($uncategorized_posts) . ')</span>
+                            <span class="count">(' . count( $uncategorized_posts ) . ')</span>
                           </div>';
-                $html .= '<div class="sults-category-content">';
-                $html .= '<ul class="sults-sortable-root" data-category-id="0">';
-                foreach ($uncategorized_posts as $root_post) {
-                    $html .= $this->build_html_item($root_post, $posts_by_parent, $current_user_roles);
-                }
-                $html .= '</ul></div></div>';
-            }
+				$html .= '<div class="sults-category-content">';
+				$html .= '<ul class="sults-sortable-root" data-category-id="0">';
+				foreach ( $uncategorized_posts as $root_post ) {
+					$html .= $this->build_html_item( $root_post, $posts_by_parent, $current_user_roles );
+				}
+				$html .= '</ul></div></div>';
+			}
+		} else {
+			if ( ! empty( $active_categories_data ) ) {
+				$data            = $active_categories_data[0];
+				$cat_id          = $data['term']->term_id;
+				$posts_to_render = $data['posts'];
+			} else {
+				$cat_id          = 0;
+				$posts_to_render = $uncategorized_posts;
+			}
 
-        } else {
-            if (!empty($active_categories_data)) {
-                $data = $active_categories_data[0]; 
-                $cat_id = $data['term']->term_id;
-                $posts_to_render = $data['posts'];
-            } else {
-                $cat_id = 0;
-                $posts_to_render = $uncategorized_posts;
-            }
+			$html .= '<ul class="sults-sortable-root" data-category-id="' . $cat_id . '">';
+			foreach ( $posts_to_render as $root_post ) {
+				$html .= $this->build_html_item( $root_post, $posts_by_parent, $current_user_roles );
+			}
+			$html .= '</ul>';
+		}
 
-            $html .= '<ul class="sults-sortable-root" data-category-id="' . $cat_id . '">';
-            foreach ($posts_to_render as $root_post) {
-                $html .= $this->build_html_item($root_post, $posts_by_parent, $current_user_roles);
-            }
-            $html .= '</ul>';
-        }
+		return $html;
+	}
 
-        return $html;
-    }
+	private function build_html_item( $element, $posts_by_parent, $user_roles ): string {
+		$children     = $posts_by_parent[ $element->ID ] ?? array();
+		$has_children = ! empty( $children );
 
-    private function build_html_item( $element, $posts_by_parent, $user_roles ): string {
-        $children = $posts_by_parent[$element->ID] ?? [];
-        $has_children = !empty($children);
+		$permalink    = get_edit_post_link( $element->ID );
+		$status_slug  = $element->post_status;
+		$status_obj   = get_post_status_object( $status_slug );
+		$status_label = $status_obj ? $status_obj->label : $status_slug;
 
-        $permalink = get_edit_post_link( $element->ID );
-        $status_slug = $element->post_status;
-        $status_obj = get_post_status_object( $status_slug );
-        $status_label = $status_obj ? $status_obj->label : $status_slug;
+		$is_redator = in_array( RoleDefinitions::REDATOR, $user_roles, true );
 
-        $is_redator = in_array( RoleDefinitions::REDATOR, $user_roles );
+		if ( $is_redator ) {
+			$current_user_id = get_current_user_id();
+			$is_author       = ( (int) $element->post_author === $current_user_id );
+			$is_public       = ( $status_slug === 'publish' );
+			$is_finished     = ( $status_slug === 'finished' );
 
-        if ( $is_redator ) {
-            $current_user_id = get_current_user_id();
-            $is_author       = ( (int) $element->post_author === $current_user_id );
-            $is_public       = ( $status_slug === 'publish' );
-            $is_finished     = ( $status_slug === 'finished' );
+			$has_access = ( $is_author || $is_public || $is_finished );
+		} else {
+			$has_access = true;
+		}
 
-            $has_access = ($is_author || $is_public || $is_finished);
-        } else {
-            $has_access = true;
-        }
+		$card_class  = 'sults-card';
+		$icon_class  = 'sults-action-icon';
+		$link_html   = '';
+		$action_html = '';
 
-        $card_class  = 'sults-card';
-        $icon_class  = 'sults-action-icon';
-        $link_html   = ''; 
-        $action_html = ''; 
+		if ( ! $has_access ) {
+			$card_class .= ' disabled';
+			$icon_class .= ' disabled';
 
-        if ( ! $has_access ) {
-            $card_class .= ' disabled'; 
-            $icon_class .= ' disabled';
-            
-            $link_html = '<span class="sults-card-title">' . esc_html( $element->post_title ) . '</span>';
-            $action_html = '<span class="' . $icon_class . '" title="Acesso Restrito (Post de outro usuário)"><span class="dashicons dashicons-lock"></span></span>';
+			$link_html   = '<span class="sults-card-title">' . esc_html( $element->post_title ) . '</span>';
+			$action_html = '<span class="' . $icon_class . '" title="Acesso Restrito (Post de outro usuário)"><span class="dashicons dashicons-lock"></span></span>';
 
-        } else {
-            $is_locked_by_policy = $this->policy->is_editing_locked( $status_slug, $user_roles );
-            $can_edit_native     = $this->user_provider->current_user_can( 'edit_post', $element->ID );
+		} else {
+			$is_locked_by_policy = $this->policy->is_editing_locked( $status_slug, $user_roles );
+			$can_edit_native     = $this->user_provider->current_user_can( 'edit_post', $element->ID );
 
-            if ( $is_locked_by_policy || ! $can_edit_native ) {
-                $action_icon  = 'dashicons-visibility';
-                $action_title = 'Visualizar (Apenas Leitura)';
-                $target_url   = get_permalink( $element->ID ); 
-            } else {
-                $action_icon  = 'dashicons-edit';
-                $action_title = 'Editar';
-                $target_url   = $permalink; 
-            }
+			if ( $is_locked_by_policy || ! $can_edit_native ) {
+				$action_icon  = 'dashicons-visibility';
+				$action_title = 'Visualizar (Apenas Leitura)';
+				$target_url   = get_permalink( $element->ID );
+			} else {
+				$action_icon  = 'dashicons-edit';
+				$action_title = 'Editar';
+				$target_url   = $permalink;
+			}
 
-            $link_html = '<a href="' . esc_url($target_url) . '" target="_blank" class="sults-card-title">' . esc_html( $element->post_title ) . '</a>';
-            
-            $action_html = '<a href="' . esc_url($target_url) . '" target="_blank" title="' . esc_attr($action_title) . '" class="' . $icon_class . '">
+			$link_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" class="sults-card-title">' . esc_html( $element->post_title ) . '</a>';
+
+			$action_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" title="' . esc_attr( $action_title ) . '" class="' . $icon_class . '">
                                 <span class="dashicons ' . $action_icon . '"></span>
                             </a>';
-        }
+		}
 
-        $toggle_html = $has_children 
-            ? '<span class="sults-toggle dashicons dashicons-arrow-down-alt2"></span>' 
-            : '<span class="sults-toggle-placeholder"></span>';
+		$toggle_html = $has_children
+			? '<span class="sults-toggle dashicons dashicons-arrow-down-alt2"></span>'
+			: '<span class="sults-toggle-placeholder"></span>';
 
-        $html = '<li class="sults-item" id="post-' . $element->ID . '" data-id="' . $element->ID . '">';
-        
-        $html .= '
+		$html = '<li class="sults-item" id="post-' . $element->ID . '" data-id="' . $element->ID . '">';
+
+		$html .= '
             <div class="' . $card_class . '">
                 ' . $toggle_html . '
                 <div class="sults-card-left">
@@ -576,35 +622,41 @@ public function register(): void {
                 </div>
             </div>';
 
+		$html .= '<ul class="sults-sortable-nested">';
+		if ( $has_children ) {
+			foreach ( $children as $child ) {
+				$html .= $this->build_html_item( $child, $posts_by_parent, $user_roles );
+			}
+		}
+		$html .= '</ul>';
 
-        $html .= '<ul class="sults-sortable-nested">';
-        if ($has_children) {
-            foreach ($children as $child) {
-                $html .= $this->build_html_item($child, $posts_by_parent, $user_roles);
-            }
-        }
-        $html .= '</ul>';
+		$html .= '</li>';
+		return $html;
+	}
 
-        $html .= '</li>';
-        return $html;
-    }
-
-    private function hex2rgba($color, $opacity = false) {
-        $default = 'rgb(0,0,0)';
-        if(empty($color)) return $default; 
-        if ($color[0] == '#' ) $color = substr( $color, 1 );
-        if (strlen($color) == 6) {
-                $hex = array( $color[0] . $color[1], $color[2] . $color[3], $color[4] . $color[5] );
-        } elseif ( strlen( $color ) == 3 ) {
-                $hex = array( $color[0] . $color[0], $color[1] . $color[1], $color[2] . $color[2] );
-        } else { return $default; }
-        $rgb =  array_map('hexdec', $hex);
-        if($opacity){
-            if(abs($opacity) > 1) $opacity = 1.0;
-            $output = 'rgba('.implode(",",$rgb).','.$opacity.')';
-        } else {
-            $output = 'rgb('.implode(",",$rgb).')';
-        }
-        return $output;
-    }
+	private function hex2rgba( $color, $opacity = false ) {
+		$default = 'rgb(0,0,0)';
+		if ( empty( $color ) ) {
+			return $default;
+		}
+		if ( $color[0] === '#' ) {
+			$color = substr( $color, 1 );
+		}
+		if ( strlen( $color ) === 6 ) {
+				$hex = array( $color[0] . $color[1], $color[2] . $color[3], $color[4] . $color[5] );
+		} elseif ( strlen( $color ) === 3 ) {
+				$hex = array( $color[0] . $color[0], $color[1] . $color[1], $color[2] . $color[2] );
+		} else {
+			return $default; }
+		$rgb = array_map( 'hexdec', $hex );
+		if ( $opacity ) {
+			if ( abs( $opacity ) > 1 ) {
+				$opacity = 1.0;
+			}
+			$output = 'rgba(' . implode( ',', $rgb ) . ',' . $opacity . ')';
+		} else {
+			$output = 'rgb(' . implode( ',', $rgb ) . ')';
+		}
+		return $output;
+	}
 }

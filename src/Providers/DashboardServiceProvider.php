@@ -26,6 +26,8 @@ use Sults\Writen\Workflow\Export\Transformers\TableTransformer;
 use Sults\Writen\Workflow\Export\Transformers\SultsTipTransformer;
 use Sults\Writen\Workflow\Export\Transformers\BlockquoteTransformer;
 use Sults\Writen\Workflow\Export\Transformers\FileBlockTransformer;
+use Sults\Writen\Workflow\Export\ExportNamingService;
+use Sults\Writen\Workflow\Export\JspHtmlSanitizer;
 
 class DashboardServiceProvider implements ServiceProviderInterface {
 
@@ -93,7 +95,8 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 					$c->get( \Sults\Writen\Contracts\HtmlExtractorInterface::class ),
 					$c->get( \Sults\Writen\Workflow\Export\ExportAssetsManager::class ),
 					$c->get( \Sults\Writen\Contracts\SeoDataProviderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\JspBuilderInterface::class )
+					$c->get( \Sults\Writen\Contracts\JspBuilderInterface::class ),
+					$c->get( JspHtmlSanitizerInterface::class )
 				);
 			}
 		);
@@ -105,7 +108,8 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\ArchiverInterface::class ),
-					$c->get( ExportProcessor::class )
+					$c->get( ExportProcessor::class ),
+					$c->get( ExportNamingServiceInterface::class )
 				);
 			}
 		);
@@ -200,5 +204,10 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 				);
 			}
 		);
+
+		$container->set( ExportNamingService::class, fn() => new ExportNamingService() );
+		$container->set( JspHtmlSanitizer::class, fn() => new JspHtmlSanitizer() );
+		$container->set( ExportNamingServiceInterface::class, fn() => new ExportNamingService() );
+		$container->set( JspHtmlSanitizerInterface::class, fn() => new JspHtmlSanitizer() );
 	}
 }

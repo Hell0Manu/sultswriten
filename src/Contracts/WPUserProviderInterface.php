@@ -19,10 +19,11 @@ interface WPUserProviderInterface {
 	public function update_user_meta( int $user_id, string $key, $value );
 
 	/**
-     * Verifica permissões do usuário atual.
-     * @param string $capability
-     * @param mixed ...$args
-     * @return bool
-     */
-    public function current_user_can( string $capability, ...$args ): bool;
+	 * Verifica permissões do usuário atual.
+	 *
+	 * @param string $capability
+	 * @param mixed ...$args
+	 * @return bool
+	 */
+	public function current_user_can( string $capability, ...$args ): bool;
 }

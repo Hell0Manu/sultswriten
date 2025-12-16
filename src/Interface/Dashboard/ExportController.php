@@ -6,6 +6,7 @@ use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\ArchiverInterface;
 use Sults\Writen\Workflow\Export\ExportProcessor;
+use Sults\Writen\Contracts\ExportNamingServiceInterface; 
 
 class ExportController implements HookableInterface {
 
@@ -13,6 +14,7 @@ class ExportController implements HookableInterface {
 	private WPUserProviderInterface $user_provider;
 	private ArchiverInterface $archiver;
 	private ExportProcessor $processor;
+	private ExportNamingServiceInterface $naming_service; 
 
 	public const PAGE_SLUG = 'sults-writen-export';
 
@@ -20,12 +22,14 @@ class ExportController implements HookableInterface {
 		PostRepositoryInterface $post_repo,
 		WPUserProviderInterface $user_provider,
 		ArchiverInterface $archiver,
-		ExportProcessor $processor
+		ExportProcessor $processor,
+		ExportNamingServiceInterface $naming_service 
 	) {
-		$this->post_repo     = $post_repo;
-		$this->user_provider = $user_provider;
-		$this->archiver      = $archiver;
-		$this->processor     = $processor;
+		$this->post_repo      = $post_repo;
+		$this->user_provider  = $user_provider;
+		$this->archiver       = $archiver;
+		$this->processor      = $processor;
+		$this->naming_service = $naming_service;
 	}
 
 	public function register(): void {
@@ -84,14 +88,15 @@ class ExportController implements HookableInterface {
 				'show_option_all' => 'Autores',
 				'name'            => 'author',
 				'selected'        => $filters['author'],
-				'who'             => 'authors',
+				'capability'      => 'edit_posts', 
 				'class'           => 'sults-filter-select',
 			)
 		);
 
 		require __DIR__ . '/views/export-home.php';
 	}
-
+    
+    
 	private function render_preview_screen(): void {
 		if ( ! isset( $_GET['_wpnonce'] ) ) {
 			wp_die( 'Requisição inválida: Nonce ausente.', 'Erro de Segurança', array( 'response' => 403 ) );
@@ -135,16 +140,8 @@ class ExportController implements HookableInterface {
 
 		$post      = get_post( $post_id );
 		$raw_title = get_the_title( $post );
-		$base_name = sanitize_title( $raw_title );
 
-		$char_limit = 50;
-		if ( strlen( $base_name ) > $char_limit ) {
-			$base_name = substr( $base_name, 0, $char_limit );
-			$base_name = rtrim( $base_name, '-' );
-		}
-		if ( empty( $base_name ) ) {
-			$base_name = 'exportacao-sults';
-		}
+		$base_name = $this->naming_service->generate_zip_filename( $raw_title );
 
 		$zip_images_prefix = defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ? SULTSWRITEN_EXPORT_ZIP_PATH : 'sults/images/';
 		$jsp_filename_inside_zip = $base_name . '.jsp';

@@ -4,6 +4,7 @@ namespace Sults\Writen\Workflow\PostStatus;
 use Sults\Writen\Contracts\AssetLoaderInterface;
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Infrastructure\AssetPathResolver;
+use Sults\Writen\Workflow\PostStatus\StatusVisuals;
 
 class AdminAssetsManager {
 
@@ -48,7 +49,7 @@ class AdminAssetsManager {
 			$version
 		);
 
-		$custom_css = StatusConfig::get_css_rules();
+		$custom_css = StatusVisuals::get_css_rules();
 		$this->asset_loader->add_inline_style( 'sultswriten-status-css', $custom_css );
 
 		$this->asset_loader->enqueue_script(

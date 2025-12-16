@@ -37,6 +37,6 @@ class WPUserProvider implements WPUserProviderInterface {
 	}
 
 	public function current_user_can( string $capability, ...$args ): bool {
-        return current_user_can( $capability, ...$args );
-    }
+		return current_user_can( $capability, ...$args );
+	}
 }

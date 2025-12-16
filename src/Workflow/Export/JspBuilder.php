@@ -14,9 +14,8 @@ class JspBuilder implements JspBuilderInterface {
 		$safe_seo_desc   = htmlspecialchars( $seo_desc, ENT_QUOTES, 'UTF-8' );
 		$safe_page_title = htmlspecialchars( $page_title, ENT_QUOTES, 'UTF-8' );
 
-		$html_attributes_fixed = preg_replace( '/( [a-zA-Z0-9_\-]+)=["\']([^"\']*)["\']/', '$1=\'$2\'', $html_content );
-
-		$safe_html_content = str_replace( '"', '&#34;', $html_attributes_fixed );
+		// A lógica de limpeza de HTML foi removida daqui e movida para JspHtmlSanitizer.
+		// O $html_content recebido já deve estar sanitizado.
 
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
 		return <<<JSP
@@ -36,7 +35,7 @@ class JspBuilder implements JspBuilderInterface {
     <main>
         <jsp:include page="/sults/components/content/include_content_page_checklist.jsp">
             <jsp:param name="page_title" value="{$safe_page_title}"/>
-            <jsp:param name="description1" value="{$safe_html_content}"/>
+            <jsp:param name="description1" value="{$html_content}"/>
         </jsp:include>
     </main>
 

@@ -9,13 +9,13 @@ class AdminMenuManager implements HookableInterface {
 	private WPUserProviderInterface $user_provider;
 
 	private const ALLOWED_PAGES = array(
-		'sults-writen-workspace', 
+		'sults-writen-workspace',
 		'sults-writen-structure',
-		'edit.php',     
-		'post-new.php',  
-		'post.php',      
-		'upload.php',    
-		'profile.php',        
+		'edit.php',
+		'post-new.php',
+		'post.php',
+		'upload.php',
+		'profile.php',
 	);
 
 	public function __construct( WPUserProviderInterface $user_provider ) {
