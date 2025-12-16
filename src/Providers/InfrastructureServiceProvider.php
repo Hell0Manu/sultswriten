@@ -14,6 +14,9 @@ use Sults\Writen\Infrastructure\WPConfigProvider;
 use Sults\Writen\Infrastructure\RequestBlocker;
 use Sults\Writen\Infrastructure\AssetPathResolver;
 use Sults\Writen\Infrastructure\FeatureDisabler;
+use Sults\Writen\Infrastructure\PostConfigurator;
+use Sults\Writen\Infrastructure\HomeRedirector;
+use Sults\Writen\Infrastructure\NotFoundRedirector;
 
 class InfrastructureServiceProvider implements ServiceProviderInterface {
 
@@ -32,6 +35,10 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 		// Configuração e Requests.
 		$container->set( \Sults\Writen\Contracts\ConfigProviderInterface::class, fn() => new WPConfigProvider() );
 		$container->set( \Sults\Writen\Contracts\RequestProviderInterface::class, fn() => new RequestBlocker() );
+
+		// Redirectors
+		$container->set( HomeRedirector::class, fn() => new HomeRedirector() );
+		$container->set( NotFoundRedirector::class, fn() => new NotFoundRedirector() );
 
 		// Repositório de Posts.
 		$container->set(
@@ -59,6 +66,11 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 			function () {
 				return new \Sults\Writen\Infrastructure\ZipArchiver();
 			}
+		);
+
+		$container->set(
+			PostConfigurator::class,
+			fn() => new PostConfigurator()
 		);
 	}
 }

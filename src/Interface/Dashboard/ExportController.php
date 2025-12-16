@@ -146,8 +146,8 @@ class ExportController implements HookableInterface {
 			$base_name = 'exportacao-sults';
 		}
 
-		$zip_images_prefix       = $base_name . '/images/';
-		$jsp_filename_inside_zip = $base_name . '/' . $base_name . '.jsp';
+		$zip_images_prefix = defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ? SULTSWRITEN_EXPORT_ZIP_PATH : 'sults/images/';
+		$jsp_filename_inside_zip = $base_name . '.jsp';
 
 		try {
 			$result = $this->processor->execute( $post_id, $zip_images_prefix );

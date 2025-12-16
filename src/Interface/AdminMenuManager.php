@@ -8,12 +8,14 @@ class AdminMenuManager implements HookableInterface {
 
 	private WPUserProviderInterface $user_provider;
 
-	private const ALLOWED_FOR_CONTRIBUTOR = array(
+	private const ALLOWED_PAGES = array(
 		'sults-writen-workspace', 
 		'sults-writen-structure',
-		'edit.php',              
-		'upload.php',            
-		'profile.php',           
+		'edit.php',     
+		'post-new.php',  
+		'post.php',      
+		'upload.php',    
+		'profile.php',        
 	);
 
 	public function __construct( WPUserProviderInterface $user_provider ) {
@@ -33,15 +35,9 @@ class AdminMenuManager implements HookableInterface {
 			return;
 		}
 
-		if ( in_array( 'contributor', $roles, true ) ) {
-			$this->apply_allowlist( self::ALLOWED_FOR_CONTRIBUTOR );
-		}
+		$this->apply_allowlist( self::ALLOWED_PAGES );
 	}
 
-	/**
-	 * Remove tudo do menu que NÃO estiver na lista de permitidos.
-	 * * @param array $allowed_slugs Lista de slugs (ex: index.php, edit.php) que devem permanecer.
-	 */
 	private function apply_allowlist( array $allowed_slugs ): void {
 		global $menu;
 

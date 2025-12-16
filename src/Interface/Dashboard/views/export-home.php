@@ -36,12 +36,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<span class="dashicons dashicons-search sults-search-icon"></span>
 				<input type="search" name="s" class="sults-search-input" placeholder="Search..." value="<?php echo esc_attr( $filters['s'] ); ?>">
 			</div>
-
-			<div class="sults-actions-right">
-				<button type="button" class="sults-btn-primary">
-					Gerar JSP <span class="dashicons dashicons-media-code" style="margin-top: 3px;"></span>
-				</button>
-			</div>
 		</div>
 	</form>
 

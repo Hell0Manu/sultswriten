@@ -5,7 +5,10 @@ use Sults\Writen\Core\Container;
 use Sults\Writen\Providers\InfrastructureServiceProvider;
 use Sults\Writen\Providers\WorkflowServiceProvider;
 use Sults\Writen\Providers\DashboardServiceProvider;
-use Sults\Writen\Providers\StructureServiceProvider; // <--- 1. Importar o Provider
+use Sults\Writen\Providers\StructureServiceProvider;
+use Sults\Writen\Infrastructure\PostConfigurator;
+use Sults\Writen\Infrastructure\HomeRedirector;
+use Sults\Writen\Infrastructure\NotFoundRedirector;
 
 /**
  * Classe principal que comanda o plugin Sults Writen.
@@ -59,6 +62,9 @@ class Plugin {
             $this->container->get( \Sults\Writen\Interface\Editor\GutenbergManager::class ),
             $this->container->get( \Sults\Writen\Interface\GlobalAssetsManager::class ),
             $this->container->get( \Sults\Writen\Structure\StructureManager::class ),
+            $this->container->get( \Sults\Writen\Infrastructure\PostConfigurator::class ),
+            $this->container->get( \Sults\Writen\Infrastructure\HomeRedirector::class ),
+            $this->container->get( \Sults\Writen\Infrastructure\NotFoundRedirector::class ),
         );
 
         $hook_manager->register_services( $global_services );
