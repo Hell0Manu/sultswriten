@@ -192,7 +192,7 @@ class StructureManager implements HookableInterface {
 			$relative_path = '/';
 		}
 
-		$edit_link  = get_edit_post_link( $post_id );
+		$edit_link = get_edit_post_link( $post_id, 'raw' );
 		$view_link  = $permalink;
 		$user_roles = $this->user_provider->get_current_user_roles();
 		$can_edit   = ! $this->policy->is_editing_locked( $status_slug, $user_roles ) && current_user_can( 'edit_post', $post_id );
