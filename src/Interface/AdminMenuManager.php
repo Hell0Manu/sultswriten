@@ -9,10 +9,11 @@ class AdminMenuManager implements HookableInterface {
 	private WPUserProviderInterface $user_provider;
 
 	private const ALLOWED_FOR_CONTRIBUTOR = array(
-		'sults-writen-workspace', // Workspace.
-		'edit.php',               // Posts (Artigos).
-		'upload.php',             // Mídia.
-		'profile.php',            // Perfil.
+		'sults-writen-workspace', 
+		'sults-writen-structure',
+		'edit.php',              
+		'upload.php',            
+		'profile.php',           
 	);
 
 	public function __construct( WPUserProviderInterface $user_provider ) {

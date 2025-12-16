@@ -20,6 +20,7 @@
             'core/pullquote',          
             'core/table',                   
             'core/details',
+            'core/verse',
             'sults-writen/dica',
             
             'core/file',

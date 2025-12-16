@@ -1,111 +1,111 @@
-/* --- CONTAINER --- */
-.sults-structure-container {
-    max-width: 1000px;
+.sults-structure-wrapper {
+    max-width: 900px;
     margin-top: 20px;
+}
+
+.sults-category-folder {
     background: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #c3c4c7;
+    border-left-width: 4px; 
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-/* Ajuste de altura da linha */
-.jstree-default .jstree-node {
-    margin-bottom: 5px;
-    min-height: 32px;
-    line-height: 32px;
+.sults-category-header {
+    padding: 12px 15px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.5);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
-/* Ícones (Dashicons) alinhados */
-.jstree-default .jstree-anchor .dashicons {
+.sults-category-header:hover {
+    background: rgba(255,255,255,0.8);
+}
+
+.sults-category-content {
+    padding: 15px;
+}
+
+.sults-category-folder.sults-cat-closed .sults-category-content {
+    display: none;
+}
+
+.sults-category-folder.sults-cat-closed {
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.sults-cat-toggle {
     font-size: 20px;
+    width: 20px;
     height: 20px;
-    margin-top: 5px; /* Centraliza verticalmente */
-    margin-right: 5px;
+    color: inherit;
+    opacity: 0.8;
+}
+
+ul.sults-sortable-nested {
+    margin-top: 12px;
+}
+
+ul.sults-sortable-root, ul.sults-sortable-nested { list-style: none; padding: 0; min-height: 10px; position: relative; }
+ul.sults-sortable-nested { margin-left: 35px; border-left: 2px dashed #ddd; padding-left: 25px; }
+ul.sults-sortable-nested > li.sults-item::before { content: ''; position: absolute; left: -27px; top: 24px; width: 25px; height: 0; border-top: 2px dashed #ddd; }
+li.sults-item { margin-bottom: 12px; position: relative; }
+
+li.sults-closed > ul.sults-sortable-nested { display: none; }
+
+.sults-card { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #e2e4e7; border-radius: 6px; padding: 10px 15px; min-height: 46px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; z-index: 2; }
+.sults-card:hover { border-color: #2271b1; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+.sults-card-left { display: flex; align-items: center; gap: 12px; flex-grow: 1; min-width: 0; }
+.sults-handle { cursor: grab; color: #a0a5aa; font-size: 20px; flex-shrink: 0; }
+.sults-handle:active { cursor: grabbing; }
+.sults-readonly .sults-handle { display: none; }
+.sults-card-title { font-weight: 600; color: #3c434a; text-decoration: none; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sults-card-title:hover { color: #2271b1; }
+.sults-card-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+.sults-status-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; text-transform: uppercase; line-height: 1.4; letter-spacing: 0.02em; background: #e2e4e7; color: #50575e; }
+.sults-toggle { cursor: pointer; color: #a0a5aa; width: 20px; height: 20px; line-height: 20px; font-size: 20px; margin-right: 5px; }
+.sults-toggle:hover { color: #2271b1; }
+.sults-toggle-placeholder { width: 25px; display: inline-block; }
+.sults-placeholder { height: 48px; background: #f0f6fc; border: 2px dashed #2271b1; margin-bottom: 12px; border-radius: 6px; margin-left: 0; }
+
+.sults-action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    text-decoration: none;
+    color: #a7aaad;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.sults-action-icon:hover {
+    color: #2271b1;
+    background-color: #f0f6fc;
+}
+
+.sults-action-icon .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.sults-action-icon[title*="Visualizar"]:hover {
     color: #50575e;
 }
 
-/* --- 1. LINHAS DE HIERARQUIA (IDENTAÇÃO) --- */
-/* Cria uma linha vertical contínua à esquerda de cada grupo de filhos */
-.jstree-children {
-    border-left: 1px dashed #dcdcde; /* A linha pontilhada lateral */
-    margin-left: 11px !important;    /* Posição exata abaixo do ícone de abrir/fechar */
-    padding-left: 15px;              /* Espaço entre a linha e os itens */
+@media (max-width: 600px) {
+    .sults-card-right .sults-status-badge {
+        display: none;
+    }
 }
 
-/* Remove a linha do primeiro nível para não ficar solta */
-.jstree-container-ul > .jstree-node > .jstree-children {
-    border-left: none; 
-    margin-left: 0 !important;
-    padding-left: 0;
-}
-
-/* Opcional: Efeito Zebrado nas linhas (ajuda a ler horizontalmente) */
-.jstree-wholerow-hovered {
-    background: #f0f6fc !important;
-}
-.jstree-wholerow-clicked {
-    background: #e5e5e5 !important; /* Cinza claro em vez de azul forte para manter legível */
-    background: linear-gradient(to bottom, #e5e5e5 0%, #f4f4f4 100%) !important;
-}
-
-/* --- 2. BADGES DE STATUS --- */
-.sults-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-left: 10px;
-    line-height: 1.4;
-    vertical-align: middle;
-    letter-spacing: 0.05em;
-}
-
-/* Cores específicas */
-.status-publish { 
-    background-color: #edfaef; 
-    color: #008a20; 
-    border: 1px solid #d4f4d9;
-}
-.status-draft { 
-    background-color: #f6f7f7; 
-    color: #50575e; 
-    border: 1px solid #dcdcde;
-}
-.status-pending { 
-    background-color: #fef8ee; 
-    color: #b36b00; 
-    border: 1px solid #fbeccf;
-}
-.status-future {
-    background-color: #f0f6fc;
-    color: #2271b1;
-    border: 1px solid #c5d9ed;
-}
-
-/* --- 3. DRAG & DROP (PONTILHADO) --- */
-/* Transforma a seta padrão do jstree em uma linha guia */
-#jstree-marker {
-    border-top: 2px dashed #2271b1 !important; /* Linha azul tracejada */
-    border-bottom: none !important;
-    border-left: none !important;
-    background: transparent !important;
-    height: 0 !important;
-    width: 100% !important; /* Tenta ocupar a largura */
-    margin-left: 0 !important;
-    opacity: 1;
-}
-
-/* Muda o cursor para "mãozinha fechada" ao arrastar */
-.jstree-default .jstree-anchor {
-    cursor: grab;
-    transition: color 0.2s;
-}
-.vakata-dnd {
-    background: #2271b1;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 4px;
-    opacity: 0.9;
-}
+@media (max-width: 600px) { .sults-card-right .sults-status-badge { display: none; } }

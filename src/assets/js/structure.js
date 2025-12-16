@@ -1,84 +1,67 @@
 jQuery(document).ready(function($) {
-    const container = $('#sults-structure-app');
-    const searchInput = $('#sults-search');
+    const wrapper = $('.sults-structure-wrapper');
 
-    if (typeof sultsStructureData === 'undefined' || sultsStructureData.length === 0) {
-        container.html('<div class="notice notice-warning inline"><p>Nenhum conteúdo encontrado para exibir.</p></div>');
-        return;
-    }
-
-    container.jstree({
-        'core': {
-            'data': sultsStructureData,
-            'check_callback': true, // Permite mover
-            'themes': {
-                'name': 'default',
-                'responsive': true,
-                'variant': 'large', // Itens maiores
-                'dots': false,      // DESLIGAMOS os dots padrão para usar nossas linhas CSS
-                'icons': true,
-                'stripes': false    // Controlamos zebrado via CSS
-            }
-        },
-        'dnd': {
-            'is_draggable': true,
-            'check_while_dragging': true, // Melhora a resposta visual
-            'large_drop_target': true     // Aumenta a área de soltar
-        },
-        'plugins': ['dnd', 'search', 'types', 'wholerow'],
-        'types': {
-            'default': {
-                'icon': 'dashicons dashicons-admin-post'
-            }
+    wrapper.on('click', '.sults-toggle', function(e) {
+        e.preventDefault();
+        const icon = $(this);
+        const li = icon.closest('li.sults-item');
+        
+        li.toggleClass('sults-closed');
+        
+        if (li.hasClass('sults-closed')) {
+            icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
+        } else {
+            icon.removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
         }
     });
 
-    // --- Lógica de Busca e AJAX (Mantém a mesma do passo anterior) ---
-    let to = false;
-    searchInput.keyup(function () {
-        if(to) { clearTimeout(to); }
-        to = setTimeout(function () {
-            var v = searchInput.val();
-            container.jstree(true).search(v);
-        }, 250);
-    });
+    const canManage = Boolean(Number(sultsStructureParams.can_manage));
 
- // ... (código anterior)
+    if (canManage) {
+        wrapper.addClass('sults-can-manage');
+        initSortable();
+    } else {
+        wrapper.addClass('sults-readonly');
+    }
 
-    // Evento: Ao terminar de arrastar
-    container.on('move_node.jstree', function (e, data) {
-        let parentId = data.parent;
-        if (parentId === '#') parentId = 0;
+    function initSortable() {
+        $('.sults-sortable-root, .sults-sortable-nested').sortable({
+            connectWith: '.sults-sortable-root, .sults-sortable-nested', 
+            handle: '.sults-handle', 
+            placeholder: 'sults-placeholder',
+            tolerance: 'pointer',
+            cursor: 'grabbing',
+            
+            stop: function(event, ui) {
+                const item = ui.item;
+                const itemId = item.data('id');
+                const parentUl = item.parent();
+                
+                let parentId = 0;
+                if (parentUl.hasClass('sults-sortable-nested')) {
+                    parentId = parentUl.closest('li.sults-item').data('id');
+                }
 
-        // Recupera a nova ordem dos filhos desse pai
-        // data.instance = instância da árvore
-        // get_node(parentId).children retorna array de IDs na ordem visual
-        var siblings = data.instance.get_node(data.parent).children;
+                const siblings = parentUl.sortable('toArray', { attribute: 'data-id' });
+                saveStructure(itemId, parentId, siblings);
+            }
+        });
+    }
 
-        // Feedback visual (opcional)
-        // container.css('opacity', '0.6');
-
+    function saveStructure(postId, parentId, orderArray) {
         $.ajax({
             url: sultsStructureParams.ajax_url,
             type: 'POST',
             data: {
                 action: 'sults_update_structure',
                 security: sultsStructureParams.nonce,
-                post_id: data.node.id,
+                post_id: postId,
                 parent_id: parentId,
-                order: siblings // <--- ENVIAMOS A LISTA DE ORDEM
+                order: orderArray
             },
-            success: function(response) {
-                // container.css('opacity', '1');
-                if (!response.success) {
-                    alert('Erro ao salvar: ' + (response.data || 'Erro desconhecido'));
-                    location.reload(); 
-                }
-            },
-            error: function() {
-                // container.css('opacity', '1');
-                alert('Erro de conexão.');
+            success: function(res) {
+                if(!res.success) alert('Erro ao salvar.');
             }
         });
-    });
+    }
 });
