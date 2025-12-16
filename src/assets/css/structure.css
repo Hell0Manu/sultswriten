@@ -1,0 +1,111 @@
+/* --- CONTAINER --- */
+.sults-structure-container {
+    max-width: 1000px;
+    margin-top: 20px;
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Ajuste de altura da linha */
+.jstree-default .jstree-node {
+    margin-bottom: 5px;
+    min-height: 32px;
+    line-height: 32px;
+}
+
+/* Ícones (Dashicons) alinhados */
+.jstree-default .jstree-anchor .dashicons {
+    font-size: 20px;
+    height: 20px;
+    margin-top: 5px; /* Centraliza verticalmente */
+    margin-right: 5px;
+    color: #50575e;
+}
+
+/* --- 1. LINHAS DE HIERARQUIA (IDENTAÇÃO) --- */
+/* Cria uma linha vertical contínua à esquerda de cada grupo de filhos */
+.jstree-children {
+    border-left: 1px dashed #dcdcde; /* A linha pontilhada lateral */
+    margin-left: 11px !important;    /* Posição exata abaixo do ícone de abrir/fechar */
+    padding-left: 15px;              /* Espaço entre a linha e os itens */
+}
+
+/* Remove a linha do primeiro nível para não ficar solta */
+.jstree-container-ul > .jstree-node > .jstree-children {
+    border-left: none; 
+    margin-left: 0 !important;
+    padding-left: 0;
+}
+
+/* Opcional: Efeito Zebrado nas linhas (ajuda a ler horizontalmente) */
+.jstree-wholerow-hovered {
+    background: #f0f6fc !important;
+}
+.jstree-wholerow-clicked {
+    background: #e5e5e5 !important; /* Cinza claro em vez de azul forte para manter legível */
+    background: linear-gradient(to bottom, #e5e5e5 0%, #f4f4f4 100%) !important;
+}
+
+/* --- 2. BADGES DE STATUS --- */
+.sults-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 10px;
+    line-height: 1.4;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+}
+
+/* Cores específicas */
+.status-publish { 
+    background-color: #edfaef; 
+    color: #008a20; 
+    border: 1px solid #d4f4d9;
+}
+.status-draft { 
+    background-color: #f6f7f7; 
+    color: #50575e; 
+    border: 1px solid #dcdcde;
+}
+.status-pending { 
+    background-color: #fef8ee; 
+    color: #b36b00; 
+    border: 1px solid #fbeccf;
+}
+.status-future {
+    background-color: #f0f6fc;
+    color: #2271b1;
+    border: 1px solid #c5d9ed;
+}
+
+/* --- 3. DRAG & DROP (PONTILHADO) --- */
+/* Transforma a seta padrão do jstree em uma linha guia */
+#jstree-marker {
+    border-top: 2px dashed #2271b1 !important; /* Linha azul tracejada */
+    border-bottom: none !important;
+    border-left: none !important;
+    background: transparent !important;
+    height: 0 !important;
+    width: 100% !important; /* Tenta ocupar a largura */
+    margin-left: 0 !important;
+    opacity: 1;
+}
+
+/* Muda o cursor para "mãozinha fechada" ao arrastar */
+.jstree-default .jstree-anchor {
+    cursor: grab;
+    transition: color 0.2s;
+}
+.vakata-dnd {
+    background: #2271b1;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    opacity: 0.9;
+}

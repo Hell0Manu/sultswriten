@@ -17,4 +17,12 @@ interface WPUserProviderInterface {
 	public function get_current_user_id(): int;
 	public function get_user_meta( int $user_id, string $key, bool $single = false );
 	public function update_user_meta( int $user_id, string $key, $value );
+
+	/**
+     * Verifica permissões do usuário atual.
+     * @param string $capability
+     * @param mixed ...$args
+     * @return bool
+     */
+    public function current_user_can( string $capability, ...$args ): bool;
 }

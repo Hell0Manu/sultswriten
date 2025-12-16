@@ -26,4 +26,9 @@ class WPPostStatusProvider implements WPPostStatusProviderInterface {
 	public function get_status_object( string $slug ): ?object {
 		return get_post_status_object( $slug );
 	}
+
+	public function get_all_status_slugs(): array {
+        $stati = get_post_stati( ['internal' => false], 'names' );
+        return array_values( $stati );
+    }
 }

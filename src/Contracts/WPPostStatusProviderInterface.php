@@ -16,4 +16,10 @@ interface WPPostStatusProviderInterface {
 	public function register( string $post_type, array $args ): object;
 	public function get_status( int $post_id ): string;
 	public function get_status_object( string $slug ): ?object;
+
+	/**
+     * Retorna todos os slugs de status registrados (não internos).
+     * @return array
+     */
+    public function get_all_status_slugs(): array;
 }

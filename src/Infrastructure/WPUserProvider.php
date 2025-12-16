@@ -35,4 +35,8 @@ class WPUserProvider implements WPUserProviderInterface {
 	public function update_user_meta( int $user_id, string $key, $value ) {
 		return update_user_meta( $user_id, $key, $value );
 	}
+
+	public function current_user_can( string $capability, ...$args ): bool {
+        return current_user_can( $capability, ...$args );
+    }
 }
