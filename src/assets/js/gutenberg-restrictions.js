@@ -21,7 +21,7 @@
             'core/table',                   
             'core/details',
             'core/verse',
-            'sults-writen/dica',
+            // 'sults-writen/dica',
             
             'core/file',
             'core/image',           

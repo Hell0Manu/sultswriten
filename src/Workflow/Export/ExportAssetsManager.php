@@ -76,6 +76,7 @@ class ExportAssetsManager {
 			$files_to_zip[ $local_path ] = $zip_path;
 			$img->setAttribute( 'src', '/' . $zip_path );
 
+			$img->removeAttribute( 'style' );
 			$img->removeAttribute( 'srcset' );
 			$img->removeAttribute( 'sizes' );
 			$img->removeAttribute( 'class' );

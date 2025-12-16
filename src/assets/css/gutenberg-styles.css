@@ -108,3 +108,63 @@
     color: var(--color-neutral-700); 
     line-height: 1.5;
 }
+
+
+/* =========================================
+   BLOCO: Dica SULTS (.dica-sults)
+   ========================================= */
+.wp-block-verse {
+    display: flex;
+    flex-direction: row; 
+    align-items: flex-start;
+    gap: 20px;
+    background-color: var(--color-verdigris-100); 
+    border-left: 5px solid var(--color-primary); 
+    border-radius: 8px;
+    padding: 24px;
+    margin: 32px 0;
+    font-family: inherit;
+    white-space: pre-wrap;
+}
+
+
+.wp-block-verse {
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: 
+        "icon title"
+        "icon content";
+    align-items: start;
+    gap: 0 20px;
+    background-color: var(--color-verdigris-100) !important; 
+    border-left: 5px solid var(--color-primary) !important; 
+    border-radius: 8px;
+    padding: 24px !important;
+    margin: 32px 0 !important;
+    font-family: inherit !important;
+    white-space: pre-wrap !important;
+    position: relative;
+}
+
+
+.wp-block-verse::before {
+    grid-area: icon;
+    content: "";
+    display: block;
+    width: 60px;
+    height: 60px;
+    background-image: url('../images/modulo-checklist.webp'); /* */
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+
+.wp-block-verse::after {
+    grid-area: title;
+    content: "Dica SULTS";
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #032d60;
+    margin-bottom: 8px;
+}

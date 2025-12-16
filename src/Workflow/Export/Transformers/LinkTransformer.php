@@ -24,6 +24,8 @@ class LinkTransformer implements DomTransformerInterface {
 				continue;
 			}
 
+			$link->removeAttribute( 'title' );
+
 			$href = trim( $link->getAttribute( 'href' ) );
 			if ( ! $href ) {
 				continue;
