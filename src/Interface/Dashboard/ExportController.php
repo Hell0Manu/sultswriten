@@ -149,9 +149,12 @@ class ExportController implements HookableInterface {
 		try {
 			$result = $this->processor->execute( $post_id, $zip_images_prefix );
 
-			$files_map  = $result['files_map'];
-			$string_map = array( $jsp_filename_inside_zip => $result['jsp_content'] );
-
+			$files_map = $result['files_map'];
+			$string_map = array(
+                $base_name . '.jsp'      => $result['jsp_content'],
+                $base_name . '-info.txt' => $result['info_content'], 
+            );
+			
 			$upload_dir            = wp_upload_dir();
 			$zip_filename_download = $base_name . '.zip';
 			$zip_path              = $upload_dir['basedir'] . '/' . $zip_filename_download;

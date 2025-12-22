@@ -35,7 +35,7 @@ class StructureManager implements HookableInterface {
 
 	private function can_manage_structure(): bool {
 		$user          = wp_get_current_user();
-		$allowed_roles = array( 'administrator', 'editor_chefe' );
+		$allowed_roles = array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE );
 		return (bool) array_intersect( $allowed_roles, (array) $user->roles );
 	}
 

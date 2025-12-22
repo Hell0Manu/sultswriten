@@ -158,8 +158,7 @@
     background-repeat: no-repeat;
 }
 
-
-/* .wp-block-verse::after {
+.wp-block-verse::after {
     grid-area: title;
     content: "Dica SULTS";
     display: block;
@@ -167,4 +166,4 @@
     font-weight: 700;
     color: #032d60;
     margin-bottom: 8px;
-} */
+}

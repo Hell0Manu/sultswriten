@@ -28,6 +28,7 @@ use Sults\Writen\Workflow\Export\Transformers\BlockquoteTransformer;
 use Sults\Writen\Workflow\Export\Transformers\FileBlockTransformer;
 use Sults\Writen\Workflow\Export\ExportNamingService;
 use Sults\Writen\Workflow\Export\JspHtmlSanitizer;
+use Sults\Writen\Workflow\Export\ExportMetadataBuilder;
 
 class DashboardServiceProvider implements ServiceProviderInterface {
 
@@ -96,7 +97,8 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 					$c->get( \Sults\Writen\Workflow\Export\ExportAssetsManager::class ),
 					$c->get( \Sults\Writen\Contracts\SeoDataProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\JspBuilderInterface::class ),
-					$c->get( JspHtmlSanitizerInterface::class )
+					$c->get( JspHtmlSanitizerInterface::class ),
+					new ExportMetadataBuilder()
 				);
 			}
 		);

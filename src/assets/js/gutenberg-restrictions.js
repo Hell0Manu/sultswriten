@@ -5,9 +5,22 @@
     var blocks = wp.blocks;
     var domReady = wp.domReady;
 
+    function renameVerseToDica(settings, name) {
+        if (name === 'core/verse') {
+            return lodash.assign({}, settings, {
+                title: 'Dica SULTS',
+                icon: 'lightbulb', 
+                description: 'Insira um bloco de destaque ou dica.'
+            });
+        }
+        
+        return settings;
+    }
+
     hooks.addFilter(
         'blocks.registerBlockType',
         'sults-writen/rename-blocks',
+        renameVerseToDica
     );
 
     domReady(function () {

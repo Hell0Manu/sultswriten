@@ -26,8 +26,10 @@ class JspBuilder implements JspBuilderInterface {
         <jsp:param name="meta_title" value="{$safe_seo_title}"/>
         <jsp:param name="meta_description" value="{$safe_seo_desc}"/>
     </jsp:include>
-    <link rel="preload" href="/sults/assets/css/style_marca.css" as="style">
-    <link rel="stylesheet" href="/sults/assets/css/style_marca.css">
+    <link rel="preload" href="/sults/assets/js/script_lazyframe.js" as="script">
+    <script src="/sults/assets/js/script_lazyframe.js"></script>
+    <link rel="preload" href="/sults/assets/css/style_lazyframe.css" as="style">
+    <link rel="stylesheet" href="/sults/assets/css/style_lazyframe.css">
 </head>
 <body>
     <jsp:include page="/sults/components/elements/include_elements_menu.jsp"/>

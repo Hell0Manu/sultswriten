@@ -12,6 +12,7 @@ use Sults\Writen\Contracts\JspBuilderInterface;
 use Sults\Writen\Contracts\SeoDataProviderInterface;
 use Sults\Writen\Workflow\Export\ExportAssetsManager;
 use Sults\Writen\Contracts\JspHtmlSanitizerInterface;
+use Sults\Writen\Workflow\Export\ExportMetadataBuilder;
 
 class ExportProcessor {
 
@@ -20,19 +21,22 @@ class ExportProcessor {
 	private SeoDataProviderInterface $seo_provider;
 	private JspBuilderInterface $jsp_builder;
 	private JspHtmlSanitizerInterface $sanitizer;
+	private ExportMetadataBuilder $metadata_builder;
 
 	public function __construct(
 		HtmlExtractorInterface $extractor,
 		ExportAssetsManager $assets_manager,
 		SeoDataProviderInterface $seo_provider,
 		JspBuilderInterface $jsp_builder,
-		JspHtmlSanitizerInterface $sanitizer
+		JspHtmlSanitizerInterface $sanitizer,
+		ExportMetadataBuilder $metadata_builder
 	) {
 		$this->extractor      = $extractor;
 		$this->assets_manager = $assets_manager;
 		$this->seo_provider   = $seo_provider;
 		$this->jsp_builder    = $jsp_builder;
 		$this->sanitizer      = $sanitizer;
+		$this->metadata_builder = $metadata_builder;
 	}
 
 	public function execute( int $post_id, string $zip_folder_prefix ): array {
@@ -57,8 +61,10 @@ class ExportProcessor {
 
 		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $page_title, $seo_data );
 
+		$info_content = $this->metadata_builder->build_info_file( $post );
 		return array(
 			'jsp_content' => $jsp_content,
+			'info_content' => $info_content,
 			'files_map'   => $files_to_zip,
 			'html_clean'  => $html_clean,
 			'html_raw'    => $html_raw,
