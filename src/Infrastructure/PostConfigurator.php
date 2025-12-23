@@ -8,6 +8,7 @@ class PostConfigurator implements HookableInterface {
 	public function register(): void {
 		add_filter( 'register_post_type_args', array( $this, 'configure_post_type' ), 20, 2 );
 		add_action( 'init', array( $this, 'add_page_attributes_support' ) );
+		add_action( 'init', array( $this, 'register_custom_taxonomy' ) );
 	}
 
 
@@ -47,5 +48,33 @@ class PostConfigurator implements HookableInterface {
 
 	public function add_page_attributes_support(): void {
 		add_post_type_support( 'post', 'page-attributes' );
+	}
+
+		public function register_custom_taxonomy(): void {
+		$labels = array(
+			'name'              => 'Sidebar',
+			'singular_name'     => 'Sidebar',
+			'search_items'      => 'Pesquisar Sidebar',
+			'all_items'         => 'Todas as Sidebar',
+			'parent_item'       => 'Sidebar Pai',
+			'parent_item_colon' => 'Sidebar Pai:',
+			'edit_item'         => 'Editar Sidebar',
+			'update_item'       => 'Atualizar Sidebar',
+			'add_new_item'      => 'Adicionar Nova Sidebar',
+			'new_item_name'     => 'Nome da Nova Sidebar',
+			'menu_name'         => 'Sidebar',
+		);
+
+		$args = array(
+			'hierarchical'      => true, 
+			'labels'            => $labels,
+			'show_ui'           => true,
+			'show_admin_column' => true, 
+			'query_var'         => true,
+			'rewrite'           => array( 'slug' => 'sidebar' ),
+			'show_in_rest'      => true, 
+		);
+
+		register_taxonomy( 'sidebar', array( 'post' ), $args );
 	}
 }

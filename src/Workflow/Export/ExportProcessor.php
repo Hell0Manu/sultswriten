@@ -45,6 +45,9 @@ class ExportProcessor {
 			throw new \InvalidArgumentException( 'Post não encontrado.' );
 		}
 
+		$terms = get_the_terms( $post_id, 'sidebar' );
+    	$sidebar = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
+
 		$html_raw   = $post->post_content;
 		$html_clean = $this->extractor->extract( $post );
 
@@ -59,7 +62,7 @@ class ExportProcessor {
 		$seo_data   = $this->seo_provider->get_seo_data( $post_id );
 		$page_title = get_the_title( $post );
 
-		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $page_title, $seo_data );
+		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $page_title, $seo_data, $sidebar);
 
 		$info_content = $this->metadata_builder->build_info_file( $post );
 		return array(

@@ -11,7 +11,7 @@ interface ConfigProviderInterface {
 	 * Retorna o domínio interno principal para verificação de links.
 	 * Ex: 'sults.com.br'
 	 */
-	public function get_internal_domain(): string;
+	public function get_internal_domains(): array;
 
 	/**
 	 * Retorna o caminho base para downloads (usado no FileBlockTransformer).

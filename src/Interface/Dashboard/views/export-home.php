@@ -10,6 +10,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 ?>
 <div class="wrap sults-page-container">
 	
@@ -44,6 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<thead>
 				<tr>
 					<th>Categoria</th>
+					<th>Sidebar</th>
 					<th>Título da página</th>
 					<th>Link para a página no site</th>
 					<th>Realização</th>
@@ -68,6 +70,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 						$sultswriten_cat_color = \Sults\Writen\Interface\CategoryColorManager::get_color( $sultswriten_cat_obj->term_id );
 					}
+
+					$terms = get_the_terms( get_the_ID(), 'sidebar' );
+       			 	$sidebar = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
 					?>
 					<tr>
 						<td>
@@ -75,6 +80,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 								<?php echo esc_html( $sultswriten_cat_name ); ?>
 							</span>
 						</td>
+
+						<td>
+                <span style="font-weight: 500; color: var(--color-neutral-700);">
+                    <?php echo esc_html( $sidebar ); ?>
+                </span>
+            </td>
 
 						<td>
 							<div class="sults-title-cell">

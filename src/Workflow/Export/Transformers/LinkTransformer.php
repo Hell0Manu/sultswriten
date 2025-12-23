@@ -17,7 +17,7 @@ class LinkTransformer implements DomTransformerInterface {
 
 	public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
 		$links           = $xpath->query( '//a' );
-		$internal_domain = $this->config->get_internal_domain();
+		$internal_domains = $this->config->get_internal_domains();
 
 		foreach ( $links as $link ) {
 			if ( ! $link instanceof DOMElement ) {
@@ -41,6 +41,7 @@ class LinkTransformer implements DomTransformerInterface {
 
 			$parsed_url = wp_parse_url( $href );
 			$host       = isset( $parsed_url['host'] ) ? $parsed_url['host'] : '';
+
 
 			$is_internal = empty( $host ) || ( stripos( $host, $internal_domain ) !== false );
 

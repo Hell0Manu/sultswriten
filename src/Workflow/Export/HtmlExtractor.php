@@ -60,12 +60,24 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		return preg_replace( '/(\R\s*)+/', "\n\n", $html ) ?? $html;
 	}
 
-	private function normalize_urls( string $html ): string {
-		$domain = preg_quote( $this->config->get_internal_domain(), '#' );
 
-		// Ex: #https://www\.sults\.com\.br(?!/)(?=")#.
-		$html = preg_replace( "#https://(?:www\.)?{$domain}(?!/)(?=\")#", '/', $html );
-		$html = preg_replace( "#https://(?:www\.)?{$domain}/#", '/', $html );
+	private function normalize_urls( string $html ): string {
+		$domains = $this->config->get_internal_domains();
+
+		foreach ( $domains as $domain ) {
+			$quoted_domain = preg_quote( $domain, '#' );
+
+			// #https?://      -> Busca por http ou https
+			// (?:www\.)?      -> Busca opcional por www.
+			// {$quoted_domain}-> O domínio da vez (ex: artigo.sults.com.br)
+			// (?!/)           -> Garante que não estamos pegando algo que já é relativo
+			
+			// https://sults.com.br -> /
+			$html = preg_replace( "#https?://(?:www\.)?{$quoted_domain}(?!/)(?=\")#", '/', $html );
+			
+			// https://sults.com.br/ -> /
+			$html = preg_replace( "#https?://(?:www\.)?{$quoted_domain}/#", '/', $html );
+		}
 
 		return $html ?? '';
 	}
@@ -89,6 +101,7 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		$this->clean_classes_and_ids( $xpath );
 		$this->clean_figures( $dom, $xpath );
 		$this->clean_empty_tags( $xpath );
+		$this->clean_strong_in_headings( $xpath );
 
 		foreach ( $this->transformers as $transformer ) {
 			$transformer->transform( $dom, $xpath );
@@ -102,6 +115,22 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		$output = preg_replace( '/^<\?xml.+?\?>\s*/i', '', $output );
 
 		return html_entity_decode( $output, ENT_QUOTES, 'UTF-8' );
+	}
+
+	private function clean_strong_in_headings( DOMXPath $xpath ): void {
+   		$strongs = $xpath->query( '//h1//strong | //h2//strong | //h3//strong | //h4//strong | //h5//strong | //h6//strong' );
+
+		foreach ( $strongs as $strong ) {
+			if ( ! $strong instanceof DOMElement ) {
+				continue;
+			}
+
+			$parent = $strong->parentNode;
+			while ( $strong->firstChild ) {
+				$parent->insertBefore( $strong->firstChild, $strong );
+			}
+			$parent->removeChild( $strong );
+		}
 	}
 
 	/**

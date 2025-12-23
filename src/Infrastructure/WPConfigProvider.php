@@ -9,8 +9,17 @@ class WPConfigProvider implements ConfigProviderInterface {
 		return home_url();
 	}
 
-	public function get_internal_domain(): string {
-		return defined( 'SULTSWRITEN_INTERNAL_DOMAIN' ) ? SULTSWRITEN_INTERNAL_DOMAIN : 'sults.com.br';
+	public function get_internal_domains(): array {
+		$domains = [
+			'sults.com.br',
+			'artigo.sults.com.br'
+		];
+
+		if ( defined( 'SULTSWRITEN_INTERNAL_DOMAIN' ) ) {
+			$domains[] = SULTSWRITEN_INTERNAL_DOMAIN;
+		}
+
+		return array_unique( array_filter( array_map( 'trim', $domains ) ) );
 	}
 
 	public function get_downloads_base_path(): string {

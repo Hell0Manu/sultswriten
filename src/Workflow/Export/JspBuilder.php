@@ -5,7 +5,7 @@ use Sults\Writen\Contracts\JspBuilderInterface;
 
 class JspBuilder implements JspBuilderInterface {
 
-	public function build( string $html_content, string $page_title, array $meta_data ): string {
+	public function build( string $html_content, string $page_title, array $meta_data, string $sidebar = '' ): string {
 
 		$seo_title = isset( $meta_data['title'] ) ? $meta_data['title'] : $page_title;
 		$seo_desc  = isset( $meta_data['description'] ) ? $meta_data['description'] : '';
@@ -13,6 +13,7 @@ class JspBuilder implements JspBuilderInterface {
 		$safe_seo_title  = htmlspecialchars( $seo_title, ENT_QUOTES, 'UTF-8' );
 		$safe_seo_desc   = htmlspecialchars( $seo_desc, ENT_QUOTES, 'UTF-8' );
 		$safe_page_title = htmlspecialchars( $page_title, ENT_QUOTES, 'UTF-8' );
+        $safe_sidebar_name  = htmlspecialchars( $sidebar, ENT_QUOTES, 'UTF-8' );
 
 		// A lógica de limpeza de HTML foi removida daqui e movida para JspHtmlSanitizer.
 		// O $html_content recebido já deve estar sanitizado.
@@ -37,6 +38,8 @@ class JspBuilder implements JspBuilderInterface {
     <main>
         <jsp:include page="/sults/components/content/include_content_page_checklist.jsp">
             <jsp:param name="page_title" value="{$safe_page_title}"/>
+            <jsp:param name="active_group" value="{$safe_sidebar_name}"/>
+            <jsp:param name="active_item" value=""/>
             <jsp:param name="description1" value="{$html_content}"/>
         </jsp:include>
     </main>
