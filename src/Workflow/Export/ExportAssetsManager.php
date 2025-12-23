@@ -90,13 +90,27 @@ class ExportAssetsManager {
 		return new ExportPayload( $final_html, $files_to_zip );
 	}
 
-	private function resolve_local_path( string $url ): ?string {
-		$url = urldecode( $url );
-		if ( strpos( $url, $this->base_site_url ) === false ) {
-			return null;
-		}
-		return str_replace( $this->base_site_url, $this->base_upload_path, $url );
-	}
+private function resolve_local_path( string $url ): ?string {
+    $url = urldecode( $url );
+
+    $parts = explode( 'wp-content', $url );
+    if ( count( $parts ) < 2 ) {
+        return null;
+    }
+    $relative_to_wpcontent = $parts[1]; 
+
+    $local_path = WP_CONTENT_DIR . $relative_to_wpcontent;
+
+    if ( ! file_exists( $local_path ) ) {
+        $upload_dir = wp_upload_dir();
+        $relative_to_uploads = str_replace( '/uploads', '', $relative_to_wpcontent );
+        $local_path = rtrim( $upload_dir['basedir'], '/' ) . '/' . ltrim( $relative_to_uploads, '/' );
+    }
+
+    $local_path = str_replace( '//', '/', $local_path );
+
+    return $local_path;
+}
 
 	private function sanitize_filename( string $text ): string {
 		$text = remove_accents( $text );
