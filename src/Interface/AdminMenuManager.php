@@ -16,6 +16,7 @@ class AdminMenuManager implements HookableInterface {
 		'post.php',
 		'upload.php',
 		'profile.php',
+		'edit-tags.php?taxonomy=sidebar',
 	);
 
 	public function __construct( WPUserProviderInterface $user_provider ) {
