@@ -44,9 +44,20 @@ class ImageTransformer implements DomTransformerInterface {
 					'preceding::h1[1] | preceding::h2[1] | preceding::h3[1] | preceding::h4[1] | preceding::h5[1] | preceding::h6[1]',
 					$img
 				);
-				$alt_text = ( $headings->length > 0 && $headings->item( 0 ) )
-					? trim( $headings->item( 0 )->textContent )
-					: 'Imagem SULTS';
+
+				if ( $headings->length > 0 && $headings->item( 0 ) ) {
+					$alt_text = trim( $headings->item( 0 )->textContent );
+				} else {
+					$post_id    = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0;
+					$post_title = $post_id ? get_the_title( $post_id ) : '';
+
+					if ( ! empty( $post_title ) && stripos( $post_title, 'untitled' ) === false ) {
+						$alt_text = $post_title;
+					} else {
+						$alt_text = pathinfo( parse_url( $src, PHP_URL_PATH ), PATHINFO_FILENAME );
+					}
+				}
+
 				$img->setAttribute( 'alt', $alt_text );
 			}
 

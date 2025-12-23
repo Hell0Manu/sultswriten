@@ -37,6 +37,8 @@ class JspBuilder implements JspBuilderInterface {
     <main>
         <jsp:include page="/sults/components/content/include_content_page_checklist.jsp">
             <jsp:param name="page_title" value="{$safe_page_title}"/>
+            <jsp:param name="active_group" value=""/>
+            <jsp:param name="active_item" value=""/>
             <jsp:param name="description1" value="{$html_content}"/>
         </jsp:include>
     </main>

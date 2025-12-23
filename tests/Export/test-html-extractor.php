@@ -22,7 +22,7 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
         $this->mockConfigProvider = Mockery::mock( ConfigProviderInterface::class );
         $this->mockConfigProvider->shouldReceive('get_home_url')->andReturn('http://example.org');
-        $this->mockConfigProvider->shouldReceive('get_internal_domain')->andReturn('sults.com.br');
+        $this->mockConfigProvider->shouldReceive('get_internal_domains')->andReturn('sults.com.br');
         $this->mockConfigProvider->shouldReceive('get_downloads_base_path')->andReturn('/sults/downloads/artigos/checklist/');
         $this->mockConfigProvider->shouldReceive('get_tips_icon_path')->andReturn('/images/tip.png');
 
