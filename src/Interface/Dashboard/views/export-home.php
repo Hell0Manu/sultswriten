@@ -10,6 +10,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 ?>
 <div class="wrap sults-page-container">
 	
@@ -71,7 +72,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					}
 
 					$terms = get_the_terms( get_the_ID(), 'sidebar' );
-       			 	$sidebar = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '—';
+       			 	$sidebar = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
 					?>
 					<tr>
 						<td>
