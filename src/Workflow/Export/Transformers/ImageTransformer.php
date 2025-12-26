@@ -35,10 +35,15 @@ class ImageTransformer implements DomTransformerInterface {
                 continue;
             }
 
-            if ( stripos( $src, '.svg' ) !== false || strpos( $src, $home_url ) === false ) {
+            if ( stripos( $src, '.svg' ) !== false ) {
                 continue;
             }
 
+            $is_internal = ( strpos( $src, $home_url ) !== false ) || ( substr( $src, 0, 1 ) === '/' );
+
+            if ( ! $is_internal ) {
+                continue;
+            }
 
             $headings = $xpath->query(
                 'preceding::*[self::h1 or self::h2 or self::h3 or self::h4 or self::h5 or self::h6][1]',
