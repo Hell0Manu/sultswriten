@@ -44,7 +44,7 @@ class AdminAssetsManager {
 
 		$this->asset_loader->enqueue_style(
 			'sultswriten-status-css',
-			$this->asset_resolver->get_css_url( 'statusManager.css' ),
+			$this->asset_resolver->get_css_url( 'statusmanager.css' ),
 			array( 'sultswriten-variables-css' ),
 			$version
 		);

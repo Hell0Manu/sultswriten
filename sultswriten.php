@@ -3,7 +3,7 @@
  * Plugin Name:  Sults Writen
  * Plugin URI:   https://www.sults.com.br/
  * Description:  Plugin de exportação e fluxo editorial SULTS.
- * Version:      0.1.0
+ * Version:      0.1.1
  * Author:       Sults
  * Text Domain:  sultswriten
  * Domain Path:  /languages

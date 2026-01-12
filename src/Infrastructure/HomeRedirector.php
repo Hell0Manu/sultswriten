@@ -13,6 +13,11 @@ class HomeRedirector implements HookableInterface {
 		if ( ! is_front_page() ) {
 			return;
 		}
+		
+		$ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+		if ( strpos( $ua, 'WordPress' ) !== false ) {
+			return;
+		}
 
 		$ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 		if ( strpos( $ua, 'WordPress' ) !== false ) {

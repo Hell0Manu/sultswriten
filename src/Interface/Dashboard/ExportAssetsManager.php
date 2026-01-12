@@ -47,7 +47,7 @@ class ExportAssetsManager implements HookableInterface {
 
 		$this->asset_loader->enqueue_style(
 			'sults-writen-status-css',
-			$this->asset_resolver->get_css_url( 'statusManager.css' ),
+			$this->asset_resolver->get_css_url( 'statusmanager.css' ),
 			array( 'sults-writen-variables-css' ),
 			$version
 		);
