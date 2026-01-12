@@ -19,11 +19,11 @@
                 
                 var $img = $('<img>', { 
                     src: iconUrl, 
-                    alt: 'Dica Sults' 
+                    alt: 'Dica SULTS' 
                 });
 
                 var $div = $('<div>');
-                var $h3  = $('<h3>').text('Dica Sults');
+                var $h3  = $('<h3>').text('Dica SULTS');
                 var $p   = $('<p>').text(cleanText);
 
                 $div.append($h3).append($p);

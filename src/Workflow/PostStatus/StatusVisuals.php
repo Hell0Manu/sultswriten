@@ -27,6 +27,10 @@ class StatusVisuals {
 				'bg'   => 'var(--color-green-500)',
 				'text' => 'var(--color-green-100)',
 			),
+			StatusConfig::PENDING_IMAGE => array(
+            'bg'   => 'var(--color-purple-500)',
+            'text' => 'var(--color-purple-100)',
+			),
 			// Status Nativos (Defaults).
 			'publish'                         => array(
 				'bg'   => 'var(--color-verdigris-500)',

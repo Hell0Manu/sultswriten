@@ -127,7 +127,7 @@ class ExportController implements HookableInterface {
 		}
 	}
 
-	private function handle_download(): void {
+private function handle_download(): void {
 		if ( ! isset( $_GET['_wpnonce'] ) || ! isset( $_GET['post_id'] ) ) {
 			wp_die( 'Requisição inválida.' );
 		}
@@ -144,14 +144,24 @@ class ExportController implements HookableInterface {
 		$base_name = $this->naming_service->generate_zip_filename( $raw_title );
 
 		$zip_images_prefix = defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ? SULTSWRITEN_EXPORT_ZIP_PATH : 'sults/images/';
-		$jsp_filename_inside_zip = $base_name . '.jsp';
 
 		try {
 			$result = $this->processor->execute( $post_id, $zip_images_prefix );
-
 			$files_map = $result['files_map'];
+
+            $terms = get_the_terms( $post_id, 'sidebar' );
+            $sidebar_slug = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->slug : '';
+
+            $jsp_base_folder = 'sults/pages/produtos/checklist/artigos/';
+
+            if ( ! empty( $sidebar_slug ) ) {
+                $jsp_base_folder .= $sidebar_slug . '/';
+            }
+
+            $jsp_zip_path = $jsp_base_folder . $base_name . '.jsp';
+
 			$string_map = array(
-                $base_name . '.jsp'      => $result['jsp_content'],
+                $jsp_zip_path            => $result['jsp_content'],
                 $base_name . '-info.txt' => $result['info_content'], 
             );
 			

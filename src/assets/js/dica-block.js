@@ -64,7 +64,7 @@
                 [
                     el('img', {
                         src: iconUrl,
-                        alt: 'Dica Sults'
+                        alt: 'Dica SULTS'
                     }),
                     el('div', {}, [
                         el('h3', {}, 'Dica SULTS'),

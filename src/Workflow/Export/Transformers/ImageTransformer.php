@@ -46,7 +46,8 @@ class ImageTransformer implements DomTransformerInterface {
             }
 
             $headings = $xpath->query(
-                'preceding::*[self::h1 or self::h2 or self::h3 or self::h4 or self::h5 or self::h6][1]',
+                'preceding::h2[1]',
+                //'preceding::*[self::h1 or self::h2 or self::h3 or self::h4 or self::h5 or self::h6][1]',
                 $img
             );
 

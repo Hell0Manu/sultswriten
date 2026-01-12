@@ -47,6 +47,11 @@ class SultsTipTransformer implements DomTransformerInterface {
 
 		$img->setAttribute( 'src', $icon_path );
 		$img->setAttribute( 'alt', 'Dica SULTS' );
+
+		$img->setAttribute( 'loading', 'lazy' );
+		$img->setAttribute( 'width', '60' ); 
+		$img->setAttribute( 'height', '59' );
+		
 		$aside->appendChild( $img );
 
 		$div = $dom->createElement( 'div' );

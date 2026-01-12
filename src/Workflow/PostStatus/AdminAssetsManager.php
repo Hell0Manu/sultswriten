@@ -11,7 +11,6 @@ class AdminAssetsManager {
 	private AssetLoaderInterface $asset_loader;
 	private WPUserProviderInterface $user_provider;
 	private AssetPathResolver $asset_resolver;
-	private array $allowed_roles = array( 'administrator', 'editor' );
 
 	public function __construct(
 		AssetLoaderInterface $asset_loader,
@@ -60,14 +59,34 @@ class AdminAssetsManager {
 			true
 		);
 
-		$this->asset_loader->localize_script(
-			'sultswriten-statuses',
-			'SultsWritenStatuses',
-			array(
-				'statuses'      => PostStatusRegistrar::get_custom_statuses(),
-				'current_roles' => $user_roles,
-				'allowed_roles' => apply_filters( 'sultswriten_allowed_status_roles', $this->allowed_roles ),
-			)
-		);
+		$all_configs = StatusConfig::get_all();
+        $filtered_statuses = array();
+
+        foreach ( $all_configs as $slug => $config ) {
+            $allowed = isset( $config['flow_rules']['roles_allowed'] ) ? $config['flow_rules']['roles_allowed'] : array();
+
+            $has_permission = false;
+
+			foreach ( $user_roles as $role ) {
+                if ( in_array( $role, $allowed, true ) ) {
+                    $has_permission = true;
+                    break;
+                }
+            }
+            
+            if ( $has_permission ) {
+                $filtered_statuses[ $slug ] = $config['label'];
+            }
+        }
+
+        $this->asset_loader->localize_script(
+            'sultswriten-statuses',
+            'SultsWritenStatuses',
+            array(
+                'statuses'      => $filtered_statuses, 
+                'current_roles' => $user_roles,
+                'allowed_roles' => $user_roles,
+            )
+        );
 	}
 }

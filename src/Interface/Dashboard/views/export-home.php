@@ -72,7 +72,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					}
 
 					$terms = get_the_terms( get_the_ID(), 'sidebar' );
-       			 	$sidebar = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
+       			 	$sidebar = sanitize_title( ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '' );
 					?>
 					<tr>
 						<td>
@@ -104,8 +104,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 								$sultswriten_path_cat = 'sem-categoria';
 							}
 
-							$sultswriten_display_path = sprintf( '/%s/%s/', $sultswriten_path_cat, $sultswriten_path_slug );
-							?>
+							if ( ! empty( $sidebar ) ) {
+								$sultswriten_display_path = sprintf( '/%s/%s/%s/', $sultswriten_path_cat, $sidebar, $sultswriten_path_slug );
+							} else {
+								$sultswriten_display_path = sprintf( '/%s/%s/', $sultswriten_path_cat, $sultswriten_path_slug );
+							}							?>
 
 							<a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" style="color: #3c434a; text-decoration: none; font-size: 12px;">
 								<?php echo esc_html( $sultswriten_display_path ); ?>

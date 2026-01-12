@@ -69,7 +69,7 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
         // CORREÇÃO: Aspas duplas, pois é saída padrão do DOMDocument
         $this->assertStringContainsString( 'class="dica-sults"', $result );
-        $this->assertStringContainsString( '<h3>Dica Sults</h3>', $result );
+        $this->assertStringContainsString( '<h3>Dica SULTS</h3>', $result );
         $this->assertStringContainsString( '<p>Esta é uma dica importante.</p>', $result );
     }
 

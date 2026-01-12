@@ -64,7 +64,7 @@ class ExportProcessor {
 
 		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $page_title, $seo_data, $sidebar);
 
-		$info_content = $this->metadata_builder->build_info_file( $post );
+		$info_content = $this->metadata_builder->build_info_file( $post, $sidebar );
 		return array(
 			'jsp_content' => $jsp_content,
 			'info_content' => $info_content,

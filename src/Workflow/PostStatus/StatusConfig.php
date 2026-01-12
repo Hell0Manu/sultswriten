@@ -8,6 +8,7 @@ class StatusConfig {
 	public const REQUIRES_ADJUSTMENT = 'requires_adjustment';
 	public const REVIEW_IN_PROGRESS  = 'review_in_progress';
 	public const FINISHED            = 'finished';
+	public const PENDING_IMAGE       = 'pending_image';
 
 	public const DRAFT   = 'draft';
 	public const PENDING = 'pending';
@@ -27,7 +28,7 @@ class StatusConfig {
 				),
 				'flow_rules' => array(
 					'is_locked'     => true,
-					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE ),
+					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::CORRETOR ),
 				),
 			),
 			self::REQUIRES_ADJUSTMENT => array(
@@ -41,7 +42,7 @@ class StatusConfig {
 				),
 				'flow_rules' => array(
 					'is_locked'     => false,
-					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::REDATOR ),
+					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::CORRETOR ),
 				),
 			),
 			self::REVIEW_IN_PROGRESS  => array(
@@ -55,7 +56,7 @@ class StatusConfig {
 				),
 				'flow_rules' => array(
 					'is_locked'     => true,
-					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE ),
+					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::CORRETOR ),
 				),
 			),
 			self::FINISHED            => array(
@@ -69,7 +70,21 @@ class StatusConfig {
 				),
 				'flow_rules' => array(
 					'is_locked'     => true,
-					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE ),
+					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::CORRETOR ),
+				),
+			),
+			self::PENDING_IMAGE            => array(
+				'label'      => 'Imagem Pendente',
+				'wp_args'    => array(
+					'public'                    => false,
+					'exclude_from_search'       => true,
+					'show_in_admin_all_list'    => true,
+					'show_in_admin_status_list' => true,
+					'protected'                 => true,
+				),
+				'flow_rules' => array(
+					'is_locked'     => false,
+					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::CORRETOR, RoleDefinitions::REDATOR ),
 				),
 			),
 		);
