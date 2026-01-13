@@ -18,7 +18,7 @@ use Sults\Writen\Contracts\ImageProcessorInterface;
 
 class GDWebPProcessor implements ImageProcessorInterface {
 
-	private const MAX_WIDTH = 910;
+	private const MAX_WIDTH = 850;
 	private const QUALITY   = 85;
 
 	public function process( array $upload ): array {

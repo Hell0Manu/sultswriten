@@ -15,6 +15,10 @@ class JspBuilder implements JspBuilderInterface {
 		$safe_page_title = htmlspecialchars( $page_title, ENT_QUOTES, 'UTF-8' );
         $safe_sidebar_name  = htmlspecialchars( $sidebar, ENT_QUOTES, 'UTF-8' );
 
+        $title_parts = explode( ':', $page_title );
+        $active_item_raw = $title_parts[0];
+        $safe_active_item = htmlspecialchars( trim( $active_item_raw ), ENT_QUOTES, 'UTF-8' );
+
 		// A lógica de limpeza de HTML foi removida daqui e movida para JspHtmlSanitizer.
 		// O $html_content recebido já deve estar sanitizado.
 
@@ -39,7 +43,7 @@ class JspBuilder implements JspBuilderInterface {
         <jsp:include page="/sults/components/content/include_content_page_checklist.jsp">
             <jsp:param name="page_title" value="{$safe_page_title}"/>
             <jsp:param name="active_group" value="{$safe_sidebar_name}"/>
-            <jsp:param name="active_item" value=""/>
+            <jsp:param name="active_item" value="{$safe_active_item}"/>
             <jsp:param name="description1" value="{$html_content}"/>
         </jsp:include>
     </main>

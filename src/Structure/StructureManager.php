@@ -44,9 +44,10 @@ class StructureManager implements HookableInterface {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 
 		add_action( 'wp_ajax_sults_update_structure', array( $this, 'ajax_handle_move' ) );
-		add_action( 'wp_ajax_sults_get_post_details', array( $this, 'ajax_get_post_details' ) );
-		add_action( 'wp_ajax_sults_create_post', array( $this, 'ajax_create_post' ) );
-	}
+			add_action( 'wp_ajax_sults_get_post_details', array( $this, 'ajax_get_post_details' ) );
+			add_action( 'wp_ajax_sults_create_post', array( $this, 'ajax_create_post' ) );
+			add_action( 'wp_ajax_sults_save_quick_edit', array( $this, 'ajax_save_quick_edit' ) );
+		}
 
 	public function register_menu(): void {
 		add_menu_page(
@@ -84,10 +85,6 @@ class StructureManager implements HookableInterface {
 		);
 
 		if ( class_exists( StatusConfig::class ) ) {
-			// StatusVisuals deve ser usado aqui se já estiver disponível, caso contrário manter.
-			// Assumindo que o código original usava StatusConfig::get_css_rules() mas refatoramos para StatusVisuals.
-			// Para manter compatibilidade com o report de erro, vamos assumir que a chamada aqui ainda é válida ou foi atualizada.
-			// Se StatusVisuals existe, use-o.
 			if ( class_exists( \Sults\Writen\Workflow\PostStatus\StatusVisuals::class ) ) {
 				$status_css = \Sults\Writen\Workflow\PostStatus\StatusVisuals::get_css_rules();
 			} else {
@@ -210,90 +207,136 @@ class StructureManager implements HookableInterface {
 			}
 		}
 
-		$response = array(
-			'id'          => $post_id,
-			'title'       => get_the_title( $post ),
-			'status_html' => $status_html,
-			'author'      => array(
-				'name'   => $author_name,
-				'avatar' => $author_avatar,
-			),
-			'date'        => get_the_date( 'd M, Y', $post ),
-			'category'    => $cat_data,
-			'path'        => $relative_path,
-			'seo'         => array(
-				'title'       => $seo_title,
-				'description' => $seo_desc,
-			),
-			'links'       => array(
-				'edit'     => $edit_link,
-				'view'     => $view_link,
-				'can_edit' => $can_edit,
-			),
-		);
+			$sidebars    = get_the_terms( $post_id, 'sidebar' );
+			$sidebar_id  = ! empty( $sidebars ) && ! is_wp_error( $sidebars ) ? $sidebars[0]->term_id : 0;
+	
+			$response = array(
+				'id'          => $post_id,
+				'title'       => get_the_title( $post ),
+				'slug'        => $post->post_name,
+				'status'      => $status_slug,
+				'status_html' => $status_html,
+				'author'      => array(
+					'id'     => $author_id,
+					'name'   => $author_name,
+					'avatar' => $author_avatar,
+				),
+				'date'        => get_the_date( 'Y-m-d\TH:i', $post ),
+				'category'    => array_merge( $cat_data, array( 'id' => ! empty( $cats ) ? $cats[0]->term_id : 0 ) ),
+				'sidebar_id'  => $sidebar_id,
+				'parent_id'   => $post->post_parent,
+				'password'    => $post->post_password,
+				'path'        => $relative_path,
+				'seo'         => array(
+					'title'       => $seo_title,
+					'description' => $seo_desc,
+				),
+				'links'       => array(
+					'edit'     => $edit_link,
+					'view'     => $view_link,
+					'can_edit' => $can_edit,
+				),
+			);
 
 		wp_send_json_success( $response );
 	}
 
 
 	public function ajax_create_post() {
-		check_ajax_referer( 'sults_structure_nonce', 'security' );
-
-		if ( ! $this->can_manage_structure() ) {
-			wp_send_json_error( 'Sem permissão.' );
+			check_ajax_referer( 'sults_structure_nonce', 'security' );
+	
+			if ( ! $this->can_manage_structure() ) {
+				wp_send_json_error( 'Sem permissão.' );
+			}
+	
+			$title     = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+			$parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
+			$cat_id    = isset( $_POST['cat_id'] ) ? absint( $_POST['cat_id'] ) : 0;
+			$slug      = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
+	
+			if ( empty( $title ) ) {
+				wp_send_json_error( 'O título é obrigatório.' );
+			}
+	
+			$post_data = array(
+				'post_title'  => $title,
+				'post_name'   => $slug,
+				'post_status' => 'draft',
+				'post_type'   => 'post',
+				'post_parent' => $parent_id,
+			);
+	
+			$post_id = wp_insert_post( $post_data );
+	
+			if ( is_wp_error( $post_id ) ) {
+				wp_send_json_error( $post_id->get_error_message() );
+			}
+	
+			if ( $cat_id > 0 ) {
+				wp_set_post_terms( $post_id, array( $cat_id ), 'category' );
+			}
+	
+			$redirect_url = get_edit_post_link( $post_id, 'raw' );
+	
+			wp_send_json_success(
+				array(
+					'id'           => $post_id,
+					'redirect_url' => $redirect_url,
+				)
+			);
 		}
 
-		$title     = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
-		$parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
-		$cat_id    = isset( $_POST['cat_id'] ) ? absint( $_POST['cat_id'] ) : 0;
-		$slug      = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
+		public function ajax_save_quick_edit() {
+			check_ajax_referer( 'sults_structure_nonce', 'security' );
 
-		if ( empty( $title ) ) {
-			wp_send_json_error( 'O título é obrigatório.' );
+			$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+			if ( ! current_user_can( 'edit_post', $post_id ) ) {
+				wp_send_json_error( 'Sem permissão para editar este post.' );
+			}
+
+			$post_data = array(
+				'ID'            => $post_id,
+				'post_title'    => sanitize_text_field( wp_unslash( $_POST['post_title'] ) ),
+				'post_name'     => sanitize_title( wp_unslash( $_POST['post_name'] ) ),
+				'post_status'   => sanitize_text_field( wp_unslash( $_POST['post_status'] ) ),
+				'post_author'   => absint( $_POST['post_author'] ),
+				'post_parent'   => absint( $_POST['post_parent'] ),
+				'post_password' => sanitize_text_field( wp_unslash( $_POST['post_password'] ) ),
+				'post_date'     => sanitize_text_field( wp_unslash( $_POST['post_date'] ) ),
+			);
+	
+			$updated_id = wp_update_post( $post_data );
+	
+			if ( is_wp_error( $updated_id ) ) {
+				wp_send_json_error( $updated_id->get_error_message() );
+			}
+	
+			$cat_id = isset( $_POST['post_category'] ) ? absint( $_POST['post_category'] ) : 0;
+			wp_set_post_terms( $post_id, $cat_id > 0 ? array( $cat_id ) : array(), 'category' );
+	
+			$sidebar_id = isset( $_POST['post_sidebar'] ) ? absint( $_POST['post_sidebar'] ) : 0;
+			wp_set_post_terms( $post_id, $sidebar_id > 0 ? array( $sidebar_id ) : array(), 'sidebar' );
+
+			wp_send_json_success( 'Post atualizado com sucesso.' );
 		}
-
-		$post_data = array(
-			'post_title'  => $title,
-			'post_name'   => $slug,
-			'post_status' => 'draft',
-			'post_type'   => 'post',
-			'post_parent' => $parent_id,
-		);
-
-		$post_id = wp_insert_post( $post_data );
-
-		if ( is_wp_error( $post_id ) ) {
-			wp_send_json_error( $post_id->get_error_message() );
-		}
-
-		if ( $cat_id > 0 ) {
-			wp_set_post_terms( $post_id, array( $cat_id ), 'category' );
-		}
-
-		$redirect_url = get_edit_post_link( $post_id, 'raw' );
-
-		wp_send_json_success(
-			array(
-				'id'           => $post_id,
-				'redirect_url' => $redirect_url,
-			)
-		);
-	}
 
 	public function render_page(): void {
 		$tree_html = $this->get_tree_html();
 
-		$categories = get_categories( array( 'hide_empty' => false ) );
-
-		$potential_parents = get_posts(
-			array(
-				'post_type'      => 'post',
-				'posts_per_page' => -1,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-				'post_status'    => 'any',
-			)
-		);
+			$categories = get_categories( array( 'hide_empty' => false ) );
+			$sidebars   = get_terms( array( 'taxonomy' => 'sidebar', 'hide_empty' => false ) );
+			$authors    = get_users( array( 'capability__in' => array( 'edit_posts' ), 'orderby' => 'display_name' ) );
+			$all_statuses = $this->status_provider->get_all_status_slugs();
+	
+			$potential_parents = get_posts(
+				array(
+					'post_type'      => 'post',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+					'post_status'    => 'any',
+				)
+			);
 
 		echo '<div class="wrap">
                 <div class="sults-header-row">
@@ -305,7 +348,6 @@ class StructureManager implements HookableInterface {
                 
                 <div class="sults-structure-wrapper">';
 
-		// O HTML gerado por get_tree_html é construído internamente com esc_html e esc_attr.
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $tree_html;
 
@@ -356,6 +398,113 @@ class StructureManager implements HookableInterface {
                                     <span id="drawer-path"></span>
                                 </div>
                             </div>
+                            <div class="sults-quick-edit-section">
+                                <hr class="sults-drawer-divider">
+                                <h3 class="sults-quick-edit-title">Edição Rápida</h3>
+                                <form id="sults-quick-edit-form">
+                                    <input type="hidden" name="post_id" id="quick-edit-id">
+                                    
+                                    <div class="sults-form-group">
+                                        <label for="quick-edit-title">Título</label>
+                                        <input type="text" name="post_title" id="quick-edit-title" class="sults-input">
+                                    </div>
+
+                                    <div class="sults-form-group">
+                                        <label for="quick-edit-slug">Slug</label>
+                                        <input type="text" name="post_name" id="quick-edit-slug" class="sults-input">
+                                    </div>
+
+                                    <div class="sults-info-grid">
+                                        <div class="sults-form-group">
+                                            <label for="quick-edit-status">Status</label>
+                                            <select name="post_status" id="quick-edit-status" class="sults-input">
+                                                ' . (function() use ($all_statuses) {
+                                                    $options = '';
+                                                    foreach ($all_statuses as $status_slug) {
+                                                        $status_obj = get_post_status_object($status_slug);
+                                                        $label = $status_obj ? $status_obj->label : ucfirst($status_slug);
+                                                        $options .= '<option value="' . esc_attr($status_slug) . '">' . esc_html($label) . '</option>';
+                                                    }
+                                                    return $options;
+                                                })() . '
+                                            </select>
+                                        </div>
+                                        <div class="sults-form-group">
+                                            <label for="quick-edit-author">Autor</label>
+                                            <select name="post_author" id="quick-edit-author" class="sults-input">
+                                                ' . (function() use ($authors) {
+                                                    $options = '';
+                                                    foreach ($authors as $author) {
+                                                        $options .= '<option value="' . esc_attr($author->ID) . '">' . esc_html($author->display_name) . '</option>';
+                                                    }
+                                                    return $options;
+                                                })() . '
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="sults-info-grid">
+                                        <div class="sults-form-group">
+                                            <label for="quick-edit-category">Categoria</label>
+                                            <select name="post_category" id="quick-edit-category" class="sults-input">
+                                                <option value="0">Sem Categoria</option>
+                                                ' . (function() use ($categories) {
+                                                    $options = '';
+                                                    foreach ($categories as $cat) {
+                                                        $options .= '<option value="' . esc_attr($cat->term_id) . '">' . esc_html($cat->name) . '</option>';
+                                                    }
+                                                    return $options;
+                                                })() . '
+                                            </select>
+                                        </div>
+                                        <div class="sults-form-group">
+                                            <label for="quick-edit-sidebar">Sidebar</label>
+                                            <select name="post_sidebar" id="quick-edit-sidebar" class="sults-input">
+                                                <option value="0">Nenhuma</option>
+                                                ' . (function() use ($sidebars) {
+                                                    $options = '';
+                                                    if (!is_wp_error($sidebars)) {
+                                                        foreach ($sidebars as $sidebar) {
+                                                            $options .= '<option value="' . esc_attr($sidebar->term_id) . '">' . esc_html($sidebar->name) . '</option>';
+                                                        }
+                                                    }
+                                                    return $options;
+                                                })() . '
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="sults-info-grid">
+                                        <div class="sults-form-group">
+                                            <label for="quick-edit-parent">Post Pai</label>
+                                            <select name="post_parent" id="quick-edit-parent" class="sults-input">
+                                                <option value="0">Nenhum (Raiz)</option>
+                                                ' . (function() use ($potential_parents) {
+                                                    $options = '';
+                                                    foreach ($potential_parents as $p) {
+                                                        $options .= '<option value="' . esc_attr($p->ID) . '">' . esc_html($p->post_title) . '</option>';
+                                                    }
+                                                    return $options;
+                                                })() . '
+                                            </select>
+                                        </div>
+                                        <div class="sults-form-group">
+                                            <label for="quick-edit-password">Senha</label>
+                                            <input type="text" name="post_password" id="quick-edit-password" class="sults-input" placeholder="Opcional">
+                                        </div>
+                                    </div>
+
+                                    <div class="sults-form-group">
+                                        <label for="quick-edit-date">Data de Publicação</label>
+                                        <input type="datetime-local" name="post_date" id="quick-edit-date" class="sults-input">
+                                    </div>
+
+                                    <div class="sults-quick-edit-actions">
+                                        <button type="submit" class="button button-primary" id="btn-save-quick-edit">Salvar Alterações</button>
+                                    </div>
+                                </form>
+                            </div>
+
                             <div class="sults-drawer-footer">
                                 <a id="drawer-btn-view" href="#" target="_blank" class="button sults-btn-view"><span class="dashicons dashicons-visibility"></span> Ver Página</a>
                                 <a id="drawer-btn-edit" href="#" class="button button-primary sults-btn-edit"><span class="dashicons dashicons-edit"></span> Editar Página</a>
@@ -563,9 +712,8 @@ class StructureManager implements HookableInterface {
 			$current_user_id = get_current_user_id();
 			$is_author       = ( (int) $element->post_author === $current_user_id );
 			$is_public       = ( $status_slug === 'publish' );
-			$is_finished     = ( $status_slug === 'finished' );
 
-			$has_access = ( $is_author || $is_public || $is_finished );
+			$has_access = ( $is_author || $is_public );
 		} else {
 			$has_access = true;
 		}

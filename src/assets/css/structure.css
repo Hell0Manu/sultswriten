@@ -307,6 +307,30 @@ li.sults-closed > ul.sults-sortable-nested { display: none; }
     margin-right: 6px;
 }
 
+.sults-quick-edit-section {
+    margin-top: 10px;
+    padding-bottom: 30px;
+}
+
+.sults-quick-edit-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 0 0 15px 0;
+}
+
+.sults-quick-edit-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+#btn-save-quick-edit {
+    width: 100%;
+    height: 40px;
+    font-weight: 600;
+}
+
 .sults-seo-box {
     background: #fff;
     border: 1px solid #e2e4e7;

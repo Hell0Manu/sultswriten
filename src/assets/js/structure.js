@@ -117,7 +117,21 @@ jQuery(document).ready(function($) {
         seoDesc: $('#drawer-seo-desc'),
         
         btnEdit: $('#drawer-btn-edit'),
-        btnView: $('#drawer-btn-view')
+        btnView: $('#drawer-btn-view'),
+        
+        // Quick Edit Fields
+        quickEditId: $('#quick-edit-id'),
+        quickEditTitle: $('#quick-edit-title'),
+        quickEditSlug: $('#quick-edit-slug'),
+        quickEditStatus: $('#quick-edit-status'),
+        quickEditCategory: $('#quick-edit-category'),
+        quickEditAuthor: $('#quick-edit-author'),
+        quickEditSidebar: $('#quick-edit-sidebar'),
+        quickEditParent: $('#quick-edit-parent'),
+        quickEditPassword: $('#quick-edit-password'),
+        quickEditDate: $('#quick-edit-date'),
+        quickEditForm: $('#sults-quick-edit-form'),
+        quickEditSection: $('.sults-quick-edit-section')
     };
 
     /* =========================================
@@ -211,8 +225,22 @@ function fetchPostDetails(postId) {
         
         if (data.links.can_edit) {
             fields.btnEdit.attr('href', data.links.edit).removeClass('disabled').show();
+            fields.quickEditSection.show();
+            
+            // Populate Quick Edit
+            fields.quickEditId.val(data.id);
+            fields.quickEditTitle.val(data.title);
+            fields.quickEditSlug.val(data.slug);
+            fields.quickEditStatus.val(data.status);
+            fields.quickEditCategory.val(data.category.id);
+            fields.quickEditAuthor.val(data.author.id);
+            fields.quickEditSidebar.val(data.sidebar_id);
+            fields.quickEditParent.val(data.parent_id);
+            fields.quickEditPassword.val(data.password);
+            fields.quickEditDate.val(data.date);
         } else {
             fields.btnEdit.attr('href', '#').addClass('disabled').hide();
+            fields.quickEditSection.hide();
         }
 
         $loadingState.fadeOut(200, function() {
@@ -309,4 +337,37 @@ function fetchPostDetails(postId) {
             }
         });
     }
+
+    /* =========================================
+       5. SALVAR EDIÇÃO RÁPIDA
+       ========================================= */
+    fields.quickEditForm.on('submit', function(e) {
+        e.preventDefault();
+        const $btn = $('#btn-save-quick-edit');
+        const formData = $(this).serialize();
+        
+        $btn.prop('disabled', true).text('Salvando...');
+
+        $.ajax({
+            url: sultsStructureParams.ajax_url,
+            type: 'POST',
+            data: formData + '&action=sults_save_quick_edit&security=' + sultsStructureParams.nonce,
+            success: function(res) {
+                if (res.success) {
+                    $btn.text('Salvo!');
+                    setTimeout(() => {
+                        $btn.prop('disabled', false).text('Salvar Alterações');
+                        location.reload(); // Recarrega para refletir as mudanças na árvore
+                    }, 1000);
+                } else {
+                    alert('Erro: ' + res.data);
+                    $btn.prop('disabled', false).text('Salvar Alterações');
+                }
+            },
+            error: function() {
+                alert('Erro de conexão.');
+                $btn.prop('disabled', false).text('Salvar Alterações');
+            }
+        });
+    });
 });

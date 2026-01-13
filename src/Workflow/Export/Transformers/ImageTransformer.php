@@ -24,6 +24,7 @@ class ImageTransformer implements DomTransformerInterface {
     public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
         $images   = $xpath->query( '//img' );
         $home_url = $this->config->get_home_url();
+        $upload_dir = wp_upload_dir();
 
         foreach ( $images as $img ) {
             if ( ! $img instanceof DOMElement ) {
@@ -73,18 +74,64 @@ class ImageTransformer implements DomTransformerInterface {
                 $img->setAttribute( 'loading', 'lazy' );
             }
 
+            $original_width  = 0;
+            $original_height = 0;
+
             $attachment_id = $this->attachment_provider->get_attachment_id_by_url( $src );
+            
             if ( $attachment_id ) {
                 $image_data = $this->attachment_provider->get_image_src( $attachment_id, 'full' );
                 if ( $image_data ) {
-                    if ( ! $img->hasAttribute( 'width' ) ) {
-                        $img->setAttribute( 'width', (string) $image_data[1] );
-                    }
-                    if ( ! $img->hasAttribute( 'height' ) ) {
-                        $img->setAttribute( 'height', (string) $image_data[2] );
+                    $original_width  = (int) $image_data[1];
+                    $original_height = (int) $image_data[2];
+                }
+            }
+
+            if ( $original_width === 0 ) {
+                $local_path = $this->resolve_local_path_fallback( $src, $upload_dir );
+                
+                if ( $local_path && file_exists( $local_path ) ) {
+                    $size = @getimagesize( $local_path ); 
+                    if ( $size ) {
+                        $original_width  = $size[0];
+                        $original_height = $size[1];
                     }
                 }
             }
+
+            if ( $original_width > 0 && $original_height > 0 ) {
+                $target_width = 850;
+                
+                $target_height = round( ( $original_height / $original_width ) * $target_width );
+
+                $img->setAttribute( 'width', (string) $target_width );
+                $img->setAttribute( 'height', (string) $target_height );
+            }
         }
+    }
+
+    private function resolve_local_path_fallback( string $url, array $upload_dir ): ?string {
+        $url = urldecode( $url );
+        $path = parse_url( $url, PHP_URL_PATH );
+        
+        if ( empty( $path ) ) {
+            return null;
+        }
+
+        if ( strpos( $path, '/wp-content/uploads' ) !== false ) {
+            $parts = explode( '/wp-content/uploads', $path );
+            if ( isset( $parts[1] ) ) {
+                return $upload_dir['basedir'] . $parts[1];
+            }
+        }
+        
+        if ( strpos( $path, '/wp-content' ) !== false ) {
+             $parts = explode( '/wp-content', $path );
+             if ( isset( $parts[1] ) ) {
+                 return WP_CONTENT_DIR . $parts[1];
+             }
+        }
+
+        return null;
     }
 }
