@@ -32,39 +32,20 @@ class AdminAssetsManager {
 		}
 
 		$user_roles = $this->user_provider->get_current_user_roles();
-		$version    = $this->asset_resolver->get_version();
 
-		$this->asset_loader->enqueue_style(
-			'sultswriten-variables-css',
-			$this->asset_resolver->get_css_url( 'variables.css' ),
-			array(),
-			$version
-		);
-
-		$this->asset_loader->enqueue_style(
-			'sultswriten-status-css',
-			$this->asset_resolver->get_css_url( 'statusmanager.css' ),
-			array( 'sultswriten-variables-css' ),
-			$version
-		);
+		wp_enqueue_style( 'sults-writen-variables' );
+		wp_enqueue_style( 'sults-writen-status-css' );
 
 		$custom_css = StatusVisuals::get_css_rules();
-		$this->asset_loader->add_inline_style( 'sultswriten-status-css', $custom_css );
+		$this->asset_loader->add_inline_style( 'sults-writen-status-css', $custom_css );
 
-		$this->asset_loader->enqueue_script(
-			'sultswriten-statuses',
-			$this->asset_resolver->get_js_url( 'statusManager.js' ),
-			array( 'jquery' ),
-			$version,
-			true
-		);
+		wp_enqueue_script( 'sults-writen-status-js' );
 
 		$all_configs = StatusConfig::get_all();
         $filtered_statuses = array();
 
         foreach ( $all_configs as $slug => $config ) {
             $allowed = isset( $config['flow_rules']['roles_allowed'] ) ? $config['flow_rules']['roles_allowed'] : array();
-
             $has_permission = false;
 
 			foreach ( $user_roles as $role ) {
@@ -80,7 +61,7 @@ class AdminAssetsManager {
         }
 
         $this->asset_loader->localize_script(
-            'sultswriten-statuses',
+            'sults-writen-status-js',
             'SultsWritenStatuses',
             array(
                 'statuses'      => $filtered_statuses, 

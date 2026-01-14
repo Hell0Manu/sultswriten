@@ -10,6 +10,7 @@ use Sults\Writen\Contracts\AssetLoaderInterface;
 use Sults\Writen\Contracts\WPPostStatusProviderInterface;
 use Sults\Writen\Interface\CategoryColorManager;
 use Sults\Writen\Workflow\WorkflowPolicy;
+use Sults\Writen\Contracts\PostRepositoryInterface;
 
 class StructureServiceProvider implements ServiceProviderInterface {
 
@@ -22,7 +23,8 @@ class StructureServiceProvider implements ServiceProviderInterface {
 					$c->get( AssetLoaderInterface::class ),
 					$c->get( WPPostStatusProviderInterface::class ),
 					$c->get( CategoryColorManager::class ),
-					$c->get( WorkflowPolicy::class )
+					$c->get( WorkflowPolicy::class ),
+					$c->get( PostRepositoryInterface::class )
 				);
 			}
 		);

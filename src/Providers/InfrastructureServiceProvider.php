@@ -17,6 +17,7 @@ use Sults\Writen\Infrastructure\FeatureDisabler;
 use Sults\Writen\Infrastructure\PostConfigurator;
 use Sults\Writen\Infrastructure\HomeRedirector;
 use Sults\Writen\Infrastructure\NotFoundRedirector;
+use Sults\Writen\Infrastructure\WPFileSystem;
 
 class InfrastructureServiceProvider implements ServiceProviderInterface {
 
@@ -31,6 +32,13 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 		$container->set( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class, fn() => new WPPostStatusProvider() );
 		$container->set( \Sults\Writen\Contracts\NotificationRepositoryInterface::class, fn() => new WPNotificationRepository() );
 		$container->set( \Sults\Writen\Contracts\AttachmentProviderInterface::class, fn() => new WPAttachmentProvider() );
+
+		$container->set( 
+			\Sults\Writen\Contracts\FileSystemInterface::class, 
+			function() {
+				return new WPFileSystem();
+			}
+		);
 
 		// Configuração e Requests.
 		$container->set( \Sults\Writen\Contracts\ConfigProviderInterface::class, fn() => new WPConfigProvider() );

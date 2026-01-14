@@ -27,8 +27,8 @@ class AIOSEOCleaner implements HookableInterface {
 	 * @var array
 	 */
 	private array $restricted_roles = array(
-		RoleDefinitions::REDATOR,  // 'contributor'
-		RoleDefinitions::CORRETOR, // 'author'
+		RoleDefinitions::REDATOR,  
+		RoleDefinitions::CORRETOR, 
 	);
 
 	public function __construct( WPUserProviderInterface $user_provider ) {

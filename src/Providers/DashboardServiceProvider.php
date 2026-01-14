@@ -103,7 +103,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		$container->set(
+	$container->set(
 			ExportController::class,
 			function ( $c ) {
 				return new ExportController(
@@ -111,7 +111,8 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\ArchiverInterface::class ),
 					$c->get( ExportProcessor::class ),
-					$c->get( ExportNamingServiceInterface::class )
+					$c->get( ExportNamingServiceInterface::class ),
+					$c->get( \Sults\Writen\Contracts\FileSystemInterface::class )
 				);
 			}
 		);

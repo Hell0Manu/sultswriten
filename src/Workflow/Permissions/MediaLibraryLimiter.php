@@ -3,6 +3,7 @@
 namespace Sults\Writen\Workflow\Permissions;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
+use Sults\Writen\Workflow\Permissions\RoleDefinitions; // Adicionado
 
 /**
  * Responsável por restringir a biblioteca de mídia para que redatores vejam apenas seus uploads.
@@ -22,7 +23,7 @@ class MediaLibraryLimiter {
 		$user_roles = $this->user_provider->get_current_user_roles();
 		$user       = wp_get_current_user();
 
-		if ( in_array( 'contributor', $user_roles, true ) ) {
+		if ( in_array( RoleDefinitions::REDATOR, $user_roles, true ) ) {
 			$query['author'] = $user->ID;
 		}
 

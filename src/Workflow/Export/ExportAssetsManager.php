@@ -90,27 +90,40 @@ class ExportAssetsManager {
 		return new ExportPayload( $final_html, $files_to_zip );
 	}
 
-private function resolve_local_path( string $url ): ?string {
-    $url = urldecode( $url );
+	private function resolve_local_path( string $url ): ?string {
+		$url = urldecode( $url );
 
-    $parts = explode( 'wp-content', $url );
-    if ( count( $parts ) < 2 ) {
-        return null;
-    }
-    $relative_to_wpcontent = $parts[1]; 
+		$url = str_replace( '\\', '/', $url );
 
-    $local_path = WP_CONTENT_DIR . $relative_to_wpcontent;
+		$parts = explode( 'wp-content', $url );
+		if ( count( $parts ) < 2 ) {
+			return null;
+		}
+		$relative_to_wpcontent = $parts[1]; 
 
-    if ( ! file_exists( $local_path ) ) {
-        $upload_dir = wp_upload_dir();
-        $relative_to_uploads = str_replace( '/uploads', '', $relative_to_wpcontent );
-        $local_path = rtrim( $upload_dir['basedir'], '/' ) . '/' . ltrim( $relative_to_uploads, '/' );
-    }
+		$local_path = WP_CONTENT_DIR . $relative_to_wpcontent;
 
-    $local_path = str_replace( '//', '/', $local_path );
+		if ( ! file_exists( $local_path ) ) {
+			$upload_dir = wp_upload_dir();
+			$relative_clean = preg_replace( '|^[\\\\/]?uploads|', '', $relative_to_wpcontent );
+			$local_path = rtrim( $upload_dir['basedir'], '/' ) . '/' . ltrim( $relative_clean, '/' );
+		}
 
-    return $local_path;
-}
+		$real_path = realpath( $local_path );
+
+		if ( ! $real_path || ! file_exists( $real_path ) ) {
+			return null;
+		}
+
+		$safe_path_root = wp_normalize_path( realpath( WP_CONTENT_DIR ) );
+		$safe_file_path = wp_normalize_path( $real_path );
+
+		if ( strpos( $safe_file_path, $safe_path_root ) !== 0 ) {
+			return null;
+		}
+
+		return $real_path;
+	}
 
 	private function sanitize_filename( string $text ): string {
 		$text = remove_accents( $text );

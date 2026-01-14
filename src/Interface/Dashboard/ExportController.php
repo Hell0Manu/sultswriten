@@ -7,6 +7,7 @@ use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\ArchiverInterface;
 use Sults\Writen\Workflow\Export\ExportProcessor;
 use Sults\Writen\Contracts\ExportNamingServiceInterface; 
+use Sults\Writen\Contracts\FileSystemInterface;
 
 class ExportController implements HookableInterface {
 
@@ -15,6 +16,7 @@ class ExportController implements HookableInterface {
 	private ArchiverInterface $archiver;
 	private ExportProcessor $processor;
 	private ExportNamingServiceInterface $naming_service; 
+	private FileSystemInterface $filesystem;
 
 	public const PAGE_SLUG = 'sults-writen-export';
 
@@ -23,13 +25,15 @@ class ExportController implements HookableInterface {
 		WPUserProviderInterface $user_provider,
 		ArchiverInterface $archiver,
 		ExportProcessor $processor,
-		ExportNamingServiceInterface $naming_service 
+		ExportNamingServiceInterface $naming_service,
+		FileSystemInterface $filesystem
 	) {
 		$this->post_repo      = $post_repo;
 		$this->user_provider  = $user_provider;
 		$this->archiver       = $archiver;
 		$this->processor      = $processor;
 		$this->naming_service = $naming_service;
+		$this->filesystem     = $filesystem;
 	}
 
 	public function register(): void {
@@ -170,7 +174,7 @@ private function handle_download(): void {
 			$zip_path              = $upload_dir['basedir'] . '/' . $zip_filename_download;
 
 			if ( $this->archiver->create( $zip_path, $files_map, $string_map ) ) {
-				if ( file_exists( $zip_path ) ) {
+				if ( $this->filesystem->exists( $zip_path ) ) {
 					if ( ob_get_length() ) {
 						ob_end_clean();
 					}
@@ -187,7 +191,7 @@ private function handle_download(): void {
 					readfile( $zip_path );
 
 					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
-					unlink( $zip_path );
+					$this->filesystem->delete( $zip_path );
 					exit;
 				}
 			} else {

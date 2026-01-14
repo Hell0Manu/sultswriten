@@ -71,23 +71,24 @@ class RoleCapabilityManager {
 	/**
      * Cria os papéis personalizados se eles não existirem.
      */
-    private function create_custom_roles(): void {
-        if ( ! get_role( RoleDefinitions::DESIGNER ) ) {
-            $base_role = get_role( RoleDefinitions::CORRETOR );
-            
-            if ( ! $base_role ) {
-                $base_role = get_role( 'editor' );
-            }
+	private function create_custom_roles(): void {
+			if ( ! get_role( RoleDefinitions::DESIGNER ) ) {
+				$base_role = get_role( RoleDefinitions::CORRETOR );
+				
+				if ( ! $base_role ) {
+					// Substituição: Era 'editor'
+					$base_role = get_role( RoleDefinitions::EDITOR_CHEFE );
+				}
 
-            if ( $base_role ) {
-                add_role(
-                    RoleDefinitions::DESIGNER,
-                    'Designer', 
-                    $base_role->capabilities
-                );
-            }
-        }
-    }
+				if ( $base_role ) {
+					add_role(
+						RoleDefinitions::DESIGNER,
+						'Designer', 
+						$base_role->capabilities
+					);
+				}
+			}
+		}
 
 	/**
 	 * Atualiza as capacidades de um papel específico.
