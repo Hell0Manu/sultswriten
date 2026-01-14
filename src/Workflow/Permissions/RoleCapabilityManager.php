@@ -36,12 +36,21 @@ class RoleCapabilityManager {
 				'delete_published_posts',
 			),
 		),
+		RoleDefinitions::DESIGNER     => array(
+			'add'    => array( 'edit_others_posts' ),
+			'remove' => array(
+				'publish_posts',
+				'delete_posts',
+				'delete_published_posts',
+			),
+		),
 	);
 
 	/**
 	 * Aplica as alterações de capacidade (usado na ativação).
 	 */
 	public function apply(): void {
+		$this->create_custom_roles();
 		foreach ( self::CAPABILITIES_CONFIG as $role => $caps ) {
 			$this->update_role( $role, $caps['add'], $caps['remove'] );
 		}
@@ -56,7 +65,29 @@ class RoleCapabilityManager {
 		foreach ( self::CAPABILITIES_CONFIG as $role => $caps ) {
 			$this->update_role( $role, $caps['remove'], $caps['add'] );
 		}
+		remove_role( RoleDefinitions::DESIGNER );
 	}
+
+	/**
+     * Cria os papéis personalizados se eles não existirem.
+     */
+    private function create_custom_roles(): void {
+        if ( ! get_role( RoleDefinitions::DESIGNER ) ) {
+            $base_role = get_role( RoleDefinitions::CORRETOR );
+            
+            if ( ! $base_role ) {
+                $base_role = get_role( 'editor' );
+            }
+
+            if ( $base_role ) {
+                add_role(
+                    RoleDefinitions::DESIGNER,
+                    'Designer', 
+                    $base_role->capabilities
+                );
+            }
+        }
+    }
 
 	/**
 	 * Atualiza as capacidades de um papel específico.

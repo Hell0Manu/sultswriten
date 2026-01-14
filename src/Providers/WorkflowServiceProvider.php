@@ -26,6 +26,8 @@ use Sults\Writen\Workflow\Notifications\NotificationManager;
 use Sults\Writen\Workflow\Media\MediaUploadManager;
 use Sults\Writen\Workflow\Media\ThumbnailDisabler;
 use Sults\Writen\Infrastructure\Media\GDWebPProcessor;
+use Sults\Writen\Infrastructure\WPMailer;
+use Sults\Writen\Contracts\MailerInterface;
 
 class WorkflowServiceProvider implements ServiceProviderInterface {
 
@@ -122,13 +124,23 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 		);
 
 		// Notifications.
+		$container->set( 
+            MailerInterface::class, 
+            function ( $c ) {
+                return new WPMailer(
+                    $c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class ) // Injetando aqui!
+                );
+            }
+        );
+		
 		$container->set(
 			NotificationManager::class,
 			function ( $c ) {
 				return new NotificationManager(
 					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
 					$c->get( \Sults\Writen\Contracts\WPPostStatusProviderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\NotificationRepositoryInterface::class )
+					$c->get( \Sults\Writen\Contracts\NotificationRepositoryInterface::class ),
+					$c->get( MailerInterface::class )
 				);
 			}
 		);

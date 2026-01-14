@@ -7,4 +7,5 @@ class RoleDefinitions {
 	public const EDITOR_CHEFE = 'editor';
 	public const ADMIN        = 'administrator';
 	public const VISITANTE    = 'subscriber';
+	public const DESIGNER     = 'designer';
 }
