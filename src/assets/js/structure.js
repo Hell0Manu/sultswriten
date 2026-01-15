@@ -8,23 +8,37 @@ jQuery(document).ready(function($) {
     const $contentState = $drawer.find('.sults-drawer-content');
 
 
-    /* =========================================
+/* =========================================
       MODAL DE CRIAÇÃO
        ========================================= */
     const $modalBackdrop = $('#sults-modal-backdrop');
     const $form = $('#sults-create-post-form');
     const $titleInput = $('#new-post-title');
     const $slugInput = $('#new-post-slug');
+    
     const $parentSelect = $('#new-post-parent');
+    const $parentGroup = $parentSelect.closest('.sults-form-group');
+    
+    const $sidebarSelect = $('#new-post-sidebar');
+    const $sidebarGroup = $sidebarSelect.closest('.sults-form-group');
+
     const $categorySelect = $('#new-post-category');
     const $slugPrefix = $('#new-post-slug-prefix'); 
+
+    const $allParentOptions = $parentSelect.find('option').clone();
 
     $('#btn-open-new-post').on('click', function(e) {
         e.preventDefault();
         $form[0].reset();
-        $categorySelect.prop('disabled', false); 
+        
         $slugPrefix.text('/');
         $('#hidden-cat-id').remove();
+        
+        $parentGroup.hide(); 
+        $sidebarGroup.hide(); 
+        
+        $categorySelect.val(""); 
+
         $modalBackdrop.addClass('open');
         $titleInput.focus();
     });
@@ -36,34 +50,40 @@ jQuery(document).ready(function($) {
 
     $categorySelect.on('change', function() {
         const selectedOption = $(this).find('option:selected');
-        const slug = selectedOption.data('slug');
+        const slug = selectedOption.data('slug'); 
+        const selectedCatId = $(this).val();
         
         if (slug) {
             $slugPrefix.text('/' + slug + '/');
         } else {
             $slugPrefix.text('/');
         }
-    });
 
-    $parentSelect.on('change', function() {
-        const selectedOption = $(this).find('option:selected');
-        const parentCatId = selectedOption.data('cat-id');
-
-        if ($(this).val() !== "0" && parentCatId) {
-            $categorySelect.val(parentCatId).trigger('change');
-            $categorySelect.prop('disabled', true);
-            
-            if ($('#hidden-cat-id').length === 0) {
-                $form.append('<input type="hidden" id="hidden-cat-id" name="cat_id" value="' + parentCatId + '">');
-            } else {
-                $('#hidden-cat-id').val(parentCatId);
-            }
+        if (slug === 'checklist') {
+            $sidebarGroup.fadeIn(200);
         } else {
-            $categorySelect.prop('disabled', false);
-            $('#hidden-cat-id').remove();
+            $sidebarGroup.hide();
+            $sidebarSelect.val('0'); 
+        }
+
+        if (selectedCatId) {
+            $parentSelect.empty();
+            
+            const rootOption = $allParentOptions.filter('[value="0"]');
+            $parentSelect.append(rootOption);
+
+            const matchingParents = $allParentOptions.filter(function() {
+                return String($(this).data('cat-id')) === String(selectedCatId);
+            });
+            
+            $parentSelect.append(matchingParents);
+            $parentSelect.val("0");
+
+            $parentGroup.fadeIn(200);
+        } else {
+            $parentGroup.hide();
         }
     });
-
 
     $titleInput.on('input', function() {
         const val = $(this).val();
@@ -73,7 +93,6 @@ jQuery(document).ready(function($) {
             .replace(/--+/g, '-');
         $slugInput.val(slug);
     });
-
 
     $form.on('submit', function(e) {
         e.preventDefault();
@@ -357,7 +376,7 @@ function fetchPostDetails(postId) {
                     $btn.text('Salvo!');
                     setTimeout(() => {
                         $btn.prop('disabled', false).text('Salvar Alterações');
-                        location.reload(); // Recarrega para refletir as mudanças na árvore
+                        location.reload(); 
                     }, 1000);
                 } else {
                     alert('Erro: ' + res.data);

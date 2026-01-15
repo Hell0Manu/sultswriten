@@ -2,14 +2,13 @@
 namespace Sults\Writen\Infrastructure;
 
 use Sults\Writen\Contracts\MailerInterface;
-use Sults\Writen\Infrastructure\AssetPathResolver; // Importar a classe
+use Sults\Writen\Infrastructure\AssetPathResolver; 
 
 class WPMailer implements MailerInterface {
 
     private static array $css_vars = array();
-    private AssetPathResolver $asset_resolver; // Nova propriedade
+    private AssetPathResolver $asset_resolver; 
 
-    // Injeção de dependência no construtor
     public function __construct( AssetPathResolver $asset_resolver ) {
         $this->asset_resolver = $asset_resolver;
     }

@@ -174,50 +174,62 @@ defined( 'ABSPATH' ) || exit;
 				<button type="button" class="sults-modal-close"><span class="dashicons dashicons-no-alt"></span></button>
 			</div>
 			<div class="sults-modal-body">
-				<form id="sults-create-post-form">
-					
-					<div class="sults-form-group">
-						<label for="new-post-parent">Post Pai (Raiz)</label>
-						<select id="new-post-parent" name="parent_id" class="sults-input">
-							<option value="0" selected>Nenhum (Raiz)</option>
-							<?php foreach ( $potential_parents as $p ) : 
-								$cats   = get_the_category( $p->ID );
-								$cat_id = ! empty( $cats ) ? $cats[0]->term_id : 0;
-							?>
-								<option value="<?php echo esc_attr( $p->ID ); ?>" data-cat-id="<?php echo esc_attr( $cat_id ); ?>"><?php echo esc_html( $p->post_title ); ?></option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description">Se selecionar um pai, a categoria será herdada automaticamente.</p>
-					</div>
+			<form id="sults-create-post-form">
+    
+    <div class="sults-form-group">
+        <label for="new-post-title">Nome do Post</label>
+        <input type="text" id="new-post-title" name="title" class="sults-input" placeholder="Ex: Guia de Instalação" required>
+    </div>
 
-					<div class="sults-form-group">
-						<label for="new-post-title">Nome do Post</label>
-						<input type="text" id="new-post-title" name="title" class="sults-input" placeholder="Ex: Guia de Instalação" required>
-					</div>
+    <div class="sults-form-group">
+        <label for="new-post-category">Categoria</label>
+        <select id="new-post-category" name="cat_id" class="sults-input" style="max-width: 100%">
+            <option value="" selected disabled>Selecione uma categoria...</option>
+            <option value="0" data-slug="">Sem Categoria</option>
+            <?php foreach ( $categories as $cat ) : ?>
+                <option value="<?php echo esc_attr( $cat->term_id ); ?>" data-slug="<?php echo esc_attr( $cat->slug ); ?>"><?php echo esc_html( $cat->name ); ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
 
-					<div class="sults-form-group">
-						<label for="new-post-category">Categoria</label>
-						<select id="new-post-category" name="cat_id" class="sults-input">
-							<option value="0" data-slug="">Sem Categoria</option>
-							<?php foreach ( $categories as $cat ) : ?>
-								<option value="<?php echo esc_attr( $cat->term_id ); ?>" data-slug="<?php echo esc_attr( $cat->slug ); ?>"><?php echo esc_html( $cat->name ); ?></option>
-							<?php endforeach; ?>
-						</select>
-					</div>
+	<div class="sults-form-group" id="group-new-post-sidebar" style="display:none;">
+        <label for="new-post-sidebar">Selecione a Sidebar</label>
+        <select id="new-post-sidebar" name="sidebar_id" class="sults-input" style="max-width: 100%">
+            <option value="0">Nenhuma</option>
+            <?php if ( ! empty( $sidebars ) && ! is_wp_error( $sidebars ) ) : ?>
+                <?php foreach ( $sidebars as $sidebar ) : ?>
+                    <option value="<?php echo esc_attr( $sidebar->term_id ); ?>"><?php echo esc_html( $sidebar->name ); ?></option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
+    </div>
 
-					<div class="sults-form-group">
-						<label for="new-post-slug">URL do Post (Slug)</label>
-						<div class="sults-input-group">
-							<span class="sults-input-prefix" id="new-post-slug-prefix">/</span>
-							<input type="text" id="new-post-slug" name="slug" class="sults-input" placeholder="guia-de-instalacao">
-						</div>
-					</div>
+    <div class="sults-form-group" id="group-new-post-parent" style="display:none;">
+        <label for="new-post-parent">Post Pai (Raiz)</label>
+        <select id="new-post-parent" name="parent_id" class="sults-input" style="max-width: 100%">
+            <option value="0" selected>Nenhum (Raiz)</option>
+            <?php foreach ( $potential_parents as $p ) : 
+                $cats   = get_the_category( $p->ID );
+                $cat_id = ! empty( $cats ) ? $cats[0]->term_id : 0;
+            ?>
+                <option value="<?php echo esc_attr( $p->ID ); ?>" data-cat-id="<?php echo esc_attr( $cat_id ); ?>"><?php echo esc_html( $p->post_title ); ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
 
-					<div class="sults-modal-footer">
-						<button type="button" class="button sults-modal-cancel">Cancelar</button>
-						<button type="submit" class="button button-primary sults-btn-large">Criar Página</button>
-					</div>
-				</form>
+    <div class="sults-form-group">
+        <label for="new-post-slug">URL do Post (Slug)</label>
+        <div class="sults-input-group">
+            <span class="sults-input-prefix" id="new-post-slug-prefix">/</span>
+            <input type="text" id="new-post-slug" name="slug" class="sults-input" placeholder="guia-de-instalacao">
+        </div>
+    </div>
+
+    <div class="sults-modal-footer">
+        <button type="button" class="button sults-modal-cancel">Cancelar</button>
+        <button type="submit" class="button button-primary sults-btn-large">Criar Página</button>
+    </div>
+</form>
 			</div>
 		</div>
 	</div>
