@@ -19,9 +19,6 @@ jQuery(document).ready(function($) {
     const $parentSelect = $('#new-post-parent');
     const $parentGroup = $parentSelect.closest('.sults-form-group');
     
-    const $sidebarSelect = $('#new-post-sidebar');
-    const $sidebarGroup = $sidebarSelect.closest('.sults-form-group');
-
     const $categorySelect = $('#new-post-category');
     const $slugPrefix = $('#new-post-slug-prefix'); 
 
@@ -35,7 +32,6 @@ jQuery(document).ready(function($) {
         $('#hidden-cat-id').remove();
         
         $parentGroup.hide(); 
-        $sidebarGroup.hide(); 
         
         $categorySelect.val(""); 
 
@@ -50,21 +46,22 @@ jQuery(document).ready(function($) {
 
     $categorySelect.on('change', function() {
         const selectedOption = $(this).find('option:selected');
+
         const slug = selectedOption.data('slug'); 
+        const parentSlug = selectedOption.data('parent-slug');
+
         const selectedCatId = $(this).val();
+        let pathPrefix = '/';
         
         if (slug) {
-            $slugPrefix.text('/' + slug + '/');
-        } else {
-            $slugPrefix.text('/');
+            if (parentSlug) {
+                pathPrefix = '/' + parentSlug + '/' + slug + '/';
+            } else {
+                pathPrefix = '/' + slug + '/';
+            }
         }
 
-        if (slug === 'checklist') {
-            $sidebarGroup.fadeIn(200);
-        } else {
-            $sidebarGroup.hide();
-            $sidebarSelect.val('0'); 
-        }
+        $slugPrefix.text(pathPrefix);
 
         if (selectedCatId) {
             $parentSelect.empty();
@@ -78,7 +75,6 @@ jQuery(document).ready(function($) {
             
             $parentSelect.append(matchingParents);
             $parentSelect.val("0");
-
             $parentGroup.fadeIn(200);
         } else {
             $parentGroup.hide();
@@ -145,7 +141,6 @@ jQuery(document).ready(function($) {
         quickEditStatus: $('#quick-edit-status'),
         quickEditCategory: $('#quick-edit-category'),
         quickEditAuthor: $('#quick-edit-author'),
-        quickEditSidebar: $('#quick-edit-sidebar'),
         quickEditParent: $('#quick-edit-parent'),
         quickEditPassword: $('#quick-edit-password'),
         quickEditDate: $('#quick-edit-date'),
@@ -253,7 +248,6 @@ function fetchPostDetails(postId) {
             fields.quickEditStatus.val(data.status);
             fields.quickEditCategory.val(data.category.id);
             fields.quickEditAuthor.val(data.author.id);
-            fields.quickEditSidebar.val(data.sidebar_id);
             fields.quickEditParent.val(data.parent_id);
             fields.quickEditPassword.val(data.password);
             fields.quickEditDate.val(data.date);

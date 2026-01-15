@@ -500,6 +500,7 @@ li.sults-closed > ul.sults-sortable-nested { display: none; }
     padding: 0 10px;
     border-radius: 4px 0 0 4px;
     color: #646970;
+        min-width: fit-content;
 }
 .sults-input-group .sults-input {
     border-radius: 0 4px 4px 0;

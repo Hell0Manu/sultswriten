@@ -13,6 +13,7 @@ use Sults\Writen\Contracts\SeoDataProviderInterface;
 use Sults\Writen\Workflow\Export\ExportAssetsManager;
 use Sults\Writen\Contracts\JspHtmlSanitizerInterface;
 use Sults\Writen\Workflow\Export\ExportMetadataBuilder;
+use Sults\Writen\Utils\PathHelper;
 
 class ExportProcessor {
 
@@ -58,19 +59,56 @@ class ExportProcessor {
 		$files_to_zip       = $assets_payload->files_to_zip;
 
 		$safe_html_for_jsp = $this->sanitizer->sanitize( $final_html_for_jsp );
-
 		$seo_data   = $this->seo_provider->get_seo_data( $post_id );
 		$page_title = get_the_title( $post );
+		
+		$active_group_name = '';
 
-		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $page_title, $seo_data, $sidebar);
+		$cats = get_the_category( $post_id );
+        
+        if ( ! empty( $cats ) && ! is_wp_error( $cats ) ) {
+            foreach ( $cats as $cat ) {
+                if ( $cat->parent > 0 ) {
+                    $active_group_name = $cat->name; 
+                    break; 
+                }
+            }
+        }
 
-		$info_content = $this->metadata_builder->build_info_file( $post, $sidebar );
+		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $page_title, $seo_data, $active_group_name);
+
+		$info_content = $this->metadata_builder->build_info_file( $post );
+		$jsp_folder_path = $this->calculate_jsp_folder_path( $post_id );
 		return array(
 			'jsp_content' => $jsp_content,
 			'info_content' => $info_content,
 			'files_map'   => $files_to_zip,
 			'html_clean'  => $html_clean,
 			'html_raw'    => $html_raw,
+			'jsp_folder_path' => $jsp_folder_path,
 		);
 	}
+
+	/**
+     * Transforma: /checklist/faq/solucao/implantacao-de-software (Slug do WP)
+     * Em: sults/pages/produtos/checklist/artigos/faq/solucao (Pasta do ZIP)
+     */
+    private function calculate_jsp_folder_path( int $post_id ): string {
+        $relative_path = PathHelper::get_relative_path( $post_id );
+        
+        $parts = explode( '/', trim( $relative_path, '/' ) );
+        
+        if ( count( $parts ) > 0 ) {
+            array_pop( $parts ); 
+        }
+
+        if ( ! empty( $parts ) && $parts[0] === 'checklist' ) {
+            if ( ! isset( $parts[1] ) || $parts[1] !== 'artigos' ) {
+                array_splice( $parts, 1, 0, 'artigos' );
+            }
+        }
+        array_unshift( $parts, 'sults', 'pages', 'produtos' );
+
+        return implode( '/', $parts );
+    }
 }

@@ -10,5 +10,5 @@ interface JspBuilderInterface {
 	 * @param array  $meta_data Dados de SEO (title, description).
 	 * @return string O código JSP completo.
 	 */
-	public function build( string $html_content, string $page_title, array $meta_data ): string;
+	public function build( string $html_content, string $page_title, array $meta_data, string $active_group = '' ): string;
 }

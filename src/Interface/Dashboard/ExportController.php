@@ -148,57 +148,43 @@ private function handle_download(): void {
 		$base_name = $this->naming_service->generate_zip_filename( $raw_title );
 
 		$zip_images_prefix = defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ? SULTSWRITEN_EXPORT_ZIP_PATH : 'sults/images/';
+try {
+            $result = $this->processor->execute( $post_id, $zip_images_prefix );
+            $files_map = $result['files_map'];
 
-		try {
-			$result = $this->processor->execute( $post_id, $zip_images_prefix );
-			$files_map = $result['files_map'];
+            $jsp_folder = isset( $result['jsp_folder_path'] ) ? $result['jsp_folder_path'] : 'sults/pages/produtos';
+            
+            $jsp_folder = rtrim( $jsp_folder, '/' ) . '/';
+            
+            $jsp_zip_path = $jsp_folder . $base_name . '.jsp';
 
-            $terms = get_the_terms( $post_id, 'sidebar' );
-            $sidebar_slug = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->slug : '';
-
-            $jsp_base_folder = 'sults/pages/produtos/checklist/artigos/';
-
-            if ( ! empty( $sidebar_slug ) ) {
-                $jsp_base_folder .= $sidebar_slug . '/';
-            }
-
-            $jsp_zip_path = $jsp_base_folder . $base_name . '.jsp';
-
-			$string_map = array(
+            $string_map = array(
                 $jsp_zip_path            => $result['jsp_content'],
                 $base_name . '-info.txt' => $result['info_content'], 
             );
-			
-			$upload_dir            = wp_upload_dir();
-			$zip_filename_download = $base_name . '.zip';
-			$zip_path              = $upload_dir['basedir'] . '/' . $zip_filename_download;
+                        $upload_dir            = wp_upload_dir();
+            $zip_filename_download = $base_name . '.zip';
+            $zip_path              = $upload_dir['basedir'] . '/' . $zip_filename_download;
 
-			if ( $this->archiver->create( $zip_path, $files_map, $string_map ) ) {
-				if ( $this->filesystem->exists( $zip_path ) ) {
-					if ( ob_get_length() ) {
-						ob_end_clean();
-					}
-
-					header( 'Content-Description: File Transfer' );
-					header( 'Content-Type: application/zip' );
-					header( 'Content-Disposition: attachment; filename="' . basename( $zip_path ) . '"' );
-					header( 'Expires: 0' );
-					header( 'Cache-Control: must-revalidate' );
-					header( 'Pragma: public' );
-					header( 'Content-Length: ' . filesize( $zip_path ) );
-
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-					readfile( $zip_path );
-
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
-					$this->filesystem->delete( $zip_path );
-					exit;
-				}
-			} else {
-				wp_die( 'Erro ao gerar o arquivo ZIP. Verifique as permissões da pasta uploads.' );
-			}
-		} catch ( \Exception $e ) {
-			wp_die( esc_html( $e->getMessage() ) );
-		}
+            if ( $this->archiver->create( $zip_path, $files_map, $string_map ) ) {
+                if ( $this->filesystem->exists( $zip_path ) ) {
+                    if ( ob_get_length() ) ob_end_clean();
+                    header( 'Content-Description: File Transfer' );
+                    header( 'Content-Type: application/zip' );
+                    header( 'Content-Disposition: attachment; filename="' . basename( $zip_path ) . '"' );
+                    header( 'Expires: 0' );
+                    header( 'Cache-Control: must-revalidate' );
+                    header( 'Pragma: public' );
+                    header( 'Content-Length: ' . filesize( $zip_path ) );
+                    readfile( $zip_path );
+                    $this->filesystem->delete( $zip_path );
+                    exit;
+                }
+            } else {
+                 wp_die( 'Erro ao gerar o arquivo ZIP.' );
+            }
+        } catch ( \Exception $e ) {
+            wp_die( esc_html( $e->getMessage() ) );
+        }
 	}
 }

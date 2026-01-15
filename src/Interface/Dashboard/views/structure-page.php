@@ -4,7 +4,6 @@
  *
  * @var string   $tree_html         HTML da árvore de posts.
  * @var array    $categories        Lista de categorias.
- * @var array    $sidebars          Lista de sidebars.
  * @var array    $authors           Lista de autores.
  * @var array    $all_statuses      Lista de slugs de status.
  * @var array    $potential_parents Lista de posts que podem ser pais.
@@ -111,25 +110,20 @@ defined( 'ABSPATH' ) || exit;
 
 						<div class="sults-info-grid">
 							<div class="sults-form-group">
-								<label for="quick-edit-category">Categoria</label>
-								<select name="post_category" id="quick-edit-category" class="sults-input">
-									<option value="0">Sem Categoria</option>
-									<?php foreach ( $categories as $cat ) : ?>
-										<option value="<?php echo esc_attr( $cat->term_id ); ?>"><?php echo esc_html( $cat->name ); ?></option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-							<div class="sults-form-group">
-								<label for="quick-edit-sidebar">Sidebar</label>
-								<select name="post_sidebar" id="quick-edit-sidebar" class="sults-input">
-									<option value="0">Nenhuma</option>
-									<?php if ( ! is_wp_error( $sidebars ) ) : ?>
-										<?php foreach ( $sidebars as $sidebar ) : ?>
-											<option value="<?php echo esc_attr( $sidebar->term_id ); ?>"><?php echo esc_html( $sidebar->name ); ?></option>
-										<?php endforeach; ?>
-									<?php endif; ?>
-								</select>
-							</div>
+							<label for="quick-edit-category">Categoria</label>
+							<select name="post_category" id="quick-edit-category" class="sults-input">
+								<option value="0">Sem Categoria</option>
+								<?php foreach ( $categories as $cat ) : 
+									$level  = isset( $cat->depth_level ) ? (int) $cat->depth_level : 0;
+									$indent = str_repeat( '— ', $level );
+									$style  = ( $level === 0 )  ;
+								?>
+									<option value="<?php echo esc_attr( $cat->term_id ); ?>" style="<?php echo esc_attr( $style ); ?>">
+										<?php echo esc_html( $indent . $cat->name ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
 						</div>
 
 						<div class="sults-info-grid">
@@ -137,8 +131,13 @@ defined( 'ABSPATH' ) || exit;
 								<label for="quick-edit-parent">Post Pai</label>
 								<select name="post_parent" id="quick-edit-parent" class="sults-input">
 									<option value="0">Nenhum (Raiz)</option>
-									<?php foreach ( $potential_parents as $p ) : ?>
-										<option value="<?php echo esc_attr( $p->ID ); ?>"><?php echo esc_html( $p->post_title ); ?></option>
+									<?php foreach ( $potential_parents as $p ) : 
+										$level  = isset( $p->depth_level ) ? (int) $p->depth_level : 0;
+										$indent = str_repeat( '— ', $level );
+									?>
+										<option value="<?php echo esc_attr( $p->ID ); ?>">
+											<?php echo esc_html( $indent . $p->post_title ); ?>
+										</option>
 									<?php endforeach; ?>
 								</select>
 							</div>
@@ -171,7 +170,7 @@ defined( 'ABSPATH' ) || exit;
 		<div class="sults-modal">
 			<div class="sults-modal-header">
 				<h2>Nova Página</h2>
-				<button type="button" class="sults-modal-close"><span class="dashicons dashicons-no-alt"></span></button>
+				<button type="button" class="sults-modal-close" st><span class="dashicons dashicons-no-alt"></span></button>
 			</div>
 			<div class="sults-modal-body">
 			<form id="sults-create-post-form">
@@ -181,38 +180,59 @@ defined( 'ABSPATH' ) || exit;
         <input type="text" id="new-post-title" name="title" class="sults-input" placeholder="Ex: Guia de Instalação" required>
     </div>
 
-    <div class="sults-form-group">
-        <label for="new-post-category">Categoria</label>
-        <select id="new-post-category" name="cat_id" class="sults-input" style="max-width: 100%">
-            <option value="" selected disabled>Selecione uma categoria...</option>
-            <option value="0" data-slug="">Sem Categoria</option>
-            <?php foreach ( $categories as $cat ) : ?>
-                <option value="<?php echo esc_attr( $cat->term_id ); ?>" data-slug="<?php echo esc_attr( $cat->slug ); ?>"><?php echo esc_html( $cat->name ); ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+	<div class="sults-form-group">
+   		<label for="new-post-category">Categoria</label>
+<select id="new-post-category" name="cat_id" class="sults-input" style="max-width: 100%">
+    <option value="" selected disabled>Selecione uma categoria...</option>
+    <option value="0" data-slug="" data-parent-slug="">Sem Categoria</option>
+    
+    <?php foreach ( $categories as $cat ) : 
+        $level  = isset( $cat->depth_level ) ? (int) $cat->depth_level : 0;
+        $indent = str_repeat( '— ', $level );
+        $style  = ( $level === 0 );
 
-	<div class="sults-form-group" id="group-new-post-sidebar" style="display:none;">
-        <label for="new-post-sidebar">Selecione a Sidebar</label>
-        <select id="new-post-sidebar" name="sidebar_id" class="sults-input" style="max-width: 100%">
-            <option value="0">Nenhuma</option>
-            <?php if ( ! empty( $sidebars ) && ! is_wp_error( $sidebars ) ) : ?>
-                <?php foreach ( $sidebars as $sidebar ) : ?>
-                    <option value="<?php echo esc_attr( $sidebar->term_id ); ?>"><?php echo esc_html( $sidebar->name ); ?></option>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </select>
-    </div>
+        $parent_slug = '';
+        
+        $ancestors = get_ancestors( $cat->term_id, 'category' );
+        
+        if ( ! empty( $ancestors ) ) {
+            $ancestors = array_reverse( $ancestors );
+            $slugs     = array();
 
-    <div class="sults-form-group" id="group-new-post-parent" style="display:none;">
+            foreach ( $ancestors as $ancestor_id ) {
+                $term = get_term( $ancestor_id, 'category' );
+                if ( $term && ! is_wp_error( $term ) ) {
+                    $slugs[] = $term->slug;
+                }
+            }
+            $parent_slug = implode( '/', $slugs );
+        }
+    ?>
+        <option 
+            value="<?php echo esc_attr( $cat->term_id ); ?>" 
+            data-slug="<?php echo esc_attr( $cat->slug ); ?>"
+            data-parent-slug="<?php echo esc_attr( $parent_slug ); ?>"
+            style="<?php echo esc_attr( $style ); ?>"
+        >
+            <?php echo esc_html( $indent . $cat->name ); ?>
+        </option>
+    <?php endforeach; ?>
+</select>
+	</div>
+
+<div class="sults-form-group" id="group-new-post-parent" style="display:none;">
         <label for="new-post-parent">Post Pai (Raiz)</label>
         <select id="new-post-parent" name="parent_id" class="sults-input" style="max-width: 100%">
             <option value="0" selected>Nenhum (Raiz)</option>
             <?php foreach ( $potential_parents as $p ) : 
                 $cats   = get_the_category( $p->ID );
                 $cat_id = ! empty( $cats ) ? $cats[0]->term_id : 0;
+                $level  = isset( $p->depth_level ) ? (int) $p->depth_level : 0;
+                $indent = str_repeat( '— ', $level );
             ?>
-                <option value="<?php echo esc_attr( $p->ID ); ?>" data-cat-id="<?php echo esc_attr( $cat_id ); ?>"><?php echo esc_html( $p->post_title ); ?></option>
+                <option value="<?php echo esc_attr( $p->ID ); ?>" data-cat-id="<?php echo esc_attr( $cat_id ); ?>">
+                    <?php echo esc_html( $indent . $p->post_title ); ?>
+                </option>
             <?php endforeach; ?>
         </select>
     </div>

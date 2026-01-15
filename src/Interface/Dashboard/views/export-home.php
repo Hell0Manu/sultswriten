@@ -7,6 +7,7 @@
  * @var string $categories_dropdown
  * @var string $author_dropdown
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -45,7 +46,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<thead>
 				<tr>
 					<th>Categoria</th>
-					<th>Sidebar</th>
 					<th>Título da página</th>
 					<th>Link para a página no site</th>
 					<th>Realização</th>
@@ -70,9 +70,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 						$sultswriten_cat_color = \Sults\Writen\Interface\CategoryColorManager::get_color( $sultswriten_cat_obj->term_id );
 					}
-
-					$terms = get_the_terms( get_the_ID(), 'sidebar' );
-       			 	$sidebar = sanitize_title( ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '' );
 					?>
 					<tr>
 						<td>
@@ -82,33 +79,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</td>
 
 						<td>
-                <span style="font-weight: 500; color: var(--color-neutral-700);">
-                    <?php echo esc_html( $sidebar ); ?>
-                </span>
-            </td>
-
-						<td>
 							<div class="sults-title-cell">
 								<a href="<?php echo esc_url( get_permalink() ); ?>"> <?php the_title(); ?> </a>
 							</div>
 						</td>
 
 						<td>
-							<?php
-							$sultswriten_path_slug = $post->post_name;
-							$sultswriten_path_cat  = '';
-
-							if ( ! empty( $sultswriten_categories ) ) {
-								$sultswriten_path_cat = $sultswriten_categories[0]->slug;
-							} else {
-								$sultswriten_path_cat = 'sem-categoria';
-							}
-
-							if ( ! empty( $sidebar ) ) {
-								$sultswriten_display_path = sprintf( '/%s/%s/%s/', $sultswriten_path_cat, $sidebar, $sultswriten_path_slug );
-							} else {
-								$sultswriten_display_path = sprintf( '/%s/%s/', $sultswriten_path_cat, $sultswriten_path_slug );
-							}							?>
+							<?php $sultswriten_display_path = \Sults\Writen\Utils\PathHelper::get_relative_path( get_the_ID() ); ?>
 
 							<a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" style="color: #3c434a; text-decoration: none; font-size: 12px;">
 								<?php echo esc_html( $sultswriten_display_path ); ?>

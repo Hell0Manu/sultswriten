@@ -11,6 +11,8 @@ use Sults\Writen\Interface\CategoryColorManager;
 use Sults\Writen\Workflow\WorkflowPolicy;
 use Sults\Writen\Workflow\Permissions\RoleDefinitions;
 use Sults\Writen\Contracts\PostRepositoryInterface;
+use Sults\Writen\Utils\HierarchyHelper;
+use Sults\Writen\Utils\PathHelper;
 
 class StructureManager implements HookableInterface {
 
@@ -181,20 +183,7 @@ class StructureManager implements HookableInterface {
 			$cat_data['color'] = $this->color_manager->get_color( $primary_cat->term_id );
 		}
 
-		$permalink     = get_permalink( $post_id );
-		$home_url      = home_url();
-		$relative_path = str_replace( $home_url, '', $permalink );
-		if ( strpos( $relative_path, '?p=' ) !== false && ! empty( $post->post_name ) ) {
-			$sample = get_sample_permalink( $post_id );
-			if ( ! empty( $sample[0] ) && ! empty( $sample[1] ) ) {
-				$pretty_url    = str_replace( '%postname%', $sample[1], $sample[0] );
-				$relative_path = str_replace( $home_url, '', $pretty_url );
-			}
-		}
-		$relative_path = rtrim( $relative_path, '/' );
-		if ( empty( $relative_path ) ) {
-			$relative_path = '/';
-		}
+		$relative_path = PathHelper::get_relative_path( $post_id );
 
 		$edit_link = get_edit_post_link( $post_id, 'raw' );
 		$view_link  = $permalink;
@@ -214,9 +203,6 @@ class StructureManager implements HookableInterface {
 			}
 		}
 
-		$sidebars    = get_the_terms( $post_id, 'sidebar' );
-		$sidebar_id  = ! empty( $sidebars ) && ! is_wp_error( $sidebars ) ? $sidebars[0]->term_id : 0;
-
 		$response = array(
 			'id'          => $post_id,
 			'title'       => get_the_title( $post ),
@@ -230,7 +216,6 @@ class StructureManager implements HookableInterface {
 			),
 			'date'        => get_the_date( 'Y-m-d\TH:i', $post ),
 			'category'    => array_merge( $cat_data, array( 'id' => ! empty( $cats ) ? $cats[0]->term_id : 0 ) ),
-			'sidebar_id'  => $sidebar_id,
 			'parent_id'   => $post->post_parent,
 			'password'    => $post->post_password,
 			'path'        => $relative_path,
@@ -321,9 +306,6 @@ class StructureManager implements HookableInterface {
 		$cat_id = isset( $_POST['post_category'] ) ? absint( $_POST['post_category'] ) : 0;
 		$this->post_repository->set_terms( $post_id, $cat_id > 0 ? array( $cat_id ) : array(), 'category' );
 
-		$sidebar_id = isset( $_POST['post_sidebar'] ) ? absint( $_POST['post_sidebar'] ) : 0;
-		$this->post_repository->set_terms( $post_id, $sidebar_id > 0 ? array( $sidebar_id ) : array(), 'sidebar' );
-
 		wp_send_json_success( 'Post atualizado com sucesso.' );
 	}
 
@@ -331,11 +313,15 @@ class StructureManager implements HookableInterface {
 		$tree_html = $this->get_tree_html();
 
 		$categories = get_categories( array( 'hide_empty' => false ) );
-		$sidebars   = get_terms( array( 'taxonomy' => 'sidebar', 'hide_empty' => false ) );
+		$categories = HierarchyHelper::build_hierarchy( $categories, 0, 0, 'term_id', 'parent' );
+
+
 		$authors    = get_users( array( 'capability__in' => array( 'edit_posts' ), 'orderby' => 'display_name' ) );
 		$all_statuses = $this->status_provider->get_all_status_slugs();
 
-		$potential_parents = $this->post_repository->get_all_for_parents();
+		$raw_parents = $this->post_repository->get_all_for_parents();
+
+		$potential_parents = HierarchyHelper::build_hierarchy( $raw_parents );
 
 		$view_path = plugin_dir_path( dirname( dirname( __DIR__ ) ) . '/sults-writen.php' ) . 'src/Interface/Dashboard/views/structure-page.php';
 
@@ -346,126 +332,154 @@ class StructureManager implements HookableInterface {
 		}
 	}
 
-	private function get_tree_html(): string {
+	/**
+     * Gera o HTML da árvore de posts de forma hierárquica (Pastas dentro de Pastas).
+     */
+    private function get_tree_html(): string {
 
-		$statuses = $this->status_provider->get_all_status_slugs();
-		$posts    = $this->post_repository->get_by_status( $statuses );
+        $statuses = $this->status_provider->get_all_status_slugs();
+        $posts    = $this->post_repository->get_by_status( $statuses );
+        $current_user_roles = $this->user_provider->get_current_user_roles();
 
-		$current_user_roles = $this->user_provider->get_current_user_roles();
+        $posts_by_parent = array();
+        $all_posts_map   = array();
+        foreach ( $posts as $p ) {
+            $all_posts_map[ $p->ID ]              = $p;
+            $posts_by_parent[ $p->post_parent ][] = $p;
+        }
 
-		$posts_by_parent = array();
-		$all_posts_map   = array();
-		foreach ( $posts as $p ) {
-			$all_posts_map[ $p->ID ]              = $p;
-			$posts_by_parent[ $p->post_parent ][] = $p;
-		}
+        foreach ( $posts as $post ) {
+            if ( $post->post_parent > 0 && ! isset( $all_posts_map[ $post->post_parent ] ) ) {
+                $post->post_parent    = 0;
+                $posts_by_parent[0][] = $post;
+            }
+        }
 
-		foreach ( $posts as $post ) {
-			if ( $post->post_parent > 0 && ! isset( $all_posts_map[ $post->post_parent ] ) ) {
-				$post->post_parent    = 0;
-				$posts_by_parent[0][] = $post;
-			}
-		}
+        $root_posts          = $posts_by_parent[0] ?? array();
+        $category_buckets    = array();
+        $uncategorized_posts = array();
 
-		$root_posts          = $posts_by_parent[0] ?? array();
-		$category_buckets    = array();
-		$uncategorized_posts = array();
+        foreach ( $root_posts as $post ) {
+            $cats = get_the_category( $post->ID );
+            if ( empty( $cats ) ) {
+                $uncategorized_posts[] = $post;
+            } else {
+                $primary_cat                                 = $cats[0];
+                $category_buckets[ $primary_cat->term_id ][] = $post;
+            }
+        }
 
-		foreach ( $root_posts as $post ) {
-			$cats = get_the_category( $post->ID );
-			if ( empty( $cats ) ) {
-				$uncategorized_posts[] = $post;
-			} else {
-				$primary_cat                                 = $cats[0];
-				$category_buckets[ $primary_cat->term_id ][] = $post;
-			}
-		}
+        $all_categories = get_categories( array( 'hide_empty' => false ) );
+        $cat_index      = array();
+        $cat_tree       = array();
 
-		$active_categories_data = array();
-		$all_categories         = get_categories( array( 'hide_empty' => false ) );
+        foreach ( $all_categories as $cat ) {
+            $cat->children = array();
+            $cat->posts    = $category_buckets[ $cat->term_id ] ?? array(); 
+            $cat_index[ $cat->term_id ] = $cat;
+        }
 
-		foreach ( $all_categories as $cat ) {
-			if ( ! empty( $category_buckets[ $cat->term_id ] ) ) {
-				$active_categories_data[] = array(
-					'term'  => $cat,
-					'posts' => $category_buckets[ $cat->term_id ],
-				);
-			}
-		}
+        foreach ( $all_categories as $cat ) {
+            if ( $cat->parent > 0 && isset( $cat_index[ $cat->parent ] ) ) {
+                $cat_index[ $cat->parent ]->children[] = $cat;
+            } else {
+                $cat_tree[] = $cat; 
+            }
+        }
 
-		$total_groups = count( $active_categories_data ) + ( ! empty( $uncategorized_posts ) ? 1 : 0 );
+        $html = '';
 
-		if ( $total_groups === 0 ) {
-			return '<div class="notice notice-info inline"><p>Nenhum post encontrado na estrutura.</p></div>';
-		}
+        foreach ( $cat_tree as $root_cat ) {
+            $html .= $this->render_category_node( $root_cat, $posts_by_parent, $current_user_roles );
+        }
 
-		$html = '';
+        if ( ! empty( $uncategorized_posts ) ) {
+            $html .= $this->render_uncategorized_folder( $uncategorized_posts, $posts_by_parent, $current_user_roles );
+        }
 
-		if ( $total_groups > 1 ) {
+        if ( empty( $html ) ) {
+            return '<div class="notice notice-info inline"><p>Nenhum post encontrado na estrutura.</p></div>';
+        }
 
-			foreach ( $active_categories_data as $data ) {
-				$cat       = $data['term'];
-				$cat_posts = $data['posts'];
+        return $html;
+    }
 
-				$cat_color = $this->color_manager->get_color( $cat->term_id );
-				if ( ! $cat_color ) {
-					$cat_color = '#646970';
-				}
+	/**
+     * Renderiza uma pasta de categoria e, recursivamente, seus filhos.
+     */
+    private function render_category_node( $cat, $posts_by_parent, $user_roles ): string {
+        $children_html = '';
+        foreach ( $cat->children as $child ) {
+            $children_html .= $this->render_category_node( $child, $posts_by_parent, $user_roles );
+        }
 
-				$style_border  = "border-left: 4px solid {$cat_color};";
-				$style_title   = "color: {$cat_color};";
-				$style_bg_soft = 'background-color: ' . $this->hex2rgba( $cat_color, 0.03 ) . ';';
+        if ( empty( $cat->posts ) && empty( $children_html ) ) {
+            return '';
+        }
 
-				$html .= '<div class="sults-category-folder" style="' . $style_border . ' ' . $style_bg_soft . '">';
-				$html .= '<div class="sults-category-header" style="' . $style_title . '">
-                            <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
-                            <span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
-                            <strong>' . esc_html( $cat->name ) . '</strong>
-                            <span class="count" style="color: #646970;">(' . count( $cat_posts ) . ')</span>
-                          </div>';
+        $cat_color = $this->color_manager->get_color( $cat->term_id );
+        if ( ! $cat_color ) $cat_color = '#646970';
 
-				$html .= '<div class="sults-category-content">';
-				$html .= '<ul class="sults-sortable-root" data-category-id="' . $cat->term_id . '">';
-				foreach ( $cat_posts as $root_post ) {
-					$html .= $this->build_html_item( $root_post, $posts_by_parent, $current_user_roles );
-				}
-				$html .= '</ul></div></div>';
-			}
+        $style_border  = "border-left: 4px solid {$cat_color};";
+        $style_title   = "color: {$cat_color};";
+        $style_bg_soft = 'background-color: ' . $this->hex2rgba( $cat_color, 0.03 ) . ';';
 
-			if ( ! empty( $uncategorized_posts ) ) {
-				$html .= '<div class="sults-category-folder" style="border-left: 4px solid #646970; background-color: #f9f9f9;">';
-				$html .= '<div class="sults-category-header" style="color: #444;">
-                            <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
-                            <span class="dashicons dashicons-admin-generic" style="margin-right:5px; opacity: 0.7;"></span> 
-                            <strong>Geral / Sem Categoria</strong>
-                            <span class="count">(' . count( $uncategorized_posts ) . ')</span>
-                          </div>';
-				$html .= '<div class="sults-category-content">';
-				$html .= '<ul class="sults-sortable-root" data-category-id="0">';
-				foreach ( $uncategorized_posts as $root_post ) {
-					$html .= $this->build_html_item( $root_post, $posts_by_parent, $current_user_roles );
-				}
-				$html .= '</ul></div></div>';
-			}
-		} else {
-			if ( ! empty( $active_categories_data ) ) {
-				$data            = $active_categories_data[0];
-				$cat_id          = $data['term']->term_id;
-				$posts_to_render = $data['posts'];
-			} else {
-				$cat_id          = 0;
-				$posts_to_render = $uncategorized_posts;
-			}
+        $html = '<div class="sults-category-folder" style="' . $style_border . ' ' . $style_bg_soft . ' margin-bottom: 15px;">';
+        
+        // Cabeçalho
+        $html .= '<div class="sults-category-header" style="' . $style_title . '">
+                    <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
+                    <span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
+                    <strong>' . esc_html( $cat->name ) . '</strong>
+                    <span class="count" style="color: #646970;">(' . count( $cat->posts ) . ')</span>
+                  </div>';
 
-			$html .= '<ul class="sults-sortable-root" data-category-id="' . $cat_id . '">';
-			foreach ( $posts_to_render as $root_post ) {
-				$html .= $this->build_html_item( $root_post, $posts_by_parent, $current_user_roles );
-			}
-			$html .= '</ul>';
-		}
+        $html .= '<div class="sults-category-content">';
 
-		return $html;
-	}
+        if ( ! empty( $cat->posts ) ) {
+            $html .= '<ul class="sults-sortable-root" data-category-id="' . $cat->term_id . '">';
+            foreach ( $cat->posts as $root_post ) {
+                $html .= $this->build_html_item( $root_post, $posts_by_parent, $user_roles );
+            }
+            $html .= '</ul>';
+        }
+
+        if ( ! empty( $children_html ) ) {
+            $html .= '<div class="sults-subcategories" style="padding-left: 25px; border-left: 1px dashed #ddd; margin-left: 5px; margin-top: 10px;">';
+            $html .= $children_html;
+            $html .= '</div>';
+        }
+
+        $html .= '</div>'; 
+        $html .= '</div>'; 
+
+        return $html;
+    }
+
+	/**
+     * Renderiza a pasta especial "Sem Categoria".
+     */
+    private function render_uncategorized_folder( $posts, $posts_by_parent, $user_roles ): string {
+        $html = '<div class="sults-category-folder" style="border-left: 4px solid #646970; background-color: #f9f9f9; margin-bottom: 15px;">';
+        
+        $html .= '<div class="sults-category-header" style="color: #444;">
+                    <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
+                    <span class="dashicons dashicons-admin-generic" style="margin-right:5px; opacity: 0.7;"></span> 
+                    <strong>Geral / Sem Categoria</strong>
+                    <span class="count">(' . count( $posts ) . ')</span>
+                  </div>';
+        
+        $html .= '<div class="sults-category-content">';
+        $html .= '<ul class="sults-sortable-root" data-category-id="0">';
+        
+        foreach ( $posts as $root_post ) {
+            $html .= $this->build_html_item( $root_post, $posts_by_parent, $user_roles );
+        }
+        
+        $html .= '</ul></div></div>';
+        
+        return $html;
+    }
 
 	private function build_html_item( $element, $posts_by_parent, $user_roles ): string {
 		$children     = $posts_by_parent[ $element->ID ] ?? array();

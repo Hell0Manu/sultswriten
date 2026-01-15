@@ -38,11 +38,11 @@ interface PostRepositoryInterface {
 	public function update( array $data );
 
 	/**
-	 * Define termos para um post (ex: categorias, sidebars).
+	 * Define termos para um post (ex: categorias).
 	 *
 	 * @param int    $post_id  ID do Post.
 	 * @param array  $term_ids Array de IDs dos termos.
-	 * @param string $taxonomy Taxonomia (category, sidebar, etc).
+	 * @param string $taxonomy Taxonomia (category).
 	 * @return void
 	 */
 	public function set_terms( int $post_id, array $term_ids, string $taxonomy ): void;
