@@ -57,10 +57,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php
 				while ( $query->have_posts() ) :
 					$query->the_post();
-					global $sults_post;
-					$sultswriten_author_id = $sults_post->post_author;
+					$sults_post = get_post();
 
+					$sultswriten_author_id = $sults_post->post_author;
 					$sultswriten_categories = get_the_category();
+
 					$sultswriten_cat_name   = 'Sem Categoria';
 					$sultswriten_cat_color  = \Sults\Writen\Interface\CategoryColorManager::DEFAULT_COLOR;
 
@@ -116,12 +117,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 							$sultswriten_download_url = add_query_arg(
 								array(
-									'page'     => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
-									'action'   => 'download',
+									'action'   => 'sults_export_download', 
 									'post_id'  => $sults_post->ID,
 									'_wpnonce' => wp_create_nonce( 'sults_export_' . $sults_post->ID ),
 								),
-								admin_url( 'admin.php' )
+								admin_url( 'admin-post.php' ) 
 							);
 							?>
 

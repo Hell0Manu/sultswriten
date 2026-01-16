@@ -64,30 +64,34 @@ class WPPostRepository implements PostRepositoryInterface {
 	}
 
 	/**
-	 * Busca posts finalizados com filtros (Exportação).
+	 * Busca posts finalizados com filtros tipados.
 	 */
-	public function get_finished_posts( array $filters ): WP_Query {
-		$sults_paged = ( isset( $filters['paged'] ) ) ? absint( $filters['paged'] ) : 1;
-
+	public function get_finished_posts( 
+        int $page = 1, 
+        ?string $search = null, 
+        ?int $category_id = null, 
+        ?int $author_id = null 
+    ): WP_Query {
+		
 		$args = array(
 			'post_type'      => 'post',
 			'post_status'    => 'finished',
 			'posts_per_page' => 20,
-			'paged'          => $sults_paged,
+			'paged'          => $page,
 			'orderby'        => 'date',
 			'order'          => 'DESC',
 		);
 
-		if ( ! empty( $filters['s'] ) ) {
-			$args['s'] = sanitize_text_field( $filters['s'] );
+		if ( ! empty( $search ) ) {
+			$args['s'] = $search;
 		}
 
-		if ( ! empty( $filters['author'] ) ) {
-			$args['author'] = absint( $filters['author'] );
+		if ( ! empty( $author_id ) ) {
+			$args['author'] = $author_id;
 		}
 
-		if ( ! empty( $filters['cat'] ) ) {
-			$args['cat'] = absint( $filters['cat'] );
+		if ( ! empty( $category_id ) ) {
+			$args['cat'] = $category_id;
 		}
 
 		return new WP_Query( $args );

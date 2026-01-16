@@ -4,36 +4,32 @@ namespace Sults\Writen\Interface\Dashboard;
 use Sults\Writen\Contracts\HookableInterface;
 use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Contracts\WPUserProviderInterface;
-use Sults\Writen\Contracts\ArchiverInterface;
 use Sults\Writen\Workflow\Export\ExportProcessor;
-use Sults\Writen\Contracts\ExportNamingServiceInterface;
-use Sults\Writen\Contracts\FileSystemInterface;
+use Sults\Writen\Contracts\ConfigProviderInterface;
+use Sults\Writen\Contracts\ViewRendererInterface;
 
 class ExportController implements HookableInterface {
 
 	private PostRepositoryInterface $post_repo;
 	private WPUserProviderInterface $user_provider;
-	private ArchiverInterface $archiver;
-	private ExportProcessor $processor;
-	private ExportNamingServiceInterface $naming_service;
-	private FileSystemInterface $filesystem;
+	private ExportProcessor $processor; 
+	private ConfigProviderInterface $config;
+	private ViewRendererInterface $view;
 
 	public const PAGE_SLUG = 'sults-writen-export';
 
 	public function __construct(
 		PostRepositoryInterface $post_repo,
 		WPUserProviderInterface $user_provider,
-		ArchiverInterface $archiver,
 		ExportProcessor $processor,
-		ExportNamingServiceInterface $naming_service,
-		FileSystemInterface $filesystem
+		ConfigProviderInterface $config,
+		ViewRendererInterface $view
 	) {
 		$this->post_repo      = $post_repo;
 		$this->user_provider  = $user_provider;
-		$this->archiver       = $archiver;
 		$this->processor      = $processor;
-		$this->naming_service = $naming_service;
-		$this->filesystem     = $filesystem;
+		$this->config         = $config;
+		$this->view           = $view;
 	}
 
 	public function register(): void {
@@ -58,24 +54,27 @@ class ExportController implements HookableInterface {
 
 		if ( 'preview' === $action ) {
 			$this->render_preview_screen();
-		} elseif ( 'download' === $action ) {
-			$this->handle_download();
 		} else {
 			$this->render_list_screen();
 		}
 	}
 
 	private function render_list_screen(): void {
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended
-		$filters = array(
-			's'      => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
-			'author' => isset( $_GET['author'] ) ? absint( $_GET['author'] ) : '',
-			'cat'    => isset( $_GET['cat'] ) ? absint( $_GET['cat'] ) : '',
-			'paged'  => isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1,
-		);
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$search    = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : null;
+		$author_id = isset( $_GET['author'] ) && '' !== $_GET['author'] ? absint( $_GET['author'] ) : null;
+		$cat_id    = isset( $_GET['cat'] ) && '' !== $_GET['cat'] && -1 !== (int) $_GET['cat'] ? absint( $_GET['cat'] ) : null;
+		$paged     = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1;
         // phpcs:enable
 
-		$query = $this->post_repo->get_finished_posts( $filters );
+		$filters = array(
+            's'      => $search,
+            'author' => $author_id,
+            'cat'    => $cat_id,
+            'paged'  => $paged
+        );
+
+		$query = $this->post_repo->get_finished_posts( $paged, $search, $cat_id, $author_id );
 
 		$sults_cat_dropdown_args   = array(
 			'show_option_all' => 'Categorias',
@@ -97,7 +96,12 @@ class ExportController implements HookableInterface {
 			)
 		);
 
-		require __DIR__ . '/views/export-home.php';
+		$this->view->render( 'export-home', array(
+            'query'                     => $query,
+            'filters'                   => $filters,
+            'sults_categories_dropdown' => $sults_categories_dropdown,
+            'sults_author_dropdown'     => $sults_author_dropdown,
+        ) );
 	}
 
 
@@ -113,8 +117,7 @@ class ExportController implements HookableInterface {
 		}
 
 		try {
-			$zip_path_prefix = defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ? SULTSWRITEN_EXPORT_ZIP_PATH : 'sults/images/';
-
+			$zip_path_prefix = $this->config->get_export_image_prefix();
 			$result = $this->processor->execute( $sults_post_id, $zip_path_prefix );
 
 			$sults_post  = get_post( $sults_post_id );
@@ -124,70 +127,14 @@ class ExportController implements HookableInterface {
 
 			$back_url = remove_query_arg( array( 'action', 'post_id', '_wpnonce' ) );
 
-			require __DIR__ . '/views/export-preview.php';
+		$this->view->render( 'export-preview', array(
+            'sults_post'  => $sults_post,
+            'html_raw'    => $result['html_raw'],
+            'html_clean'  => $result['html_clean'],
+            'jsp_content' => $result['jsp_content'],
+            'back_url'    => remove_query_arg( array( 'action', 'post_id', '_wpnonce' ) ),
+        ) );
 
-		} catch ( \Exception $e ) {
-			wp_die( esc_html( $e->getMessage() ) );
-		}
-	}
-
-	private function handle_download(): void {
-		if ( ! isset( $_GET['_wpnonce'] ) || ! isset( $_GET['post_id'] ) ) {
-			wp_die( 'Requisição inválida.' );
-		}
-
-		$sults_post_id = absint( $_GET['post_id'] );
-
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'sults_export_' . $sults_post_id ) ) {
-			wp_die( 'Link expirado.', 'Erro de Segurança', array( 'response' => 403 ) );
-		}
-
-		$sults_post = get_post( $sults_post_id );
-		$raw_title  = get_the_title( $sults_post );
-
-		$base_name = $this->naming_service->generate_zip_filename( $raw_title );
-
-		$zip_images_prefix = defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ? SULTSWRITEN_EXPORT_ZIP_PATH : 'sults/images/';
-		try {
-			$result    = $this->processor->execute( $sults_post_id, $zip_images_prefix );
-			$files_map = $result['files_map'];
-
-			$jsp_folder = isset( $result['jsp_folder_path'] ) ? $result['jsp_folder_path'] : 'sults/pages/produtos';
-
-			$jsp_folder = rtrim( $jsp_folder, '/' ) . '/';
-
-			$jsp_zip_path = $jsp_folder . $base_name . '.jsp';
-
-			$string_map             = array(
-				$jsp_zip_path            => $result['jsp_content'],
-				$base_name . '-info.txt' => $result['info_content'],
-			);
-						$upload_dir = wp_upload_dir();
-			$zip_filename_download  = $base_name . '.zip';
-			$zip_path               = $upload_dir['basedir'] . '/' . $zip_filename_download;
-
-			if ( $this->archiver->create( $zip_path, $files_map, $string_map ) ) {
-				if ( $this->filesystem->exists( $zip_path ) ) {
-					if ( ob_get_length() ) {
-						ob_end_clean();
-					}
-					header( 'Content-Description: File Transfer' );
-					header( 'Content-Type: application/zip' );
-					header( 'Content-Disposition: attachment; filename="' . basename( $zip_path ) . '"' );
-					header( 'Expires: 0' );
-					header( 'Cache-Control: must-revalidate' );
-					header( 'Pragma: public' );
-					header( 'Content-Length: ' . filesize( $zip_path ) );
-
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-					readfile( $zip_path );
-
-					$this->filesystem->delete( $zip_path );
-					exit;
-				}
-			} else {
-				wp_die( 'Erro ao gerar o arquivo ZIP.' );
-			}
 		} catch ( \Exception $e ) {
 			wp_die( esc_html( $e->getMessage() ) );
 		}

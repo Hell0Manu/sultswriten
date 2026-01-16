@@ -29,4 +29,12 @@ class WPConfigProvider implements ConfigProviderInterface {
 	public function get_tips_icon_path(): string {
 		return defined( 'SULTSWRITEN_TIPS_ICON' ) ? SULTSWRITEN_TIPS_ICON : '';
 	}
+
+	public function get_export_image_prefix(): string {
+		return defined( 'SULTSWRITEN_EXPORT_ZIP_PATH' ) ? SULTSWRITEN_EXPORT_ZIP_PATH : 'sults/images/';
+	}
+
+	public function get_default_jsp_folder(): string {
+		return 'sults/pages/produtos';
+	}
 }

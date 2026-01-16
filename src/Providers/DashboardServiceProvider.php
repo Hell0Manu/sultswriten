@@ -10,6 +10,7 @@ use Sults\Writen\Interface\Dashboard\WorkspaceController;
 use Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager;
 use Sults\Writen\Interface\Dashboard\ExportController;
 use Sults\Writen\Interface\Dashboard\ExportAssetsManager;
+use Sults\Writen\Infrastructure\SimpleViewRenderer;
 use Sults\Writen\Interface\AdminMenuManager;
 use Sults\Writen\Interface\CategoryColorManager;
 use Sults\Writen\Interface\Theme\LoginTheme;
@@ -106,16 +107,25 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
+		    $container->set(
+            ViewRendererInterface::class,
+
+            function () {
+                $views_path = dirname( __DIR__ ) . '/Interface/Dashboard/views/';
+                return new SimpleViewRenderer( $views_path );
+            }
+
+        );
+
 		$container->set(
 			ExportController::class,
 			function ( $c ) {
 				return new ExportController(
 					$c->get( \Sults\Writen\Contracts\PostRepositoryInterface::class ),
-					$c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
-					$c->get( \Sults\Writen\Contracts\ArchiverInterface::class ),
-					$c->get( ExportProcessor::class ),
-					$c->get( ExportNamingServiceInterface::class ),
-					$c->get( \Sults\Writen\Contracts\FileSystemInterface::class )
+                    $c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
+                    $c->get( ExportProcessor::class ),
+                    $c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class ),
+                   $c->get( ViewRendererInterface::class )
 				);
 			}
 		);
@@ -211,6 +221,29 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
+		$container->set(
+            \Sults\Writen\Interface\Dashboard\ExportDownloadHandler::class,
+            function ( $c ) {
+                return new \Sults\Writen\Interface\Dashboard\ExportDownloadHandler(
+                    $c->get( \Sults\Writen\Contracts\ArchiverInterface::class ),
+                    $c->get( ExportProcessor::class ),
+                    $c->get( \Sults\Writen\Contracts\ExportNamingServiceInterface::class ),
+                    $c->get( \Sults\Writen\Contracts\FileSystemInterface::class ),
+					$c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class )
+                );
+            }
+        );
+
+        $container->set(
+            \Sults\Writen\Contracts\ViewRendererInterface::class,
+            function () {
+
+                $views_path = plugin_dir_path( dirname( __DIR__ ) ) . 'src/Interface/Dashboard/views/';
+                
+                return new \Sults\Writen\Infrastructure\SimpleViewRenderer( $views_path );
+            }
+        );
+
 		$container->set( ExportNamingService::class, fn() => new ExportNamingService() );
 		$container->set( JspHtmlSanitizer::class, fn() => new JspHtmlSanitizer() );
 		$container->set( ExportNamingServiceInterface::class, fn() => new ExportNamingService() );
@@ -240,6 +273,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
             $admin_services[] = $container->get( \Sults\Writen\Interface\CategoryColorManager::class );
             
             $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportController::class );
+			$admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportDownloadHandler::class ); 
             $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportAssetsManager::class );
 
             $hook_manager->register_services( $admin_services );

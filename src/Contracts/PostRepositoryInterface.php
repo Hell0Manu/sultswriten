@@ -2,6 +2,9 @@
 
 namespace Sults\Writen\Contracts;
 
+use WP_Query;
+use WP_Post;
+
 interface PostRepositoryInterface {
 	public function get_posts_for_workspace( int $sults_author_id ): \WP_Query;
 
@@ -11,7 +14,10 @@ interface PostRepositoryInterface {
 	 * @param array $filters Argumentos de filtro (s, author, cat, paged).
 	 * @return \WP_Query
 	 */
-	public function get_finished_posts( array $filters ): \WP_Query;
+	public function get_finished_posts( int $page = 1, ?string $search = null, 
+        ?int $category_id = null, 
+        ?int $author_id = null 
+    ): WP_Query;
 
 	/**
 	 * Busca um post pelo ID.

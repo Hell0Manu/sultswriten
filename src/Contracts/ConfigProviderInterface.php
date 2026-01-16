@@ -22,4 +22,16 @@ interface ConfigProviderInterface {
 	 * Retorna a URL/Caminho do ícone usado nas dicas.
 	 */
 	public function get_tips_icon_path(): string;
+
+	/**
+     * Retorna o prefixo/caminho para as imagens dentro do ZIP exportado.
+     * Padrão: 'sults/images/'
+     */
+    public function get_export_image_prefix(): string;
+
+    /**
+     * Retorna a pasta padrão para arquivos JSP caso não definida no post.
+     * Padrão: 'sults/pages/produtos'
+     */
+    public function get_default_jsp_folder(): string;
 }

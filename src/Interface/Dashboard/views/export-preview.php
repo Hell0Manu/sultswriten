@@ -14,12 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $sultswriten_download_url = add_query_arg(
 	array(
-		'page'     => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
-		'action'   => 'download',
+		'action'   => 'sults_export_download', 
 		'post_id'  => $sults_post->ID,
 		'_wpnonce' => wp_create_nonce( 'sults_export_' . $sults_post->ID ),
 	),
-	admin_url( 'admin.php' )
+	admin_url( 'admin-post.php' ) 
 );
 ?>
 
