@@ -2,7 +2,7 @@
 
 namespace Sults\Writen\Workflow\Permissions;
 
-use Sults\Writen\Workflow\Permissions\RoleDefinitions; 
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
 
 /**
  * Responsável por impedir a exclusão permanente de posts por não-admins.
@@ -18,12 +18,12 @@ class DeletePrevention {
 			return $caps;
 		}
 
-		$post_id = isset( $args[0] ) ? $args[0] : 0;
-		if ( ! $post_id ) {
+		$sults_post_id = isset( $args[0] ) ? $args[0] : 0;
+		if ( ! $sults_post_id ) {
 			return $caps;
 		}
 
-		if ( get_post_status( $post_id ) === 'trash' ) {
+		if ( get_post_status( $sults_post_id ) === 'trash' ) {
 			$user = get_userdata( $user_id );
 
 			if ( $user && in_array( RoleDefinitions::EDITOR_CHEFE, (array) $user->roles, true ) ) {

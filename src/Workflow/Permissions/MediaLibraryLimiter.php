@@ -3,7 +3,7 @@
 namespace Sults\Writen\Workflow\Permissions;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
-use Sults\Writen\Workflow\Permissions\RoleDefinitions; // Adicionado
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
 
 /**
  * Responsável por restringir a biblioteca de mídia para que redatores vejam apenas seus uploads.

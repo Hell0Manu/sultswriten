@@ -6,52 +6,49 @@ use Sults\Writen\Utils\PathHelper;
 
 class ExportMetadataBuilder {
 
-    public function build_info_file( WP_Post $post ): string {
-        
-        $raw_path = PathHelper::get_relative_path( $post->ID );
-        
+	public function build_info_file( WP_Post $sults_post ): string {
 
-        $path = rtrim( $raw_path, '/' ); 
+		$raw_path = PathHelper::get_relative_path( $sults_post->ID );
 
-        $domain_prod = 'https://www.sults.com.br';
-        $base_prod   = '/produtos';              
-        $base_jsp    = '/sults/pages/produtos';  
+		$sults_path = rtrim( $raw_path, '/' );
 
-        // Input: /checklist/categoria/post
-        // Output desejado: /checklist/artigos/categoria/post
-        
-        $parts = explode( '/', ltrim( $path, '/' ) );
-        $module = $parts[0] ?? '';
+		$domain_prod = 'https://www.sults.com.br';
+		$base_prod   = '/produtos';
+		$base_jsp    = '/sults/pages/produtos';
 
-        $final_path = $path;
+		// Input: /checklist/categoria/post.
+		// Output desejado: /checklist/artigos/categoria/post.
 
-        if ( 'checklist' === $module && count( $parts ) > 1 ) {
-            $suffix = substr( $path, strlen( '/' . $module ) );
-            $final_path = '/' . $module . '/artigos' . $suffix;
-        }
-        
-        // URL Rewrite
-        $rewrite_from = '^' . $path . '$';
-        $rewrite_to   = $base_jsp . $final_path . '.jsp';
+		$sults_parts = explode( '/', ltrim( $sults_path, '/' ) );
+		$module      = $sults_parts[0] ?? '';
 
-        // Sitemap
-        $sitemap_loc = $domain_prod . $final_path;
-        $last_mod    = get_the_modified_date( 'Y-m-d', $post );
+		$final_path = $sults_path;
 
-        $content = "";
+		if ( 'checklist' === $module && count( $sults_parts ) > 1 ) {
+			$suffix     = substr( $sults_path, strlen( '/' . $module ) );
+			$final_path = '/' . $module . '/artigos' . $suffix;
+		}
 
-        $content .= "=== URLREWRITE ===\n";
-        $content .= "<rule>\n";
-        $content .= "    <from>{$rewrite_from}</from>\n";
-        $content .= "    <to>{$rewrite_to}</to>\n";
-        $content .= "</rule>\n\n";
+		$rewrite_from = '^' . $sults_path . '$';
+		$rewrite_to   = $base_jsp . $final_path . '.jsp';
 
-        $content .= "=== SITEMAP ===\n";
-        $content .= "<url>\n";
-        $content .= "    <loc>{$sitemap_loc}</loc>\n";
-        $content .= "    <lastmod>{$last_mod}</lastmod>\n";
-        $content .= "</url>";
+		$sitemap_loc = $domain_prod . $final_path;
+		$last_mod    = get_the_modified_date( 'Y-m-d', $sults_post );
 
-        return $content;
-    }
+		$content = '';
+
+		$content .= "=== URLREWRITE ===\n";
+		$content .= "<rule>\n";
+		$content .= "    <from>{$rewrite_from}</from>\n";
+		$content .= "    <to>{$rewrite_to}</to>\n";
+		$content .= "</rule>\n\n";
+
+		$content .= "=== SITEMAP ===\n";
+		$content .= "<url>\n";
+		$content .= "    <loc>{$sitemap_loc}</loc>\n";
+		$content .= "    <lastmod>{$last_mod}</lastmod>\n";
+		$content .= '</url>';
+
+		return $content;
+	}
 }

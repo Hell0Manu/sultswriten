@@ -82,10 +82,10 @@ class ExportAssetsManager {
 			$img->removeAttribute( 'class' );
 		}
 
-		$processed_html = $dom->saveHTML();
+		$sults_processed_html = $dom->saveHTML();
 
-		$processed_html = preg_replace( '/^<\?xml.+?\?>\s*/i', '', $processed_html );
-		$final_html     = html_entity_decode( $processed_html, ENT_NOQUOTES, 'UTF-8' );
+		$sults_processed_html = preg_replace( '/^<\?xml.+?\?>\s*/i', '', $sults_processed_html );
+		$final_html           = html_entity_decode( $sults_processed_html, ENT_NOQUOTES, 'UTF-8' );
 
 		return new ExportPayload( $final_html, $files_to_zip );
 	}
@@ -95,18 +95,18 @@ class ExportAssetsManager {
 
 		$url = str_replace( '\\', '/', $url );
 
-		$parts = explode( 'wp-content', $url );
-		if ( count( $parts ) < 2 ) {
+		$sults_parts = explode( 'wp-content', $url );
+		if ( count( $sults_parts ) < 2 ) {
 			return null;
 		}
-		$relative_to_wpcontent = $parts[1]; 
+		$relative_to_wpcontent = $sults_parts[1];
 
 		$local_path = WP_CONTENT_DIR . $relative_to_wpcontent;
 
 		if ( ! file_exists( $local_path ) ) {
-			$upload_dir = wp_upload_dir();
+			$upload_dir     = wp_upload_dir();
 			$relative_clean = preg_replace( '|^[\\\\/]?uploads|', '', $relative_to_wpcontent );
-			$local_path = rtrim( $upload_dir['basedir'], '/' ) . '/' . ltrim( $relative_clean, '/' );
+			$local_path     = rtrim( $upload_dir['basedir'], '/' ) . '/' . ltrim( $relative_clean, '/' );
 		}
 
 		$real_path = realpath( $local_path );

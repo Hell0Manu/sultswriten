@@ -27,29 +27,29 @@ class WPFileSystem implements FileSystemInterface {
 		}
 	}
 
-	public function exists( string $path ): bool {
+	public function exists( string $sults_path ): bool {
 		$this->ensure_initialized();
-		return $this->filesystem->exists( $path );
+		return $this->filesystem->exists( $sults_path );
 	}
 
-	public function get_contents( string $path ) {
+	public function get_contents( string $sults_path ) {
 		$this->ensure_initialized();
-		return $this->filesystem->get_contents( $path );
+		return $this->filesystem->get_contents( $sults_path );
 	}
 
-	public function put_contents( string $path, string $content, int $mode = 0644 ): bool {
+	public function put_contents( string $sults_path, string $content, int $mode = 0644 ): bool {
 		$this->ensure_initialized();
-		return $this->filesystem->put_contents( $path, $content, $mode );
+		return $this->filesystem->put_contents( $sults_path, $content, $mode );
 	}
 
-	public function delete( string $path, bool $recursive = false ): bool {
+	public function delete( string $sults_path, bool $recursive = false ): bool {
 		$this->ensure_initialized();
-		return $this->filesystem->delete( $path, $recursive );
+		return $this->filesystem->delete( $sults_path, $recursive );
 	}
 
-	public function mkdir( string $path, $chmod = false, $chown = false, $chgrp = false ): bool {
+	public function mkdir( string $sults_path, $chmod = false, $chown = false, $chgrp = false ): bool {
 		$this->ensure_initialized();
-		return $this->filesystem->mkdir( $path, $chmod, $chown, $chgrp );
+		return $this->filesystem->mkdir( $sults_path, $chmod, $chown, $chgrp );
 	}
 
 	public function get_temp_dir(): string {

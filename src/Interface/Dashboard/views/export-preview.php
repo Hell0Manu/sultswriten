@@ -2,7 +2,7 @@
 /**
  * View de Prévia de Exportação.
  *
- * @var \WP_Post $post
+ * @var \WP_Post $sults_post
  * @var string $back_url
  * @var string $html_raw
  * @var string $html_clean
@@ -16,8 +16,8 @@ $sultswriten_download_url = add_query_arg(
 	array(
 		'page'     => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
 		'action'   => 'download',
-		'post_id'  => $post->ID,
-		'_wpnonce' => wp_create_nonce( 'sults_export_' . $post->ID ),
+		'post_id'  => $sults_post->ID,
+		'_wpnonce' => wp_create_nonce( 'sults_export_' . $sults_post->ID ),
 	),
 	admin_url( 'admin.php' )
 );
@@ -25,7 +25,7 @@ $sultswriten_download_url = add_query_arg(
 
 <div class="wrap sults-preview-wrap">
 	
-	<h1><?php echo esc_html( get_the_title( $post ) ); ?></h1>
+	<h1><?php echo esc_html( get_the_title( $sults_post ) ); ?></h1>
 	<div class="sults-actions-bar" style="margin-bottom: 20px;">
 		<a href="<?php echo esc_url( $back_url ); ?>" class="button">Voltar à lista</a>
 		

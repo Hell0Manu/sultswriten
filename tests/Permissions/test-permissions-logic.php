@@ -16,31 +16,31 @@ class Test_Permissions_Logic extends WP_UnitTestCase {
     // --- DeletePrevention ---
 
     public function test_delete_prevention_bloqueia_editor_de_deletar_lixo() {
-        $prevention = new DeletePrevention();
+        $sults_prevention = new DeletePrevention();
         
         // Cria um post na lixeira
-        $post_id = $this->factory->post->create( array( 'post_status' => 'trash' ) );
+        $sults_post_id = $this->factory->post->create( array( 'post_status' => 'trash' ) );
         
         // Simula usuário Editor
         $user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
         
         // Testa map_meta_cap
         $caps = array( 'delete_post' );
-        $args = array( $post_id );
+        $args = array( $sults_post_id );
         
         // Como o método usa get_userdata( $user_id ), precisamos passar o ID correto
-        $result = $prevention->prevent_permanent_delete( $caps, 'delete_post', $user_id, $args );
+        $result = $sults_prevention->prevent_permanent_delete( $caps, 'delete_post', $user_id, $args );
 
         $this->assertEquals( array( 'do_not_allow' ), $result );
     }
 
     public function test_delete_prevention_permite_admin() {
-        $prevention = new DeletePrevention();
-        $post_id = $this->factory->post->create( array( 'post_status' => 'trash' ) );
+        $sults_prevention = new DeletePrevention();
+        $sults_post_id = $this->factory->post->create( array( 'post_status' => 'trash' ) );
         $user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
         
         $caps = array( 'delete_post' );
-        $result = $prevention->prevent_permanent_delete( $caps, 'delete_post', $user_id, array( $post_id ) );
+        $result = $sults_prevention->prevent_permanent_delete( $caps, 'delete_post', $user_id, array( $sults_post_id ) );
 
         $this->assertEquals( $caps, $result );
     }
@@ -57,8 +57,8 @@ public function test_visibilidade_restrita_para_contributor() {
             ->andReturn( array( 'contributor' ) );
 
         // 3. Instancia as classes reais
-        $policy = new VisibilityPolicy( $mockUserProvider );
-        $visibility = new PostListVisibility( $policy );
+        $sults_policy = new VisibilityPolicy( $mockUserProvider );
+        $visibility = new PostListVisibility( $sults_policy );
 
         // 4. Mock da Query
         $query = Mockery::mock( \WP_Query::class );
@@ -81,8 +81,8 @@ public function test_visibilidade_restrita_para_contributor() {
             ->andReturn( array( 'administrator' ) );
 
         // CORREÇÃO AQUI TAMBÉM
-        $policy = new VisibilityPolicy( $mockUserProvider );
-        $visibility = new PostListVisibility( $policy );
+        $sults_policy = new VisibilityPolicy( $mockUserProvider );
+        $visibility = new PostListVisibility( $sults_policy );
 
         $query = Mockery::mock( \WP_Query::class );
         $query->shouldReceive( 'is_main_query' )->andReturn( true );

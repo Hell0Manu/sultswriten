@@ -16,12 +16,12 @@ use Sults\Writen\Utils\PathHelper;
 
 class StructureManager implements HookableInterface {
 
-	private $user_provider;
-	private $asset_loader;
-	private $status_provider;
-	private $color_manager;
-	private $policy;
-	private $post_repository;
+	private WPUserProviderInterface $user_provider;
+	private AssetLoaderInterface $asset_loader;
+	private WPPostStatusProviderInterface $status_provider;
+	private CategoryColorManager $color_manager;
+	private WorkflowPolicy $policy;
+	private PostRepositoryInterface $post_repository;
 
 	public function __construct(
 		WPUserProviderInterface $user_provider,
@@ -71,13 +71,13 @@ class StructureManager implements HookableInterface {
 		if ( strpos( $hook, 'sults-writen-structure' ) === false ) {
 			return;
 		}
-		
+
 		wp_enqueue_style( 'sults-writen-variables' );
 		wp_enqueue_script( 'jquery-ui-sortable' );
-		
+
 		wp_enqueue_style( 'sults-writen-status-css' );
 		wp_enqueue_style( 'sults-writen-structure-css' );
-		
+
 		wp_add_inline_style(
 			'sults-writen-structure-css',
 			'
@@ -93,9 +93,12 @@ class StructureManager implements HookableInterface {
 			if ( class_exists( \Sults\Writen\Workflow\PostStatus\StatusVisuals::class ) ) {
 				$status_css = \Sults\Writen\Workflow\PostStatus\StatusVisuals::get_css_rules();
 			} else {
-				$status_css = StatusConfig::get_css_rules();
+				$status_css = '';
 			}
-			wp_add_inline_style( 'sults-writen-structure-css', $status_css );
+
+			if ( ! empty( $status_css ) ) {
+				wp_add_inline_style( 'sults-writen-structure-css', $status_css );
+			}
 		}
 
 		wp_enqueue_script( 'sults-writen-structure-js' );
@@ -117,22 +120,22 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( 'Sem permissão global.' );
 		}
 
-		$post_id   = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		$sults_post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		if ( ! current_user_can( 'edit_post', $sults_post_id ) ) {
 			wp_send_json_error( 'Você não tem permissão para mover este item.' );
 		}
 
-		$parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
-		$order     = isset( $_POST['order'] ) ? array_map( 'absint', wp_unslash( $_POST['order'] ) ) : array();
+		$sults_parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
+		$order           = isset( $_POST['order'] ) ? array_map( 'absint', wp_unslash( $_POST['order'] ) ) : array();
 
-		if ( $post_id === $parent_id ) {
+		if ( $sults_post_id === $sults_parent_id ) {
 			wp_send_json_error( 'Loop.' );
 		}
 
 		$this->post_repository->update(
 			array(
-				'ID'          => $post_id,
-				'post_parent' => $parent_id,
+				'ID'          => $sults_post_id,
+				'post_parent' => $sults_parent_id,
 			)
 		);
 
@@ -152,72 +155,73 @@ class StructureManager implements HookableInterface {
 	public function ajax_get_post_details() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
-		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-		$post    = $this->post_repository->find( $post_id );
+		$sults_post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$sults_post    = $this->post_repository->find( $sults_post_id );
 
-		if ( ! $post ) {
+		if ( ! $sults_post ) {
 			wp_send_json_error( 'Post não encontrado' );
 		}
 
-		$author_id     = $post->post_author;
-		$author_name   = get_the_author_meta( 'display_name', $author_id );
-		$author_avatar = get_avatar_url( $author_id, array( 'size' => 64 ) );
+		$sults_author_id     = $sults_post->post_author;
+		$sults_author_name   = get_the_author_meta( 'display_name', $sults_author_id );
+		$sults_author_avatar = get_avatar_url( $sults_author_id, array( 'size' => 64 ) );
 
-		$status_slug  = $post->post_status;
-		$status_obj   = get_post_status_object( $status_slug );
-		$status_label = $status_obj ? $status_obj->label : $status_slug;
-		$status_html  = sprintf(
+		$sults_status_slug = $sults_post->post_status;
+		$sults_status_obj  = get_post_status_object( $sults_status_slug );
+		$status_label      = $sults_status_obj ? $sults_status_obj->label : $sults_status_slug;
+		$status_html       = sprintf(
 			'<span class="sults-status-badge sults-status-%s">%s</span>',
-			esc_attr( $status_slug ),
+			esc_attr( $sults_status_slug ),
 			esc_html( $status_label )
 		);
 
-		$cats     = get_the_category( $post_id );
-		$cat_data = array(
+		$sults_cats     = get_the_category( $sults_post_id );
+		$sults_cat_data = array(
 			'name'  => 'Sem Categoria',
 			'color' => '#ccc',
 		);
-		if ( ! empty( $cats ) ) {
-			$primary_cat       = $cats[0];
-			$cat_data['name']  = $primary_cat->name;
-			$cat_data['color'] = $this->color_manager->get_color( $primary_cat->term_id );
+		if ( ! empty( $sults_cats ) ) {
+			$sults_primary_cat       = $sults_cats[0];
+			$sults_cat_data['name']  = $sults_primary_cat->name;
+			$sults_cat_data['color'] = $this->color_manager->get_color( $sults_primary_cat->term_id );
 		}
 
-		$relative_path = PathHelper::get_relative_path( $post_id );
+		$relative_path = PathHelper::get_relative_path( $sults_post_id );
 
-		$edit_link = get_edit_post_link( $post_id, 'raw' );
-		$view_link  = $permalink;
+		$edit_link = get_edit_post_link( $sults_post_id, 'raw' );
+		$view_link = get_permalink( $sults_post_id );
+
 		$user_roles = $this->user_provider->get_current_user_roles();
-		$can_edit   = ! $this->policy->is_editing_locked( $status_slug, $user_roles ) && current_user_can( 'edit_post', $post_id );
+		$can_edit   = ! $this->policy->is_editing_locked( $sults_status_slug, $user_roles ) && current_user_can( 'edit_post', $sults_post_id );
 
-		$seo_title = get_post_meta( $post_id, '_aioseo_title', true );
-		$seo_desc  = get_post_meta( $post_id, '_aioseo_description', true );
+		$seo_title = get_post_meta( $sults_post_id, '_aioseo_title', true );
+		$seo_desc  = get_post_meta( $sults_post_id, '_aioseo_description', true );
 
 		if ( empty( $seo_title ) ) {
-			$seo_title = get_the_title( $post ) . ' - ' . get_bloginfo( 'name' );
+			$seo_title = get_the_title( $sults_post ) . ' - ' . get_bloginfo( 'name' );
 		}
 		if ( empty( $seo_desc ) ) {
-			$seo_desc = get_the_excerpt( $post );
+			$seo_desc = get_the_excerpt( $sults_post );
 			if ( empty( $seo_desc ) ) {
-				$seo_desc = wp_trim_words( strip_shortcodes( $post->post_content ), 25 );
+				$seo_desc = wp_trim_words( strip_shortcodes( $sults_post->post_content ), 25 );
 			}
 		}
 
 		$response = array(
-			'id'          => $post_id,
-			'title'       => get_the_title( $post ),
-			'slug'        => $post->post_name,
-			'status'      => $status_slug,
+			'id'          => $sults_post_id,
+			'title'       => get_the_title( $sults_post ),
+			'slug'        => $sults_post->post_name,
+			'status'      => $sults_status_slug,
 			'status_html' => $status_html,
 			'author'      => array(
-				'id'     => $author_id,
-				'name'   => $author_name,
-				'avatar' => $author_avatar,
+				'id'     => $sults_author_id,
+				'name'   => $sults_author_name,
+				'avatar' => $sults_author_avatar,
 			),
-			'date'        => get_the_date( 'Y-m-d\TH:i', $post ),
-			'category'    => array_merge( $cat_data, array( 'id' => ! empty( $cats ) ? $cats[0]->term_id : 0 ) ),
-			'parent_id'   => $post->post_parent,
-			'password'    => $post->post_password,
+			'date'        => get_the_date( 'Y-m-d\TH:i', $sults_post ),
+			'category'    => array_merge( $sults_cat_data, array( 'id' => ! empty( $sults_cats ) ? $sults_cats[0]->term_id : 0 ) ),
+			'parent_id'   => $sults_post->post_parent,
+			'password'    => $sults_post->post_password,
 			'path'        => $relative_path,
 			'seo'         => array(
 				'title'       => $seo_title,
@@ -241,38 +245,38 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( 'Sem permissão.' );
 		}
 
-		$title     = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
-		$parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
-		$cat_id    = isset( $_POST['cat_id'] ) ? absint( $_POST['cat_id'] ) : 0;
-		$slug      = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
+		$title           = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		$sults_parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
+		$sults_cat_id    = isset( $_POST['cat_id'] ) ? absint( $_POST['cat_id'] ) : 0;
+		$slug            = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
 
 		if ( empty( $title ) ) {
 			wp_send_json_error( 'O título é obrigatório.' );
 		}
 
-		$post_data = array(
+		$sults_post_data = array(
 			'post_title'  => $title,
 			'post_name'   => $slug,
 			'post_status' => 'draft',
 			'post_type'   => 'post',
-			'post_parent' => $parent_id,
+			'post_parent' => $sults_parent_id,
 		);
 
-		$post_id = $this->post_repository->create( $post_data );
+		$sults_post_id = $this->post_repository->create( $sults_post_data );
 
-		if ( is_wp_error( $post_id ) ) {
-			wp_send_json_error( $post_id->get_error_message() );
+		if ( is_wp_error( $sults_post_id ) ) {
+			wp_send_json_error( $sults_post_id->get_error_message() );
 		}
 
-		if ( $cat_id > 0 ) {
-			$this->post_repository->set_terms( $post_id, array( $cat_id ), 'category' );
+		if ( $sults_cat_id > 0 ) {
+			$this->post_repository->set_terms( $sults_post_id, array( $sults_cat_id ), 'category' );
 		}
 
-		$redirect_url = get_edit_post_link( $post_id, 'raw' );
+		$redirect_url = get_edit_post_link( $sults_post_id, 'raw' );
 
 		wp_send_json_success(
 			array(
-				'id'           => $post_id,
+				'id'           => $sults_post_id,
 				'redirect_url' => $redirect_url,
 			)
 		);
@@ -281,47 +285,51 @@ class StructureManager implements HookableInterface {
 	public function ajax_save_quick_edit() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
-		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		$sults_post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		if ( ! current_user_can( 'edit_post', $sults_post_id ) ) {
 			wp_send_json_error( 'Sem permissão para editar este post.' );
 		}
 
-		$post_data = array(
-			'ID'            => $post_id,
-			'post_title'    => sanitize_text_field( wp_unslash( $_POST['post_title'] ) ),
-			'post_name'     => sanitize_title( wp_unslash( $_POST['post_name'] ) ),
-			'post_status'   => sanitize_text_field( wp_unslash( $_POST['post_status'] ) ),
-			'post_author'   => absint( $_POST['post_author'] ),
-			'post_parent'   => absint( $_POST['post_parent'] ),
-			'post_password' => sanitize_text_field( wp_unslash( $_POST['post_password'] ) ),
-			'post_date'     => sanitize_text_field( wp_unslash( $_POST['post_date'] ) ),
+		$sults_post_data = array(
+			'ID'            => $sults_post_id,
+			'post_title'    => isset( $_POST['post_title'] ) ? sanitize_text_field( wp_unslash( $_POST['post_title'] ) ) : '',
+			'post_name'     => isset( $_POST['post_name'] ) ? sanitize_title( wp_unslash( $_POST['post_name'] ) ) : '',
+			'post_status'   => isset( $_POST['post_status'] ) ? sanitize_text_field( wp_unslash( $_POST['post_status'] ) ) : 'draft',
+			'post_author'   => isset( $_POST['post_author'] ) ? absint( $_POST['post_author'] ) : get_current_user_id(),
+			'post_parent'   => isset( $_POST['post_parent'] ) ? absint( $_POST['post_parent'] ) : 0,
+			'post_password' => isset( $_POST['post_password'] ) ? sanitize_text_field( wp_unslash( $_POST['post_password'] ) ) : '',
+			'post_date'     => isset( $_POST['post_date'] ) ? sanitize_text_field( wp_unslash( $_POST['post_date'] ) ) : '',
 		);
 
-		$updated_id = $this->post_repository->update( $post_data );
+		$updated_id = $this->post_repository->update( $sults_post_data );
 
 		if ( is_wp_error( $updated_id ) ) {
 			wp_send_json_error( $updated_id->get_error_message() );
 		}
 
-		$cat_id = isset( $_POST['post_category'] ) ? absint( $_POST['post_category'] ) : 0;
-		$this->post_repository->set_terms( $post_id, $cat_id > 0 ? array( $cat_id ) : array(), 'category' );
+		$sults_cat_id = isset( $_POST['post_category'] ) ? absint( $_POST['post_category'] ) : 0;
+		$this->post_repository->set_terms( $sults_post_id, $sults_cat_id > 0 ? array( $sults_cat_id ) : array(), 'category' );
 
 		wp_send_json_success( 'Post atualizado com sucesso.' );
 	}
 
 	public function render_page(): void {
-		$tree_html = $this->get_tree_html();
+		$sults_tree_html = $this->get_tree_html();
 
-		$categories = get_categories( array( 'hide_empty' => false ) );
-		$categories = HierarchyHelper::build_hierarchy( $categories, 0, 0, 'term_id', 'parent' );
+		$sults_categories = get_categories( array( 'hide_empty' => false ) );
+		$sults_categories = HierarchyHelper::build_hierarchy( $sults_categories, 0, 0, 'term_id', 'parent' );
 
-
-		$authors    = get_users( array( 'capability__in' => array( 'edit_posts' ), 'orderby' => 'display_name' ) );
-		$all_statuses = $this->status_provider->get_all_status_slugs();
+		$sults_authors      = get_users(
+			array(
+				'capability__in' => array( 'edit_posts' ),
+				'orderby'        => 'display_name',
+			)
+		);
+		$sults_all_statuses = $this->status_provider->get_all_status_slugs();
 
 		$raw_parents = $this->post_repository->get_all_for_parents();
 
-		$potential_parents = HierarchyHelper::build_hierarchy( $raw_parents );
+		$sults_potential_parents = HierarchyHelper::build_hierarchy( $raw_parents );
 
 		$view_path = plugin_dir_path( dirname( dirname( __DIR__ ) ) . '/sults-writen.php' ) . 'src/Interface/Dashboard/views/structure-page.php';
 
@@ -333,169 +341,171 @@ class StructureManager implements HookableInterface {
 	}
 
 	/**
-     * Gera o HTML da árvore de posts de forma hierárquica (Pastas dentro de Pastas).
-     */
-    private function get_tree_html(): string {
+	 * Gera o HTML da árvore de posts de forma hierárquica (Pastas dentro de Pastas).
+	 */
+	private function get_tree_html(): string {
 
-        $statuses = $this->status_provider->get_all_status_slugs();
-        $posts    = $this->post_repository->get_by_status( $statuses );
-        $current_user_roles = $this->user_provider->get_current_user_roles();
+		$statuses           = $this->status_provider->get_all_status_slugs();
+		$sults_posts        = $this->post_repository->get_by_status( $statuses );
+		$current_user_roles = $this->user_provider->get_current_user_roles();
 
-        $posts_by_parent = array();
-        $all_posts_map   = array();
-        foreach ( $posts as $p ) {
-            $all_posts_map[ $p->ID ]              = $p;
-            $posts_by_parent[ $p->post_parent ][] = $p;
-        }
+		$sults_posts_by_parent = array();
+		$all_posts_map         = array();
+		foreach ( $sults_posts as $sults_p ) {
+			$all_posts_map[ $sults_p->ID ]                    = $sults_p;
+			$sults_posts_by_parent[ $sults_p->post_parent ][] = $sults_p;
+		}
 
-        foreach ( $posts as $post ) {
-            if ( $post->post_parent > 0 && ! isset( $all_posts_map[ $post->post_parent ] ) ) {
-                $post->post_parent    = 0;
-                $posts_by_parent[0][] = $post;
-            }
-        }
+		foreach ( $sults_posts as $sults_post ) {
+			if ( $sults_post->post_parent > 0 && ! isset( $all_posts_map[ $sults_post->post_parent ] ) ) {
+				$sults_post->post_parent    = 0;
+				$sults_posts_by_parent[0][] = $sults_post;
+			}
+		}
 
-        $root_posts          = $posts_by_parent[0] ?? array();
-        $category_buckets    = array();
-        $uncategorized_posts = array();
+		$root_posts             = $sults_posts_by_parent[0] ?? array();
+		$sults_category_buckets = array();
+		$uncategorized_posts    = array();
 
-        foreach ( $root_posts as $post ) {
-            $cats = get_the_category( $post->ID );
-            if ( empty( $cats ) ) {
-                $uncategorized_posts[] = $post;
-            } else {
-                $primary_cat                                 = $cats[0];
-                $category_buckets[ $primary_cat->term_id ][] = $post;
-            }
-        }
+		foreach ( $root_posts as $sults_post ) {
+			$sults_cats = get_the_category( $sults_post->ID );
+			if ( empty( $sults_cats ) ) {
+				$uncategorized_posts[] = $sults_post;
+			} else {
+				$sults_primary_cat                                       = $sults_cats[0];
+				$sults_category_buckets[ $sults_primary_cat->term_id ][] = $sults_post;
+			}
+		}
 
-        $all_categories = get_categories( array( 'hide_empty' => false ) );
-        $cat_index      = array();
-        $cat_tree       = array();
+		$all_categories  = get_categories( array( 'hide_empty' => false ) );
+		$sults_cat_index = array();
+		$sults_cat_tree  = array();
 
-        foreach ( $all_categories as $cat ) {
-            $cat->children = array();
-            $cat->posts    = $category_buckets[ $cat->term_id ] ?? array(); 
-            $cat_index[ $cat->term_id ] = $cat;
-        }
+		foreach ( $all_categories as $sults_cat ) {
+			$sults_cat->children                    = array(); // @phpstan-ignore-line
+			$sults_cat->posts                       = $sults_category_buckets[ $sults_cat->term_id ] ?? array(); // @phpstan-ignore-line
+			$sults_cat_index[ $sults_cat->term_id ] = $sults_cat;
+		}
 
-        foreach ( $all_categories as $cat ) {
-            if ( $cat->parent > 0 && isset( $cat_index[ $cat->parent ] ) ) {
-                $cat_index[ $cat->parent ]->children[] = $cat;
-            } else {
-                $cat_tree[] = $cat; 
-            }
-        }
+		foreach ( $all_categories as $sults_cat ) {
+			if ( $sults_cat->parent > 0 && isset( $sults_cat_index[ $sults_cat->parent ] ) ) {
+				$sults_cat_index[ $sults_cat->parent ]->children[] = $sults_cat; // @phpstan-ignore-line
+			} else {
+				$sults_cat_tree[] = $sults_cat;
+			}
+		}
 
-        $html = '';
+		$html = '';
 
-        foreach ( $cat_tree as $root_cat ) {
-            $html .= $this->render_category_node( $root_cat, $posts_by_parent, $current_user_roles );
-        }
+		foreach ( $sults_cat_tree as $root_cat ) {
+			$html .= $this->render_category_node( $root_cat, $sults_posts_by_parent, $current_user_roles );
+		}
 
-        if ( ! empty( $uncategorized_posts ) ) {
-            $html .= $this->render_uncategorized_folder( $uncategorized_posts, $posts_by_parent, $current_user_roles );
-        }
+		if ( ! empty( $uncategorized_posts ) ) {
+			$html .= $this->render_uncategorized_folder( $uncategorized_posts, $sults_posts_by_parent, $current_user_roles );
+		}
 
-        if ( empty( $html ) ) {
-            return '<div class="notice notice-info inline"><p>Nenhum post encontrado na estrutura.</p></div>';
-        }
+		if ( empty( $html ) ) {
+			return '<div class="notice notice-info inline"><p>Nenhum post encontrado na estrutura.</p></div>';
+		}
 
-        return $html;
-    }
+		return $html;
+	}
 
 	/**
-     * Renderiza uma pasta de categoria e, recursivamente, seus filhos.
-     */
-    private function render_category_node( $cat, $posts_by_parent, $user_roles ): string {
-        $children_html = '';
-        foreach ( $cat->children as $child ) {
-            $children_html .= $this->render_category_node( $child, $posts_by_parent, $user_roles );
-        }
+	 * Renderiza uma pasta de categoria e, recursivamente, seus filhos.
+	 */
+	private function render_category_node( $sults_cat, $sults_posts_by_parent, $user_roles ): string {
+		$children_html = '';
+		foreach ( $sults_cat->children as $child ) {
+			$children_html .= $this->render_category_node( $child, $sults_posts_by_parent, $user_roles );
+		}
 
-        if ( empty( $cat->posts ) && empty( $children_html ) ) {
-            return '';
-        }
+		if ( empty( $sults_cat->posts ) && empty( $children_html ) ) {
+			return '';
+		}
 
-        $cat_color = $this->color_manager->get_color( $cat->term_id );
-        if ( ! $cat_color ) $cat_color = '#646970';
+		$sults_cat_color = $this->color_manager->get_color( $sults_cat->term_id );
+		if ( ! $sults_cat_color ) {
+			$sults_cat_color = '#646970';
+		}
 
-        $style_border  = "border-left: 4px solid {$cat_color};";
-        $style_title   = "color: {$cat_color};";
-        $style_bg_soft = 'background-color: ' . $this->hex2rgba( $cat_color, 0.03 ) . ';';
+		$sults_style_border  = "border-left: 4px solid {$sults_cat_color};";
+		$sults_style_title   = "color: {$sults_cat_color};";
+		$sults_style_bg_soft = 'background-color: ' . $this->hex2rgba( $sults_cat_color, 0.03 ) . ';';
 
-        $html = '<div class="sults-category-folder" style="' . $style_border . ' ' . $style_bg_soft . ' margin-bottom: 15px;">';
-        
-        // Cabeçalho
-        $html .= '<div class="sults-category-header" style="' . $style_title . '">
+		$html = '<div class="sults-category-folder" style="' . $sults_style_border . ' ' . $sults_style_bg_soft . ' margin-bottom: 15px;">';
+
+		// Cabeçalho.
+		$html .= '<div class="sults-category-header" style="' . $sults_style_title . '">
                     <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
                     <span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
-                    <strong>' . esc_html( $cat->name ) . '</strong>
-                    <span class="count" style="color: #646970;">(' . count( $cat->posts ) . ')</span>
+                    <strong>' . esc_html( $sults_cat->name ) . '</strong>
+                    <span class="count" style="color: #646970;">(' . count( $sults_cat->posts ) . ')</span>
                   </div>';
 
-        $html .= '<div class="sults-category-content">';
+		$html .= '<div class="sults-category-content">';
 
-        if ( ! empty( $cat->posts ) ) {
-            $html .= '<ul class="sults-sortable-root" data-category-id="' . $cat->term_id . '">';
-            foreach ( $cat->posts as $root_post ) {
-                $html .= $this->build_html_item( $root_post, $posts_by_parent, $user_roles );
-            }
-            $html .= '</ul>';
-        }
+		if ( ! empty( $sults_cat->posts ) ) {
+			$html .= '<ul class="sults-sortable-root" data-category-id="' . $sults_cat->term_id . '">';
+			foreach ( $sults_cat->posts as $root_post ) {
+				$html .= $this->build_html_item( $root_post, $sults_posts_by_parent, $user_roles );
+			}
+			$html .= '</ul>';
+		}
 
-        if ( ! empty( $children_html ) ) {
-            $html .= '<div class="sults-subcategories" style="padding-left: 25px; border-left: 1px dashed #ddd; margin-left: 5px; margin-top: 10px;">';
-            $html .= $children_html;
-            $html .= '</div>';
-        }
+		if ( ! empty( $children_html ) ) {
+			$html .= '<div class="sults-subcategories" style="padding-left: 25px; border-left: 1px dashed #ddd; margin-left: 5px; margin-top: 10px;">';
+			$html .= $children_html;
+			$html .= '</div>';
+		}
 
-        $html .= '</div>'; 
-        $html .= '</div>'; 
+		$html .= '</div>';
+		$html .= '</div>';
 
-        return $html;
-    }
+		return $html;
+	}
 
 	/**
-     * Renderiza a pasta especial "Sem Categoria".
-     */
-    private function render_uncategorized_folder( $posts, $posts_by_parent, $user_roles ): string {
-        $html = '<div class="sults-category-folder" style="border-left: 4px solid #646970; background-color: #f9f9f9; margin-bottom: 15px;">';
-        
-        $html .= '<div class="sults-category-header" style="color: #444;">
+	 * Renderiza a pasta especial "Sem Categoria".
+	 */
+	private function render_uncategorized_folder( $sults_posts, $sults_posts_by_parent, $user_roles ): string {
+		$html = '<div class="sults-category-folder" style="border-left: 4px solid #646970; background-color: #f9f9f9; margin-bottom: 15px;">';
+
+		$html .= '<div class="sults-category-header" style="color: #444;">
                     <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
                     <span class="dashicons dashicons-admin-generic" style="margin-right:5px; opacity: 0.7;"></span> 
                     <strong>Geral / Sem Categoria</strong>
-                    <span class="count">(' . count( $posts ) . ')</span>
+                    <span class="count">(' . count( $sults_posts ) . ')</span>
                   </div>';
-        
-        $html .= '<div class="sults-category-content">';
-        $html .= '<ul class="sults-sortable-root" data-category-id="0">';
-        
-        foreach ( $posts as $root_post ) {
-            $html .= $this->build_html_item( $root_post, $posts_by_parent, $user_roles );
-        }
-        
-        $html .= '</ul></div></div>';
-        
-        return $html;
-    }
 
-	private function build_html_item( $element, $posts_by_parent, $user_roles ): string {
-		$children     = $posts_by_parent[ $element->ID ] ?? array();
+		$html .= '<div class="sults-category-content">';
+		$html .= '<ul class="sults-sortable-root" data-category-id="0">';
+
+		foreach ( $sults_posts as $root_post ) {
+			$html .= $this->build_html_item( $root_post, $sults_posts_by_parent, $user_roles );
+		}
+
+		$html .= '</ul></div></div>';
+
+		return $html;
+	}
+
+	private function build_html_item( $element, $sults_posts_by_parent, $user_roles ): string {
+		$children     = $sults_posts_by_parent[ $element->ID ] ?? array();
 		$has_children = ! empty( $children );
 
-		$permalink    = get_edit_post_link( $element->ID );
-		$status_slug  = $element->post_status;
-		$status_obj   = get_post_status_object( $status_slug );
-		$status_label = $status_obj ? $status_obj->label : $status_slug;
+		$sults_permalink   = get_edit_post_link( $element->ID );
+		$sults_status_slug = $element->post_status;
+		$sults_status_obj  = get_post_status_object( $sults_status_slug );
+		$status_label      = $sults_status_obj ? $sults_status_obj->label : $sults_status_slug;
 
 		$is_redator = in_array( RoleDefinitions::REDATOR, $user_roles, true );
 
 		if ( $is_redator ) {
 			$current_user_id = get_current_user_id();
 			$is_author       = ( (int) $element->post_author === $current_user_id );
-			$is_public       = ( $status_slug === 'publish' );
+			$is_public       = ( $sults_status_slug === 'publish' );
 
 			$has_access = ( $is_author || $is_public );
 		} else {
@@ -515,7 +525,7 @@ class StructureManager implements HookableInterface {
 			$action_html = '<span class="' . $icon_class . '" title="Acesso Restrito (Post de outro usuário)"><span class="dashicons dashicons-lock"></span></span>';
 
 		} else {
-			$is_locked_by_policy = $this->policy->is_editing_locked( $status_slug, $user_roles );
+			$is_locked_by_policy = $this->policy->is_editing_locked( $sults_status_slug, $user_roles );
 			$can_edit_native     = $this->user_provider->current_user_can( 'edit_post', $element->ID );
 
 			if ( $is_locked_by_policy || ! $can_edit_native ) {
@@ -525,7 +535,7 @@ class StructureManager implements HookableInterface {
 			} else {
 				$action_icon  = 'dashicons-edit';
 				$action_title = 'Editar';
-				$target_url   = $permalink;
+				$target_url   = $sults_permalink;
 			}
 
 			$link_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" class="sults-card-title">' . esc_html( $element->post_title ) . '</a>';
@@ -549,7 +559,7 @@ class StructureManager implements HookableInterface {
                     ' . $link_html . '
                 </div>
                 <div class="sults-card-right">
-                        <span class="sults-status-badge sults-status-' . esc_attr( $status_slug ) . '">' . esc_html( $status_label ) . '</span>
+                        <span class="sults-status-badge sults-status-' . esc_attr( $sults_status_slug ) . '">' . esc_html( $status_label ) . '</span>
                         ' . $action_html . '
                 </div>
             </div>';
@@ -557,7 +567,7 @@ class StructureManager implements HookableInterface {
 		$html .= '<ul class="sults-sortable-nested">';
 		if ( $has_children ) {
 			foreach ( $children as $child ) {
-				$html .= $this->build_html_item( $child, $posts_by_parent, $user_roles );
+				$html .= $this->build_html_item( $child, $sults_posts_by_parent, $user_roles );
 			}
 		}
 		$html .= '</ul>';

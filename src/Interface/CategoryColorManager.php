@@ -52,8 +52,8 @@ class CategoryColorManager implements HookableInterface {
 		<?php
 	}
 
-	public function edit_color_field( \WP_Term $term ): void {
-		$color = get_term_meta( $term->term_id, self::META_KEY, true );
+	public function edit_color_field( \WP_Term $sults_term ): void {
+		$color = get_term_meta( $sults_term->term_id, self::META_KEY, true );
 		$color = ( ! empty( $color ) ) ? $color : self::DEFAULT_COLOR;
 
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
@@ -68,7 +68,7 @@ class CategoryColorManager implements HookableInterface {
 		<?php
 	}
 
-	public function save_meta( int $term_id ): void {
+	public function save_meta( int $sults_term_id ): void {
 		if ( ! isset( $_POST[ self::NONCE_FIELD ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE_FIELD ] ) ), self::NONCE_ACTION ) ) {
 			return;
 		}
@@ -77,15 +77,15 @@ class CategoryColorManager implements HookableInterface {
 			$color = sanitize_hex_color( wp_unslash( $_POST['sults_category_color'] ) );
 
 			if ( $color ) {
-				update_term_meta( $term_id, self::META_KEY, $color );
+				update_term_meta( $sults_term_id, self::META_KEY, $color );
 			} else {
-				delete_term_meta( $term_id, self::META_KEY );
+				delete_term_meta( $sults_term_id, self::META_KEY );
 			}
 		}
 	}
 
-	public static function get_color( int $term_id ): string {
-		$color = get_term_meta( $term_id, self::META_KEY, true );
+	public static function get_color( int $sults_term_id ): string {
+		$color = get_term_meta( $sults_term_id, self::META_KEY, true );
 		return $color ? $color : self::DEFAULT_COLOR;
 	}
 }

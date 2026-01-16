@@ -62,25 +62,25 @@ class PostListPresenter {
 		return $new;
 	}
 
-	public function fill_status_column_content( string $column, int $post_id ): void {
+	public function fill_status_column_content( string $column, int $sults_post_id ): void {
 		if ( 'post_status_custom' !== $column ) {
 			return;
 		}
 
-		$status_slug = $this->status_provider->get_status( $post_id );
-		$status_obj  = $this->status_provider->get_status_object( $status_slug );
+		$sults_status_slug = $this->status_provider->get_status( $sults_post_id );
+		$sults_status_obj  = $this->status_provider->get_status_object( $sults_status_slug );
 
-		$label = ( $status_obj && isset( $status_obj->label ) ) ? $status_obj->label : $status_slug;
+		$sults_label = ( $sults_status_obj && isset( $sults_status_obj->label ) ) ? $sults_status_obj->label : $sults_status_slug;
 
 		printf(
 			'<span class="sults-status-badge sults-status-%s">%s</span>',
-			esc_attr( $status_slug ),
-			esc_html( $label )
+			esc_attr( $sults_status_slug ),
+			esc_html( $sults_label )
 		);
 	}
 
-	public function display_states( array $states, WP_Post $post ): array {
-		$status          = $post->post_status;
+	public function display_states( array $states, WP_Post $sults_post ): array {
+		$status          = $sults_post->post_status;
 		$custom_statuses = PostStatusRegistrar::get_custom_statuses();
 
 		if ( isset( $custom_statuses[ $status ] ) ) {
@@ -90,8 +90,8 @@ class PostListPresenter {
 		return $states;
 	}
 
-	public function add_custom_filters_to_post_list( string $post_type ): void {
-		if ( 'post' !== $post_type ) {
+	public function add_custom_filters_to_post_list( string $sults_post_type ): void {
+		if ( 'post' !== $sults_post_type ) {
 			return;
 		}
 
@@ -125,12 +125,12 @@ class PostListPresenter {
 		}
 
 		$custom_statuses = PostStatusRegistrar::get_custom_statuses();
-		foreach ( $custom_statuses as $slug => $label ) {
+		foreach ( $custom_statuses as $slug => $sults_label ) {
 			printf(
 				'<option value="%s" %s>%s</option>',
 				esc_attr( $slug ),
 				selected( $current_status, $slug, false ),
-				esc_html( $label )
+				esc_html( $sults_label )
 			);
 		}
 

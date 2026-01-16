@@ -27,9 +27,9 @@ class StatusVisuals {
 				'bg'   => 'var(--color-green-500)',
 				'text' => 'var(--color-green-100)',
 			),
-			StatusConfig::PENDING_IMAGE => array(
-            'bg'   => 'var(--color-purple-500)',
-            'text' => 'var(--color-purple-100)',
+			StatusConfig::PENDING_IMAGE       => array(
+				'bg'   => 'var(--color-purple-500)',
+				'text' => 'var(--color-purple-100)',
 			),
 			// Status Nativos (Defaults).
 			'publish'                         => array(
@@ -62,10 +62,10 @@ class StatusVisuals {
 		$css         = '';
 		$definitions = self::get_definitions();
 
-		foreach ( $definitions as $slug => $style ) {
+		foreach ( $definitions as $slug => $sults_style ) {
 			$selector = ".sults-status-{$slug}";
-			$bg       = $style['bg'];
-			$text     = $style['text'];
+			$bg       = $sults_style['bg'];
+			$text     = $sults_style['text'];
 
 			$css .= "{$selector} { background: {$bg}; color: {$text}; } ";
 		}

@@ -18,13 +18,13 @@ class Test_Notification_Manager extends WP_UnitTestCase {
         $mockStatus     = Mockery::mock( WPPostStatusProviderInterface::class );
         $mockRepository = Mockery::mock( NotificationRepositoryInterface::class ); // Novo Mock
 
-        $author_id = 5;
+        $sults_author_id = 5;
         $editor_id = 10;
 
-        $post = (object) array(
+        $sults_post = (object) array(
             'ID'          => 123,
             'post_title'  => 'Post Teste',
-            'post_author' => $author_id,
+            'post_author' => $sults_author_id,
             'post_type'   => 'post',
         );
 
@@ -39,7 +39,7 @@ class Test_Notification_Manager extends WP_UnitTestCase {
         $mockRepository->shouldReceive( 'add_notification' )
             ->once()
             ->with( 
-                $author_id, 
+                $sults_author_id, 
                 Mockery::on( function( $notification ) {
                     return isset($notification['msg']) && strpos( $notification['msg'], 'mudou para' ) !== false;
                 })
@@ -49,7 +49,7 @@ class Test_Notification_Manager extends WP_UnitTestCase {
         // 3. Instanciação com a nova dependência
         $manager = new NotificationManager( $mockUser, $mockStatus, $mockRepository );
         
-        $manager->notify_author_on_status_change( 'published', 'draft', new WP_Post( $post ) );
+        $manager->notify_author_on_status_change( 'published', 'draft', new WP_Post( $sults_post ) );
         
         $this->assertTrue( true );
     }
@@ -59,17 +59,17 @@ class Test_Notification_Manager extends WP_UnitTestCase {
         $mockStatus     = Mockery::mock( WPPostStatusProviderInterface::class );
         $mockRepository = Mockery::mock( NotificationRepositoryInterface::class );
 
-        $author_id = 5;
+        $sults_author_id = 5;
         
-        $mockUser->shouldReceive( 'get_current_user_id' )->andReturn( $author_id );
+        $mockUser->shouldReceive( 'get_current_user_id' )->andReturn( $sults_author_id );
         
         // Garante que o repositório NUNCA é chamado
         $mockRepository->shouldReceive( 'add_notification' )->never();
 
-        $post = (object) array( 'ID' => 1, 'post_author' => $author_id, 'post_type' => 'post' );
+        $sults_post = (object) array( 'ID' => 1, 'post_author' => $sults_author_id, 'post_type' => 'post' );
 
         $manager = new NotificationManager( $mockUser, $mockStatus, $mockRepository );
-        $manager->notify_author_on_status_change( 'published', 'draft', new WP_Post( $post ) );
+        $manager->notify_author_on_status_change( 'published', 'draft', new WP_Post( $sults_post ) );
 
         $this->assertTrue( true );
     }

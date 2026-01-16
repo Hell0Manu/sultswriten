@@ -49,13 +49,13 @@ class PostListVisibility {
 			return $where;
 		}
 
-		$current_user_id  = get_current_user_id();
-		$allowed_statuses = $this->visibility_policy->get_allowed_statuses_for_restricted_user();
-		$placeholders     = implode( ', ', array_fill( 0, count( $allowed_statuses ), '%s' ) );
+		$current_user_id    = get_current_user_id();
+		$allowed_statuses   = $this->visibility_policy->get_allowed_statuses_for_restricted_user();
+		$sults_placeholders = implode( ', ', array_fill( 0, count( $allowed_statuses ), '%s' ) );
 
 		$query_template = " AND ( 
             {$wpdb->posts}.post_author = %d 
-            OR {$wpdb->posts}.post_status IN ( $placeholders )
+            OR {$wpdb->posts}.post_status IN ( $sults_placeholders )
         )";
 
 		$args = array_merge( array( $current_user_id ), $allowed_statuses );

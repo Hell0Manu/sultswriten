@@ -29,8 +29,8 @@ class PostRedirectionManager {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$post_id = absint( $_GET['post'] );
-		if ( ! $post_id ) {
+		$sults_post_id = absint( $_GET['post'] );
+		if ( ! $sults_post_id ) {
 			return;
 		}
 
@@ -41,14 +41,14 @@ class PostRedirectionManager {
 			return;
 		}
 
-		$current_status = $this->status_provider->get_status( $post_id );
+		$current_status = $this->status_provider->get_status( $sults_post_id );
 		$user_roles     = $this->user_provider->get_current_user_roles();
 
 		$statuses_to_block = apply_filters( 'sultswriten_blocked_statuses', PostStatusRegistrar::get_restricted_statuses() );
 		$roles_to_block    = apply_filters( 'sultswriten_blocked_roles', PostStatusRegistrar::get_restricted_roles() );
 
 		if ( array_intersect( $roles_to_block, $user_roles ) && in_array( $current_status, $statuses_to_block, true ) ) {
-			wp_safe_redirect( get_permalink( $post_id ) );
+			wp_safe_redirect( get_permalink( $sults_post_id ) );
 			exit;
 		}
 	}

@@ -7,8 +7,8 @@ interface HtmlExtractorInterface {
 	/**
 	 * Processa o post: extrai o conteúdo, limpa o HTML e aplica melhorias estruturais.
 	 *
-	 * @param WP_Post $post O objeto do post.
+	 * @param WP_Post $sults_post O objeto do post.
 	 * @return string O HTML pronto para ser inserido no JSP.
 	 */
-	public function extract( WP_Post $post ): string;
+	public function extract( WP_Post $sults_post ): string;
 }

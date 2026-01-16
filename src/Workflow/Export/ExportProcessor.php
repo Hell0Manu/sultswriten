@@ -32,25 +32,25 @@ class ExportProcessor {
 		JspHtmlSanitizerInterface $sanitizer,
 		ExportMetadataBuilder $metadata_builder
 	) {
-		$this->extractor      = $extractor;
-		$this->assets_manager = $assets_manager;
-		$this->seo_provider   = $seo_provider;
-		$this->jsp_builder    = $jsp_builder;
-		$this->sanitizer      = $sanitizer;
+		$this->extractor        = $extractor;
+		$this->assets_manager   = $assets_manager;
+		$this->seo_provider     = $seo_provider;
+		$this->jsp_builder      = $jsp_builder;
+		$this->sanitizer        = $sanitizer;
 		$this->metadata_builder = $metadata_builder;
 	}
 
-	public function execute( int $post_id, string $zip_folder_prefix ): array {
-		$post = get_post( $post_id );
-		if ( ! $post instanceof WP_Post ) {
+	public function execute( int $sults_post_id, string $zip_folder_prefix ): array {
+		$sults_post = get_post( $sults_post_id );
+		if ( ! $sults_post instanceof WP_Post ) {
 			throw new \InvalidArgumentException( 'Post não encontrado.' );
 		}
 
-		$terms = get_the_terms( $post_id, 'sidebar' );
-    	$sidebar = ( ! empty( $terms ) && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
+		$sults_terms = get_the_terms( $sults_post_id, 'sidebar' );
+		$sidebar     = ( ! empty( $sults_terms ) && ! is_wp_error( $sults_terms ) ) ? $sults_terms[0]->name : '';
 
-		$html_raw   = $post->post_content;
-		$html_clean = $this->extractor->extract( $post );
+		$html_raw   = $sults_post->post_content;
+		$html_clean = $this->extractor->extract( $sults_post );
 
 		/* @var ExportPayload $assets_payload */
 		$assets_payload = $this->assets_manager->process( $html_clean, $zip_folder_prefix );
@@ -59,56 +59,56 @@ class ExportProcessor {
 		$files_to_zip       = $assets_payload->files_to_zip;
 
 		$safe_html_for_jsp = $this->sanitizer->sanitize( $final_html_for_jsp );
-		$seo_data   = $this->seo_provider->get_seo_data( $post_id );
-		$page_title = get_the_title( $post );
-		
+		$seo_data          = $this->seo_provider->get_seo_data( $sults_post_id );
+		$sults_page_title  = get_the_title( $sults_post );
+
 		$active_group_name = '';
 
-		$cats = get_the_category( $post_id );
-        
-        if ( ! empty( $cats ) && ! is_wp_error( $cats ) ) {
-            foreach ( $cats as $cat ) {
-                if ( $cat->parent > 0 ) {
-                    $active_group_name = $cat->name; 
-                    break; 
-                }
-            }
-        }
+		$sults_cats = get_the_category( $sults_post_id );
 
-		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $page_title, $seo_data, $active_group_name);
+		if ( ! empty( $sults_cats ) && ! is_wp_error( $sults_cats ) ) {
+			foreach ( $sults_cats as $sults_cat ) {
+				if ( $sults_cat->parent > 0 ) {
+					$active_group_name = $sults_cat->name;
+					break;
+				}
+			}
+		}
 
-		$info_content = $this->metadata_builder->build_info_file( $post );
-		$jsp_folder_path = $this->calculate_jsp_folder_path( $post_id );
+		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $sults_page_title, $seo_data, $active_group_name );
+
+		$info_content    = $this->metadata_builder->build_info_file( $sults_post );
+		$jsp_folder_path = $this->calculate_jsp_folder_path( $sults_post_id );
 		return array(
-			'jsp_content' => $jsp_content,
-			'info_content' => $info_content,
-			'files_map'   => $files_to_zip,
-			'html_clean'  => $html_clean,
-			'html_raw'    => $html_raw,
+			'jsp_content'     => $jsp_content,
+			'info_content'    => $info_content,
+			'files_map'       => $files_to_zip,
+			'html_clean'      => $html_clean,
+			'html_raw'        => $html_raw,
 			'jsp_folder_path' => $jsp_folder_path,
 		);
 	}
 
 	/**
-     * Transforma: /checklist/faq/solucao/implantacao-de-software (Slug do WP)
-     * Em: sults/pages/produtos/checklist/artigos/faq/solucao (Pasta do ZIP)
-     */
-    private function calculate_jsp_folder_path( int $post_id ): string {
-        $relative_path = PathHelper::get_relative_path( $post_id );
-        
-        $parts = explode( '/', trim( $relative_path, '/' ) );
-        
-        if ( count( $parts ) > 0 ) {
-            array_pop( $parts ); 
-        }
+	 * Transforma: /checklist/faq/solucao/implantacao-de-software (Slug do WP)
+	 * Em: sults/pages/produtos/checklist/artigos/faq/solucao (Pasta do ZIP)
+	 */
+	private function calculate_jsp_folder_path( int $sults_post_id ): string {
+		$relative_path = PathHelper::get_relative_path( $sults_post_id );
 
-        if ( ! empty( $parts ) && $parts[0] === 'checklist' ) {
-            if ( ! isset( $parts[1] ) || $parts[1] !== 'artigos' ) {
-                array_splice( $parts, 1, 0, 'artigos' );
-            }
-        }
-        array_unshift( $parts, 'sults', 'pages', 'produtos' );
+		$sults_parts = explode( '/', trim( $relative_path, '/' ) );
 
-        return implode( '/', $parts );
-    }
+		if ( count( $sults_parts ) > 0 ) {
+			array_pop( $sults_parts );
+		}
+
+		if ( ! empty( $sults_parts ) && $sults_parts[0] === 'checklist' ) {
+			if ( ! isset( $sults_parts[1] ) || $sults_parts[1] !== 'artigos' ) {
+				array_splice( $sults_parts, 1, 0, 'artigos' );
+			}
+		}
+		array_unshift( $sults_parts, 'sults', 'pages', 'produtos' );
+
+		return implode( '/', $sults_parts );
+	}
 }

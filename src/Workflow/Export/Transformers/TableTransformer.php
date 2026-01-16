@@ -11,16 +11,16 @@ class TableTransformer implements DomTransformerInterface {
 		$tables = $xpath->query( '//table' );
 
 		foreach ( $tables as $table ) {
-			$parent = $table->parentNode;
-			if ( $parent instanceof DOMElement && $parent->nodeName === 'div' && $parent->getAttribute( 'class' ) === 'table-content' ) {
+			$sults_parent = $table->parentNode;
+			if ( $sults_parent instanceof DOMElement && $sults_parent->nodeName === 'div' && $sults_parent->getAttribute( 'class' ) === 'table-content' ) {
 				continue;
 			}
 
 			$wrapper = $dom->createElement( 'div' );
 			$wrapper->setAttribute( 'class', 'table-content' );
 
-			if ( $parent ) {
-				$parent->replaceChild( $wrapper, $table );
+			if ( $sults_parent ) {
+				$sults_parent->replaceChild( $wrapper, $table );
 				$wrapper->appendChild( $table );
 			}
 		}

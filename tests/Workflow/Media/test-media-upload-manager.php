@@ -39,7 +39,7 @@ class Test_MediaUploadManager extends WP_UnitTestCase {
             'type' => 'image/jpeg'
         );
 
-        $processedData = array(
+        $sults_processedData = array(
             'file' => '/tmp/imagem-teste.webp', // Simula mudança
             'url'  => 'http://site.local/wp-content/uploads/imagem-teste.webp',
             'type' => 'image/webp'
@@ -49,7 +49,7 @@ class Test_MediaUploadManager extends WP_UnitTestCase {
         $mockProcessor->shouldReceive( 'process' )
             ->once()
             ->with( $uploadData )
-            ->andReturn( $processedData );
+            ->andReturn( $sults_processedData );
 
         $manager = new MediaUploadManager( $mockProcessor );
         
@@ -57,6 +57,6 @@ class Test_MediaUploadManager extends WP_UnitTestCase {
         $result = $manager->handle_upload_conversion( $uploadData );
 
         // Verifica o retorno
-        $this->assertEquals( $processedData, $result );
+        $this->assertEquals( $sults_processedData, $result );
     }
 }

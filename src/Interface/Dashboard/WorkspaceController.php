@@ -6,6 +6,7 @@ use Sults\Writen\Contracts\NotificationRepositoryInterface;
 use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Contracts\HookableInterface;
 use Sults\Writen\Workflow\WorkflowPolicy;
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
 
 class WorkspaceController implements HookableInterface {
 
@@ -19,13 +20,13 @@ class WorkspaceController implements HookableInterface {
 	public function __construct(
 		WPUserProviderInterface $user_provider,
 		NotificationRepositoryInterface $notification_repo,
-		PostRepositoryInterface $post_repo,
-		WorkflowPolicy $policy
+		PostRepositoryInterface $sults_post_repo,
+		WorkflowPolicy $sults_policy
 	) {
 		$this->user_provider     = $user_provider;
 		$this->notification_repo = $notification_repo;
-		$this->post_repo         = $post_repo;
-		$this->policy            = $policy;
+		$this->post_repo         = $sults_post_repo;
+		$this->policy            = $sults_policy;
 	}
 
 	public function register(): void {
@@ -35,9 +36,9 @@ class WorkspaceController implements HookableInterface {
 	}
 
 	public function redirect_default_dashboard(): void {
-		global $pagenow;
+		global $sults_pagenow;
 
-		if ( 'index.php' === $pagenow && ! $this->is_admin() ) {
+		if ( 'index.php' === $sults_pagenow && ! $this->is_admin() ) {
 			wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
 			exit;
 		}
@@ -127,7 +128,7 @@ class WorkspaceController implements HookableInterface {
 
 	private function is_admin(): bool {
 		$roles = $this->user_provider->get_current_user_roles();
-		return in_array( 'administrator', $roles, true );
+		return in_array( RoleDefinitions::ADMIN, $roles, true );
 	}
 
 	public function get_policy(): WorkflowPolicy {

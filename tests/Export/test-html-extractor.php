@@ -49,12 +49,12 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
     }
 
     public function test_deve_limpar_elementos_basicos() {
-        $post_id = $this->factory->post->create( array(
+        $sults_post_id = $this->factory->post->create( array(
             'post_content' => '<p id="remove-me">Texto Limpo</p>'
         ) );
-        $post = get_post( $post_id );
+        $sults_post = get_post( $sults_post_id );
 
-        $result = $this->extractor->extract( $post );
+        $result = $this->extractor->extract( $sults_post );
 
         $this->assertStringNotContainsString( 'id="remove-me"', $result );
         $this->assertStringContainsString( '<p>Texto Limpo</p>', $result );
@@ -62,10 +62,10 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
     public function test_deve_transformar_pre_em_dica_sults() {
         $content = '<pre>Esta é uma dica importante.</pre>';
-        $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
-        $post = get_post( $post_id );
+        $sults_post_id = $this->factory->post->create( array( 'post_content' => $content ) );
+        $sults_post = get_post( $sults_post_id );
 
-        $result = $this->extractor->extract( $post );
+        $result = $this->extractor->extract( $sults_post );
 
         // CORREÇÃO: Aspas duplas, pois é saída padrão do DOMDocument
         $this->assertStringContainsString( 'class="dica-sults"', $result );
@@ -75,9 +75,9 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
     public function test_deve_envolver_tabelas_em_div_responsiva() {
         $content = '<table><tr><td>Dados</td></tr></table>';
-        $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
+        $sults_post_id = $this->factory->post->create( array( 'post_content' => $content ) );
         
-        $result = $this->extractor->extract( get_post( $post_id ) );
+        $result = $this->extractor->extract( get_post( $sults_post_id ) );
 
         // CORREÇÃO: Aspas duplas
         $this->assertStringContainsString( 'class="table-content"', $result );
@@ -86,9 +86,9 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
     public function test_deve_adicionar_target_blank_em_links_externos() {
         $content = '<a href="https://google.com">Google</a>';
-        $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
+        $sults_post_id = $this->factory->post->create( array( 'post_content' => $content ) );
 
-        $result = $this->extractor->extract( get_post( $post_id ) );
+        $result = $this->extractor->extract( get_post( $sults_post_id ) );
 
         // CORREÇÃO: Aspas duplas
         $this->assertStringContainsString( 'target="_blank"', $result );
@@ -97,9 +97,9 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
 
     public function test_nao_deve_alterar_links_internos() {
         $content = "<a href='https://sults.com.br/contato'>Contato</a>";
-        $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
+        $sults_post_id = $this->factory->post->create( array( 'post_content' => $content ) );
 
-        $result = $this->extractor->extract( get_post( $post_id ) );
+        $result = $this->extractor->extract( get_post( $sults_post_id ) );
 
         $this->assertStringNotContainsString( "target='_blank'", $result );
     }
@@ -110,9 +110,9 @@ class Test_HtmlExtractor extends WP_UnitTestCase {
         // Aqui testamos se o Extractor mantém as classes corretas (agora via DOM).
         
         $content = "<p class='aligncenter'>Texto</p>";
-        $post_id = $this->factory->post->create( array( 'post_content' => $content ) );
+        $sults_post_id = $this->factory->post->create( array( 'post_content' => $content ) );
 
-        $result = $this->extractor->extract( get_post( $post_id ) );
+        $result = $this->extractor->extract( get_post( $sults_post_id ) );
 
         // Espera aspas duplas, padrão do HTML
         $this->assertStringContainsString( 'class="aligncenter"', $result );

@@ -18,11 +18,11 @@ class RoleLabelUpdater {
 			$roles[ RoleDefinitions::EDITOR_CHEFE ]['name'] = 'Redator-Chefe';
 		}
 
-		if ( isset( $roles[ RoleDefinitions::REDATOR ] ) ) { 
+		if ( isset( $roles[ RoleDefinitions::REDATOR ] ) ) {
 			$roles[ RoleDefinitions::REDATOR ]['name'] = 'Redator';
 		}
 
-		if ( isset( $roles[ RoleDefinitions::CORRETOR ] ) ) { 
+		if ( isset( $roles[ RoleDefinitions::CORRETOR ] ) ) {
 			$roles[ RoleDefinitions::CORRETOR ]['name'] = 'Corretor';
 		}
 

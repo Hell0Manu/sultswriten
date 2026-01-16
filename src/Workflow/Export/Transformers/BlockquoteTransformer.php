@@ -31,15 +31,15 @@ class BlockquoteTransformer implements DomTransformerInterface {
 				$old_cite->parentNode->removeChild( $old_cite );
 			}
 
-			$footer = $dom->createElement( 'footer' );
-			$parts  = explode( ',', $full_text, 2 );
-			$name   = trim( $parts[0] );
+			$footer      = $dom->createElement( 'footer' );
+			$sults_parts = explode( ',', $full_text, 2 );
+			$name        = trim( $sults_parts[0] );
 
 			$footer->appendChild( $dom->createTextNode( "—{$name}" ) );
 
-			if ( isset( $parts[1] ) ) {
+			if ( isset( $sults_parts[1] ) ) {
 				$footer->appendChild( $dom->createTextNode( ', ' ) );
-				$role_cite = $dom->createElement( 'cite', trim( $parts[1] ) );
+				$role_cite = $dom->createElement( 'cite', trim( $sults_parts[1] ) );
 				$footer->appendChild( $role_cite );
 			}
 			$footer->appendChild( $dom->createTextNode( '.' ) );

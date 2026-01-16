@@ -4,8 +4,8 @@
  *
  * @var \WP_Query $query
  * @var array $filters
- * @var string $categories_dropdown
- * @var string $author_dropdown
+ * @var string $sults_categories_dropdown
+ * @var string $sults_author_dropdown
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,14 +22,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="sults-select-wrapper">
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML seguro gerado pelo WP.
-				echo $author_dropdown;
+				echo $sults_author_dropdown;
 				?>
 			</div>
 
 			<div class="sults-select-wrapper">
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML seguro gerado pelo WP.
-				echo $categories_dropdown;
+				echo $sults_categories_dropdown;
 				?>
 			</div>
 		</div>
@@ -57,8 +57,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php
 				while ( $query->have_posts() ) :
 					$query->the_post();
-					global $post;
-					$sultswriten_author_id = $post->post_author;
+					global $sults_post;
+					$sultswriten_author_id = $sults_post->post_author;
 
 					$sultswriten_categories = get_the_category();
 					$sultswriten_cat_name   = 'Sem Categoria';
@@ -118,8 +118,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 								array(
 									'page'     => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
 									'action'   => 'download',
-									'post_id'  => $post->ID,
-									'_wpnonce' => wp_create_nonce( 'sults_export_' . $post->ID ),
+									'post_id'  => $sults_post->ID,
+									'_wpnonce' => wp_create_nonce( 'sults_export_' . $sults_post->ID ),
 								),
 								admin_url( 'admin.php' )
 							);

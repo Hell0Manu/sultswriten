@@ -38,13 +38,13 @@ class PostStatusRegistrar {
 		foreach ( $all_configs as $slug => $config ) {
 			$args = $config['wp_args'];
 
-			$label         = $config['label'];
-			$args['label'] = $label;
+			$sults_label   = $config['label'];
+			$args['label'] = $sults_label;
 
 			// phpcs:disable WordPress.WP.I18n.NonSingularStringLiteralSingular, WordPress.WP.I18n.NonSingularStringLiteralPlural
 			$args['label_count'] = _n_noop(
-				$label . ' <span class="count">(%s)</span>',
-				$label . ' <span class="count">(%s)</span>',
+				$sults_label . ' <span class="count">(%s)</span>',
+				$sults_label . ' <span class="count">(%s)</span>',
 				'sultswriten'
 			);
 			// phpcs:enable

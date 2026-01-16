@@ -13,8 +13,8 @@
 namespace Sults\Writen\Contracts;
 
 interface WPPostStatusProviderInterface {
-	public function register( string $post_type, array $args ): object;
-	public function get_status( int $post_id ): string;
+	public function register( string $sults_post_type, array $args ): object;
+	public function get_status( int $sults_post_id ): string;
 	public function get_status_object( string $slug ): ?object;
 
 	/**

@@ -124,15 +124,15 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 		);
 
 		// Notifications.
-		$container->set( 
-            MailerInterface::class, 
-            function ( $c ) {
-                return new WPMailer(
-                    $c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class ) // Injetando aqui!
-                );
-            }
-        );
-		
+		$container->set(
+			MailerInterface::class,
+			function ( $c ) {
+				return new WPMailer(
+					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class ) // Injetando aqui!
+				);
+			}
+		);
+
 		$container->set(
 			NotificationManager::class,
 			function ( $c ) {

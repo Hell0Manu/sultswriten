@@ -22,17 +22,17 @@ class Test_ExportController extends WP_UnitTestCase {
 		$mockProcessor = Mockery::mock( ExportProcessor::class );
 		$mockNaming    = Mockery::mock( ExportNamingService::class ); // [Novo Mock]
 
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Titulo Teste' ) );
+		$sults_post_id = $this->factory->post->create( array( 'post_title' => 'Titulo Teste' ) );
 		
 		// Simula GET parameters
 		$_GET['action']   = 'preview';
-		$_GET['post_id']  = $post_id;
-		$_GET['_wpnonce'] = wp_create_nonce( 'sults_preview_' . $post_id );
+		$_GET['post_id']  = $sults_post_id;
+		$_GET['_wpnonce'] = wp_create_nonce( 'sults_preview_' . $sults_post_id );
 
 		// 2. Expectativas
 		$mockProcessor->shouldReceive( 'execute' )
 			->once()
-			->with( $post_id, Mockery::type('string') )
+			->with( $sults_post_id, Mockery::type('string') )
 			->andReturn( array(
 				'jsp_content' => '<jsp>Final</jsp>',
 				'files_map'   => array(),
@@ -62,11 +62,11 @@ class Test_ExportController extends WP_UnitTestCase {
 		$mockProcessor = Mockery::mock( ExportProcessor::class );
 		$mockNaming    = Mockery::mock( ExportNamingService::class );
 
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Meu Post' ) );
+		$sults_post_id = $this->factory->post->create( array( 'post_title' => 'Meu Post' ) );
 
 		$_GET['action']   = 'download';
-		$_GET['post_id']  = $post_id;
-		$_GET['_wpnonce'] = wp_create_nonce( 'sults_export_' . $post_id );
+		$_GET['post_id']  = $sults_post_id;
+		$_GET['_wpnonce'] = wp_create_nonce( 'sults_export_' . $sults_post_id );
 
 		// Expectativa: O NamingService deve ser invocado
 		$mockNaming->shouldReceive( 'generate_zip_filename' )

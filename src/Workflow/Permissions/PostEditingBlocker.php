@@ -25,12 +25,12 @@ class PostEditingBlocker {
 		WPUserProviderInterface $user_provider,
 		WPPostStatusProviderInterface $status_provider,
 		RequestProviderInterface $request_provider,
-		WorkflowPolicy $policy
+		WorkflowPolicy $sults_policy
 	) {
 		$this->user_provider    = $user_provider;
 		$this->status_provider  = $status_provider;
 		$this->request_provider = $request_provider;
-		$this->policy           = $policy;
+		$this->policy           = $sults_policy;
 	}
 
 	public function register(): void {
@@ -42,12 +42,12 @@ class PostEditingBlocker {
 			return $caps;
 		}
 
-		$post_id = isset( $args[0] ) ? (int) $args[0] : 0;
-		if ( ! $post_id ) {
+		$sults_post_id = isset( $args[0] ) ? (int) $args[0] : 0;
+		if ( ! $sults_post_id ) {
 			return $caps;
 		}
 
-		$current_status = $this->status_provider->get_status( $post_id );
+		$current_status = $this->status_provider->get_status( $sults_post_id );
 		if ( ! $current_status ) {
 			return $caps;
 		}

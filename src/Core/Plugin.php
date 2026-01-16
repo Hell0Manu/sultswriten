@@ -27,15 +27,15 @@ class Plugin {
 	 * Carrega os Service Providers.
 	 */
 	private function register_services(): void {
-		$providers = array(
+		$sults_providers = array(
 			new InfrastructureServiceProvider(),
 			new WorkflowServiceProvider(),
 			new DashboardServiceProvider(),
 			new StructureServiceProvider(),
 		);
 
-		foreach ( $providers as $provider ) {
-			$provider->register( $this->container );
+		foreach ( $sults_providers as $sults_provider ) {
+			$sults_provider->register( $this->container );
 		}
 	}
 

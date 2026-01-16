@@ -16,13 +16,13 @@ jQuery(document).ready(function($) {
     const $titleInput = $('#new-post-title');
     const $slugInput = $('#new-post-slug');
     
-    const $parentSelect = $('#new-post-parent');
-    const $parentGroup = $parentSelect.closest('.sults-form-group');
+    const $sults_parentSelect = $('#new-post-parent');
+    const $sults_parentGroup = $sults_parentSelect.closest('.sults-form-group');
     
-    const $categorySelect = $('#new-post-category');
+    const $sults_categorySelect = $('#new-post-category');
     const $slugPrefix = $('#new-post-slug-prefix'); 
 
-    const $allParentOptions = $parentSelect.find('option').clone();
+    const $allParentOptions = $sults_parentSelect.find('option').clone();
 
     $('#btn-open-new-post').on('click', function(e) {
         e.preventDefault();
@@ -31,9 +31,9 @@ jQuery(document).ready(function($) {
         $slugPrefix.text('/');
         $('#hidden-cat-id').remove();
         
-        $parentGroup.hide(); 
+        $sults_parentGroup.hide(); 
         
-        $categorySelect.val(""); 
+        $sults_categorySelect.val(""); 
 
         $modalBackdrop.addClass('open');
         $titleInput.focus();
@@ -44,7 +44,7 @@ jQuery(document).ready(function($) {
         $modalBackdrop.removeClass('open');
     });
 
-    $categorySelect.on('change', function() {
+    $sults_categorySelect.on('change', function() {
         const selectedOption = $(this).find('option:selected');
 
         const slug = selectedOption.data('slug'); 
@@ -64,20 +64,20 @@ jQuery(document).ready(function($) {
         $slugPrefix.text(pathPrefix);
 
         if (selectedCatId) {
-            $parentSelect.empty();
+            $sults_parentSelect.empty();
             
             const rootOption = $allParentOptions.filter('[value="0"]');
-            $parentSelect.append(rootOption);
+            $sults_parentSelect.append(rootOption);
 
             const matchingParents = $allParentOptions.filter(function() {
                 return String($(this).data('cat-id')) === String(selectedCatId);
             });
             
-            $parentSelect.append(matchingParents);
-            $parentSelect.val("0");
-            $parentGroup.fadeIn(200);
+            $sults_parentSelect.append(matchingParents);
+            $sults_parentSelect.val("0");
+            $sults_parentGroup.fadeIn(200);
         } else {
-            $parentGroup.hide();
+            $sults_parentGroup.hide();
         }
     });
 

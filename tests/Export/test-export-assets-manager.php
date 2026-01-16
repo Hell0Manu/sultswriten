@@ -32,15 +32,15 @@ class Test_ExportAssetsManager extends WP_UnitTestCase {
 		$img_url = $this->upload_url . '/teste-sults.jpg';
 		
 		$html_input = '<img src="' . $img_url . '" title="Capa do Vídeo Checklist" alt="Alt Ignorado">';
-		$path_prefix = 'sults/images/produtos/checklist'; // Caminho solicitado
+		$sults_path_prefix = 'sults/images/produtos/checklist'; // Caminho solicitado
 
-		$payload = $manager->process( $html_input, $path_prefix );
+		$sults_payload = $manager->process( $html_input, $sults_path_prefix );
 
 		$expected_path = 'sults/images/produtos/checklist/capa_do_video_checklist.jpg';
 		
-		$this->assertArrayHasKey( $this->temp_file, $payload->files_to_zip );
-		$this->assertEquals( $expected_path, $payload->files_to_zip[ $this->temp_file ] );
-		$this->assertStringContainsString( 'src="/' . $expected_path . '"', $payload->html_content );
+		$this->assertArrayHasKey( $this->temp_file, $sults_payload->files_to_zip );
+		$this->assertEquals( $expected_path, $sults_payload->files_to_zip[ $this->temp_file ] );
+		$this->assertStringContainsString( 'src="/' . $expected_path . '"', $sults_payload->html_content );
 	}
 
 	public function test_deve_tratar_nomes_duplicados() {
@@ -54,11 +54,11 @@ class Test_ExportAssetsManager extends WP_UnitTestCase {
 		$html_input .= '</div>';
 
 		// CORREÇÃO: Passando o segundo argumento obrigatório 'img/'
-		$payload = $manager->process( $html_input, 'img/' );
+		$sults_payload = $manager->process( $html_input, 'img/' );
 
 		// Verifica se gerou sufixos diferentes
-		$this->assertStringContainsString( 'icone.jpg', $payload->html_content );
-		$this->assertStringContainsString( 'icone_1.jpg', $payload->html_content );
+		$this->assertStringContainsString( 'icone.jpg', $sults_payload->html_content );
+		$this->assertStringContainsString( 'icone_1.jpg', $sults_payload->html_content );
 	}
 
 	public function test_deve_ignorar_imagens_externas() {
@@ -67,19 +67,19 @@ class Test_ExportAssetsManager extends WP_UnitTestCase {
 		$html_input   = '<img src="' . $external_url . '">';
 
 		// CORREÇÃO: Passando argumento 'assets/' (mesmo que não vá usar)
-		$payload = $manager->process( $html_input, 'assets/' );
+		$sults_payload = $manager->process( $html_input, 'assets/' );
 
-		$this->assertEmpty( $payload->files_to_zip );
-		$this->assertStringContainsString( $external_url, $payload->html_content );
+		$this->assertEmpty( $sults_payload->files_to_zip );
+		$this->assertStringContainsString( $external_url, $sults_payload->html_content );
 	}
 
 	public function test_deve_lidar_com_html_vazio() {
 		$manager = new ExportAssetsManager();
 		
 		// CORREÇÃO: Passando argumento 'assets/'
-		$payload = $manager->process( '', 'assets/' );
+		$sults_payload = $manager->process( '', 'assets/' );
 
-		$this->assertEmpty( $payload->html_content );
-		$this->assertEmpty( $payload->files_to_zip );
+		$this->assertEmpty( $sults_payload->html_content );
+		$this->assertEmpty( $sults_payload->files_to_zip );
 	}
 }

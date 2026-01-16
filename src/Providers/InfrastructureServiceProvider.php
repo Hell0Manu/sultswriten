@@ -33,9 +33,9 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 		$container->set( \Sults\Writen\Contracts\NotificationRepositoryInterface::class, fn() => new WPNotificationRepository() );
 		$container->set( \Sults\Writen\Contracts\AttachmentProviderInterface::class, fn() => new WPAttachmentProvider() );
 
-		$container->set( 
-			\Sults\Writen\Contracts\FileSystemInterface::class, 
-			function() {
+		$container->set(
+			\Sults\Writen\Contracts\FileSystemInterface::class,
+			function () {
 				return new WPFileSystem();
 			}
 		);

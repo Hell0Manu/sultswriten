@@ -10,10 +10,10 @@ class WPConfigProvider implements ConfigProviderInterface {
 	}
 
 	public function get_internal_domains(): array {
-		$domains = [
+		$domains = array(
 			'sults.com.br',
-			'artigo.sults.com.br'
-		];
+			'artigo.sults.com.br',
+		);
 
 		if ( defined( 'SULTSWRITEN_INTERNAL_DOMAIN' ) ) {
 			$domains[] = SULTSWRITEN_INTERNAL_DOMAIN;

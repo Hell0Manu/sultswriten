@@ -9,66 +9,66 @@ use DOMElement;
 
 class LinkTransformer implements DomTransformerInterface {
 
-    private ConfigProviderInterface $config;
+	private ConfigProviderInterface $config;
 
-    public function __construct( ConfigProviderInterface $config ) {
-        $this->config = $config;
-    }
+	public function __construct( ConfigProviderInterface $config ) {
+		$this->config = $config;
+	}
 
-    public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
-        $links            = $xpath->query( '//a' );
-        $internal_domains = $this->config->get_internal_domains(); 
-		
-        foreach ( $links as $link ) {
-            if ( ! $link instanceof DOMElement ) {
-                continue;
-            }
+	public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
+		$links            = $xpath->query( '//a' );
+		$internal_domains = $this->config->get_internal_domains();
 
-            $link->removeAttribute( 'title' );
-            $href = trim( $link->getAttribute( 'href' ) );
-            if ( ! $href ) {
-                continue;
-            }
+		foreach ( $links as $link ) {
+			if ( ! $link instanceof DOMElement ) {
+				continue;
+			}
 
-            if ( strpos( $href, '#' ) === 0 || stripos( $href, 'mailto:' ) === 0 || stripos( $href, 'tel:' ) === 0 ) {
-                continue;
-            }
+			$link->removeAttribute( 'title' );
+			$href = trim( $link->getAttribute( 'href' ) );
+			if ( ! $href ) {
+				continue;
+			}
 
-            if ( ! $link->hasAttribute( 'target' ) ) {
-                $link->setAttribute( 'target', '_blank' );
-            }
+			if ( strpos( $href, '#' ) === 0 || stripos( $href, 'mailto:' ) === 0 || stripos( $href, 'tel:' ) === 0 ) {
+				continue;
+			}
 
-            $parsed_url = wp_parse_url( $href );
-            $host       = isset( $parsed_url['host'] ) ? $parsed_url['host'] : '';
+			if ( ! $link->hasAttribute( 'target' ) ) {
+				$link->setAttribute( 'target', '_blank' );
+			}
 
-            $is_internal = empty( $host ); 
-            if ( ! $is_internal && ! empty( $host ) ) {
-                foreach ( $internal_domains as $domain ) {
-                    if ( stripos( $host, $domain ) !== false ) {
-                        $is_internal = true;
-                        break;
-                    }
-                }
-            }
+			$sults_parsed_url = wp_parse_url( $href );
+			$host             = isset( $sults_parsed_url['host'] ) ? $sults_parsed_url['host'] : '';
 
-            if ( ! $is_internal ) {
-                $rel   = $link->getAttribute( 'rel' );
-                $parts = $rel ? explode( ' ', $rel ) : array();
+			$is_internal = empty( $host );
+			if ( ! $is_internal ) {
+				foreach ( $internal_domains as $domain ) {
+					if ( stripos( $host, $domain ) !== false ) {
+						$is_internal = true;
+						break;
+					}
+				}
+			}
 
-                $changed = false;
-                if ( ! in_array( 'noopener', $parts, true ) ) {
-                    $parts[] = 'noopener';
-                    $changed = true;
-                }
-                if ( ! in_array( 'noreferrer', $parts, true ) ) {
-                    $parts[] = 'noreferrer';
-                    $changed = true;
-                }
+			if ( ! $is_internal ) {
+				$rel         = $link->getAttribute( 'rel' );
+				$sults_parts = $rel ? explode( ' ', $rel ) : array();
 
-                if ( $changed ) {
-                    $link->setAttribute( 'rel', trim( implode( ' ', $parts ) ) );
-                }
-            }
-        }
-    }
+				$changed = false;
+				if ( ! in_array( 'noopener', $sults_parts, true ) ) {
+					$sults_parts[] = 'noopener';
+					$changed       = true;
+				}
+				if ( ! in_array( 'noreferrer', $sults_parts, true ) ) {
+					$sults_parts[] = 'noreferrer';
+					$changed       = true;
+				}
+
+				if ( $changed ) {
+					$link->setAttribute( 'rel', trim( implode( ' ', $sults_parts ) ) );
+				}
+			}
+		}
+	}
 }

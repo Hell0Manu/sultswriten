@@ -3,6 +3,7 @@ namespace Sults\Writen\Interface;
 
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\HookableInterface;
+use Sults\Writen\Workflow\Permissions\RoleDefinitions;
 
 class AdminMenuManager implements HookableInterface {
 
@@ -31,7 +32,7 @@ class AdminMenuManager implements HookableInterface {
 
 		$roles = $this->user_provider->get_current_user_roles();
 
-		if ( in_array( 'administrator', $roles, true ) ) {
+		if ( in_array( RoleDefinitions::ADMIN, $roles, true ) ) {
 			return;
 		}
 

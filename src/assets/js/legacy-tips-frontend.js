@@ -24,9 +24,9 @@
 
                 var $div = $('<div>');
                 var $h3  = $('<h3>').text('Dica SULTS');
-                var $p   = $('<p>').text(cleanText);
+                var $sults_p   = $('<p>').text(cleanText);
 
-                $div.append($h3).append($p);
+                $div.append($h3).append($sults_p);
                 $aside.append($img).append($div);
                 $table.replaceWith($aside);
             }

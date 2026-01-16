@@ -18,9 +18,9 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 		$mockRequest = Mockery::mock( RequestProviderInterface::class );
 		$mockPolicy  = Mockery::mock( WorkflowPolicy::class ); // <--- NOVO
 
-		$postId = 123;
+		$sults_postId = 123;
 		
-		$mockStatus->shouldReceive( 'get_status' )->with( $postId )->andReturn( 'suspended' );
+		$mockStatus->shouldReceive( 'get_status' )->with( $sults_postId )->andReturn( 'suspended' );
 		$mockUser->shouldReceive( 'get_current_user_roles' )->andReturn( array( 'contributor' ) );
 		
 		// A Policy diz que ESTÁ travado
@@ -34,7 +34,7 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 		$blocker = new PostEditingBlocker( $mockUser, $mockStatus, $mockRequest, $mockPolicy ); // <--- 4 argumentos
 		
 		$caps = array( 'edit_post' );
-		$args = array( $postId ); 
+		$args = array( $sults_postId ); 
 		
 		$result = $blocker->filter_map_meta_cap( $caps, 'edit_post', 1, $args );
 
@@ -47,8 +47,8 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 		$mockRequest = Mockery::mock( RequestProviderInterface::class );
 		$mockPolicy  = Mockery::mock( WorkflowPolicy::class );
 
-		$postId = 123;
-		$mockStatus->shouldReceive( 'get_status' )->with( $postId )->andReturn( 'suspended' );
+		$sults_postId = 123;
+		$mockStatus->shouldReceive( 'get_status' )->with( $sults_postId )->andReturn( 'suspended' );
 		$mockUser->shouldReceive( 'get_current_user_roles' )->andReturn( array( 'contributor' ) );
 
 		// A Policy diz que ESTÁ travado
@@ -60,7 +60,7 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 		$blocker = new PostEditingBlocker( $mockUser, $mockStatus, $mockRequest, $mockPolicy );
 		
 		$caps = array( 'edit_post' );
-		$args = array( $postId ); 
+		$args = array( $sults_postId ); 
 		
 		$result = $blocker->filter_map_meta_cap( $caps, 'edit_post', 1, $args );
 
@@ -73,8 +73,8 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 		$mockRequest = Mockery::mock( RequestProviderInterface::class );
 		$mockPolicy  = Mockery::mock( WorkflowPolicy::class );
 
-		$postId = 123;
-		$mockStatus->shouldReceive( 'get_status' )->with( $postId )->andReturn( 'draft' );
+		$sults_postId = 123;
+		$mockStatus->shouldReceive( 'get_status' )->with( $sults_postId )->andReturn( 'draft' );
 		$mockUser->shouldReceive( 'get_current_user_roles' )->andReturn( array( 'contributor' ) ); // Adicionado para satisfazer a chamada
 
 		// A Policy diz que NÃO está travado
@@ -85,7 +85,7 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 		
 		$caps = array( 'edit_post' );
 		
-		$result = $blocker->filter_map_meta_cap( $caps, 'edit_post', 1, array( $postId ) );
+		$result = $blocker->filter_map_meta_cap( $caps, 'edit_post', 1, array( $sults_postId ) );
 
 		$this->assertEquals( $caps, $result );
 	}
@@ -96,8 +96,8 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 		$mockRequest = Mockery::mock( RequestProviderInterface::class );
 		$mockPolicy  = Mockery::mock( WorkflowPolicy::class );
 
-		$postId = 10;
-		$mockStatus->shouldReceive( 'get_status' )->with( $postId )->andReturn( 'suspended' );
+		$sults_postId = 10;
+		$mockStatus->shouldReceive( 'get_status' )->with( $sults_postId )->andReturn( 'suspended' );
 		$mockUser->shouldReceive( 'get_current_user_roles' )->andReturn( array( 'contributor' ) );
 		
 		// Policy confirma bloqueio
@@ -110,7 +110,7 @@ class Test_Post_Editing_Blocker extends WP_UnitTestCase {
 
 		$caps = array( 'edit_post' ); 
 		
-		$result = $blocker->filter_map_meta_cap( $caps, 'edit_post', 1, array( $postId ) );
+		$result = $blocker->filter_map_meta_cap( $caps, 'edit_post', 1, array( $sults_postId ) );
 
 		$this->assertEquals( array( 'do_not_allow' ), $result );
 	}

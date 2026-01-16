@@ -73,7 +73,7 @@ class StatusConfig {
 					'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::CORRETOR ),
 				),
 			),
-			self::PENDING_IMAGE            => array(
+			self::PENDING_IMAGE       => array(
 				'label'      => 'Imagem Pendente',
 				'wp_args'    => array(
 					'public'                    => false,

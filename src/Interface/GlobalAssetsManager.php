@@ -20,7 +20,7 @@ class GlobalAssetsManager implements HookableInterface {
 
 	public function register(): void {
 		add_action( 'admin_enqueue_scripts', array( $this, 'register_admin_assets' ), 1 );
-		
+
 		add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_styles' ) );
 	}
 
@@ -42,7 +42,7 @@ class GlobalAssetsManager implements HookableInterface {
 		wp_register_style(
 			'sults-writen-status-css',
 			$this->asset_resolver->get_css_url( 'statusmanager.css' ),
-			array( 'sults-writen-variables' ), 
+			array( 'sults-writen-variables' ),
 			$version
 		);
 

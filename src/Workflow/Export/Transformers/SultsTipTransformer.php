@@ -16,8 +16,8 @@ class SultsTipTransformer implements DomTransformerInterface {
 	}
 
 	public function transform( DOMDocument $dom, DOMXPath $xpath ): void {
-		$pre_nodes = $xpath->query( '//pre' );
-		foreach ( $pre_nodes as $node ) {
+		$sults_pre_nodes = $xpath->query( '//pre' );
+		foreach ( $sults_pre_nodes as $node ) {
 			$this->replace_with_tip( $dom, $node, $node->nodeValue );
 		}
 
@@ -49,9 +49,9 @@ class SultsTipTransformer implements DomTransformerInterface {
 		$img->setAttribute( 'alt', 'Dica SULTS' );
 
 		$img->setAttribute( 'loading', 'lazy' );
-		$img->setAttribute( 'width', '60' ); 
+		$img->setAttribute( 'width', '60' );
 		$img->setAttribute( 'height', '59' );
-		
+
 		$aside->appendChild( $img );
 
 		$div = $dom->createElement( 'div' );
@@ -59,9 +59,9 @@ class SultsTipTransformer implements DomTransformerInterface {
 		$h3 = $dom->createElement( 'h3', 'Dica SULTS' );
 		$div->appendChild( $h3 );
 
-		$p = $dom->createElement( 'p' );
-		$p->appendChild( $dom->createTextNode( $text_content ) );
-		$div->appendChild( $p );
+		$sults_p = $dom->createElement( 'p' );
+		$sults_p->appendChild( $dom->createTextNode( $text_content ) );
+		$div->appendChild( $sults_p );
 
 		$aside->appendChild( $div );
 

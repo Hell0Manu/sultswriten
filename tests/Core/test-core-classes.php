@@ -18,13 +18,13 @@ class Test_Core_Classes extends WP_UnitTestCase {
      * Teste para verificar se o Plugin registra os serviços no Container.
      */
     public function test_plugin_deve_registrar_servicos_no_container() {
-        $plugin = new Plugin();
+        $sults_plugin = new Plugin();
         
         // Usa Reflection para acessar a propriedade privada 'container'
-        $reflection = new ReflectionClass( $plugin );
+        $reflection = new ReflectionClass( $sults_plugin );
         $container_prop = $reflection->getProperty( 'container' );
         $container_prop->setAccessible( true );
-        $container = $container_prop->getValue( $plugin );
+        $container = $container_prop->getValue( $sults_plugin );
 
         $this->assertInstanceOf( Container::class, $container );
 

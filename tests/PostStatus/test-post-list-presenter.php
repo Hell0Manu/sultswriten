@@ -15,12 +15,12 @@ class Test_PostListPresenter extends WP_UnitTestCase {
 		$mockStatusProvider = Mockery::mock( WPPostStatusProviderInterface::class );
 		$mockUserProvider   = Mockery::mock( WPUserProviderInterface::class );
 
-		$postId      = 123;
+		$sults_postId      = 123;
 		$statusSlug  = 'suspended';
 		$statusLabel = 'Suspenso';
 
 		$mockStatusProvider->shouldReceive( 'get_status' )
-			->with( $postId )
+			->with( $sults_postId )
 			->andReturn( $statusSlug );
 
 		$statusObj = (object) array( 'label' => $statusLabel );
@@ -28,12 +28,12 @@ class Test_PostListPresenter extends WP_UnitTestCase {
 			->with( $statusSlug )
 			->andReturn( $statusObj );
 
-		$presenter = new PostListPresenter( $mockStatusProvider, $mockUserProvider );
+		$sults_presenter = new PostListPresenter( $mockStatusProvider, $mockUserProvider );
 
 		$expectedHtml = '<span class="sults-status-badge sults-status-suspended">Suspenso</span>';
 		$this->expectOutputString( $expectedHtml );
 
-		$presenter->fill_status_column_content( 'post_status_custom', $postId );
+		$sults_presenter->fill_status_column_content( 'post_status_custom', $sults_postId );
 	}
 
 	public function test_nao_deve_fazer_nada_se_coluna_for_incorreta() {
@@ -42,8 +42,8 @@ class Test_PostListPresenter extends WP_UnitTestCase {
 
 		$mockStatus->shouldReceive( 'get_status' )->never();
 
-		$presenter = new PostListPresenter( $mockStatus, $mockUser );
-		$presenter->fill_status_column_content( 'author', 123 );
+		$sults_presenter = new PostListPresenter( $mockStatus, $mockUser );
+		$sults_presenter->fill_status_column_content( 'author', 123 );
 
 		$this->assertTrue( true );
 	}

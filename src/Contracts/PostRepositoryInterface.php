@@ -3,7 +3,7 @@
 namespace Sults\Writen\Contracts;
 
 interface PostRepositoryInterface {
-	public function get_posts_for_workspace( int $author_id ): \WP_Query;
+	public function get_posts_for_workspace( int $sults_author_id ): \WP_Query;
 
 	/**
 	 * Busca posts finalizados com filtros.
@@ -40,12 +40,12 @@ interface PostRepositoryInterface {
 	/**
 	 * Define termos para um post (ex: categorias).
 	 *
-	 * @param int    $post_id  ID do Post.
-	 * @param array  $term_ids Array de IDs dos termos.
+	 * @param int    $sults_post_id  ID do Post.
+	 * @param array  $sults_term_ids Array de IDs dos termos.
 	 * @param string $taxonomy Taxonomia (category).
 	 * @return void
 	 */
-	public function set_terms( int $post_id, array $term_ids, string $taxonomy ): void;
+	public function set_terms( int $sults_post_id, array $sults_term_ids, string $taxonomy ): void;
 
 	/**
 	 * Busca posts filtrados por uma lista de status (usado na árvore de estrutura).

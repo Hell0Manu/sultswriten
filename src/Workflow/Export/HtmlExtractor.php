@@ -28,11 +28,11 @@ class HtmlExtractor implements HtmlExtractorInterface {
 	/**
 	 * Executa o pipeline de extração: Obtém -> Limpa -> Melhora.
 	 *
-	 * @param WP_Post $post O post original.
+	 * @param WP_Post $sults_post O post original.
 	 * @return string O HTML final processado.
 	 */
-	public function extract( WP_Post $post ): string {
-		$html = $post->post_content;
+	public function extract( WP_Post $sults_post ): string {
+		$html = $sults_post->post_content;
 
 		$html = $this->remove_gutenberg_comments( $html );
 		$html = $this->clear_white_spaces( $html );
@@ -51,9 +51,9 @@ class HtmlExtractor implements HtmlExtractorInterface {
 	}
 
 	private function remove_empty_tags( string $html ): string {
-		$pattern = '/<(p|h[1-6]|span|li)[^>]*>(?:\s|&nbsp;|&#160;)*<\/\1>/iu';
-		$html    = preg_replace( $pattern, '', $html );
-		return preg_replace( $pattern, '', $html ) ?? $html;
+		$sults_pattern = '/<(p|h[1-6]|span|li)[^>]*>(?:\s|&nbsp;|&#160;)*<\/\1>/iu';
+		$html          = preg_replace( $sults_pattern, '', $html );
+		return preg_replace( $sults_pattern, '', $html ) ?? $html;
 	}
 
 	private function clear_white_spaces( string $html ): string {
@@ -67,15 +67,12 @@ class HtmlExtractor implements HtmlExtractorInterface {
 		foreach ( $domains as $domain ) {
 			$quoted_domain = preg_quote( $domain, '#' );
 
-			// #https?://      -> Busca por http ou https
+			// #https?://      -> Busca por http ou https.
 			// (?:www\.)?      -> Busca opcional por www.
-			// {$quoted_domain}-> O domínio da vez (ex: artigo.sults.com.br)
-			// (?!/)           -> Garante que não estamos pegando algo que já é relativo
-			
-			// https://sults.com.br -> /
+			// {$quoted_domain}-> O domínio da vez (ex: artigo.sults.com.br).
+			// (?!/)           -> Garante que não estamos pegando algo que já é relativo.
+
 			$html = preg_replace( "#https?://(?:www\.)?{$quoted_domain}(?!/)(?=\")#", '/', $html );
-			
-			// https://sults.com.br/ -> /
 			$html = preg_replace( "#https?://(?:www\.)?{$quoted_domain}/#", '/', $html );
 		}
 
@@ -118,18 +115,18 @@ class HtmlExtractor implements HtmlExtractorInterface {
 	}
 
 	private function clean_strong_in_headings( DOMXPath $xpath ): void {
-   		$strongs = $xpath->query( '//h1//strong | //h2//strong | //h3//strong | //h4//strong | //h5//strong | //h6//strong' );
+		$strongs = $xpath->query( '//h1//strong | //h2//strong | //h3//strong | //h4//strong | //h5//strong | //h6//strong' );
 
 		foreach ( $strongs as $strong ) {
 			if ( ! $strong instanceof DOMElement ) {
 				continue;
 			}
 
-			$parent = $strong->parentNode;
+			$sults_parent = $strong->parentNode;
 			while ( $strong->firstChild ) {
-				$parent->insertBefore( $strong->firstChild, $strong );
+				$sults_parent->insertBefore( $strong->firstChild, $strong );
 			}
-			$parent->removeChild( $strong );
+			$sults_parent->removeChild( $strong );
 		}
 	}
 

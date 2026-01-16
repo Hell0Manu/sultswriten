@@ -37,19 +37,19 @@ class GutenbergManager implements HookableInterface {
 		);
 
 		// $this->asset_loader->enqueue_script(
-		// 	'sults-writen-block-dica',
-		// 	$this->asset_resolver->get_js_url( 'dica-block.js' ),
-		// 	array( 'wp-blocks', 'wp-element', 'wp-editor', 'wp-components', 'wp-i18n' ),
-		// 	$version,
-		// 	true
+		// 'sults-writen-block-dica',
+		// $this->asset_resolver->get_js_url( 'dica-block.js' ),
+		// array( 'wp-blocks', 'wp-element', 'wp-editor', 'wp-components', 'wp-i18n' ),
+		// $version,
+		// true
 		// );
 
 		// $this->asset_loader->localize_script(
-		// 	'sults-writen-block-dica',
-		// 	'sultsWritenSettings',
-		// 	array(
-		// 		'tipsIconUrl' => $this->asset_resolver->get_image_url( 'modulo-checklist.webp' ),
-		// 	)
+		// 'sults-writen-block-dica',
+		// 'sultsWritenSettings',
+		// array(
+		// 'tipsIconUrl' => $this->asset_resolver->get_image_url( 'modulo-checklist.webp' ),
+		// )
 		// );
 	}
 

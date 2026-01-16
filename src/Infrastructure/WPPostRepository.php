@@ -32,12 +32,11 @@ class WPPostRepository implements PostRepositoryInterface {
 	/**
 	 * Busca os posts para o Workspace (apenas pendentes do usuário).
 	 *
-	 * @param int $author_id O ID do usuário logado.
+	 * @param int $sults_author_id O ID do usuário logado.
 	 * @return WP_Query
 	 */
-	public function get_posts_for_workspace( int $author_id ): WP_Query {
+	public function get_posts_for_workspace( int $sults_author_id ): WP_Query {
 
-		// 1. Pega todos os status existentes
 		$core_statuses = get_post_stati(
 			array(
 				'show_in_admin_all_list' => true,
@@ -47,10 +46,10 @@ class WPPostRepository implements PostRepositoryInterface {
 		);
 		$core_statuses = array_diff( $core_statuses, array( 'future', 'private' ) );
 
-		$custom_statuses = array_keys( PostStatusRegistrar::get_custom_statuses() );
-		$all_statuses    = array_merge( $core_statuses, $custom_statuses );
+		$custom_statuses    = array_keys( PostStatusRegistrar::get_custom_statuses() );
+		$sults_all_statuses = array_merge( $core_statuses, $custom_statuses );
 
-		$workspace_statuses = array_diff( $all_statuses, array( 'publish', 'finished' ) );
+		$workspace_statuses = array_diff( $sults_all_statuses, array( 'publish', 'finished' ) );
 
 		$args = array(
 			'post_type'      => 'post',
@@ -58,7 +57,7 @@ class WPPostRepository implements PostRepositoryInterface {
 			'orderby'        => 'modified',
 			'order'          => 'DESC',
 			'post_status'    => array_values( $workspace_statuses ),
-			'author'         => $author_id,
+			'author'         => $sults_author_id,
 		);
 
 		return new WP_Query( $args );
@@ -68,13 +67,13 @@ class WPPostRepository implements PostRepositoryInterface {
 	 * Busca posts finalizados com filtros (Exportação).
 	 */
 	public function get_finished_posts( array $filters ): WP_Query {
-		$paged = ( isset( $filters['paged'] ) ) ? absint( $filters['paged'] ) : 1;
+		$sults_paged = ( isset( $filters['paged'] ) ) ? absint( $filters['paged'] ) : 1;
 
 		$args = array(
 			'post_type'      => 'post',
 			'post_status'    => 'finished',
 			'posts_per_page' => 20,
-			'paged'          => $paged,
+			'paged'          => $sults_paged,
 			'orderby'        => 'date',
 			'order'          => 'DESC',
 		);
@@ -96,11 +95,10 @@ class WPPostRepository implements PostRepositoryInterface {
 
 	/**
 	 * Busca um post pelo ID.
-	 * CORREÇÃO: Adicionado \ antes de WP_Post para evitar erro de namespace.
 	 */
 	public function find( int $id ): ?\WP_Post {
-		$post = get_post( $id );
-		return $post instanceof \WP_Post ? $post : null;
+		$sults_post = get_post( $id );
+		return $sults_post instanceof \WP_Post ? $sults_post : null;
 	}
 
 	/**
@@ -120,10 +118,9 @@ class WPPostRepository implements PostRepositoryInterface {
 	/**
 	 * Define termos para um post.
 	 */
-	public function set_terms( int $post_id, array $term_ids, string $taxonomy ): void {
-		// Converte IDs para inteiros para garantir segurança
-		$term_ids = array_map( 'absint', $term_ids );
-		wp_set_post_terms( $post_id, $term_ids, $taxonomy );
+	public function set_terms( int $sults_post_id, array $sults_term_ids, string $taxonomy ): void {
+		$sults_term_ids = array_map( 'absint', $sults_term_ids );
+		wp_set_post_terms( $sults_post_id, $sults_term_ids, $taxonomy );
 	}
 
 	/**

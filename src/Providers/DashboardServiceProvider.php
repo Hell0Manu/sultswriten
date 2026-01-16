@@ -16,6 +16,8 @@ use Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner;
 use Sults\Writen\Interface\Editor\GutenbergManager;
 use Sults\Writen\Interface\GlobalAssetsManager;
 use Sults\Writen\Workflow\Export\Transformers\GridTransformer;
+use Sults\Writen\Contracts\JspHtmlSanitizerInterface;
+use Sults\Writen\Contracts\ExportNamingServiceInterface;
 
 // Export Helpers.
 use Sults\Writen\Workflow\Export\HtmlExtractor;
@@ -103,7 +105,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-	$container->set(
+		$container->set(
 			ExportController::class,
 			function ( $c ) {
 				return new ExportController(

@@ -11,14 +11,14 @@ class PostConfigurator implements HookableInterface {
 	}
 
 
-	public function configure_post_type( array $args, string $post_type ): array {
-		if ( 'post' !== $post_type ) {
+	public function configure_post_type( array $args, string $sults_post_type ): array {
+		if ( 'post' !== $sults_post_type ) {
 			return $args;
 		}
 
 		$args['hierarchical'] = true;
 
-		$labels = array(
+		$sults_labels = array(
 			'name'                  => 'Posts',
 			'singular_name'         => 'Post',
 			'add_new'               => 'Adicionar Novo',
@@ -40,16 +40,16 @@ class PostConfigurator implements HookableInterface {
 			'name_admin_bar'        => 'Post',
 		);
 
-		$args['labels'] = array_merge( (array) $args['labels'], $labels );
+		$args['labels'] = array_merge( (array) $args['labels'], $sults_labels );
 
 		return $args;
 	}
 
 	/**
-     * Adiciona suporte a atributos de página (Ordem, Pai/Filho) aos Posts.
-     * Isso corrige o erro fatal.
-     */
-    public function add_page_attributes_support(): void {
-        add_post_type_support( 'post', 'page-attributes' );
-    }
+	 * Adiciona suporte a atributos de página (Ordem, Pai/Filho) aos Posts.
+	 * Isso corrige o erro fatal.
+	 */
+	public function add_page_attributes_support(): void {
+		add_post_type_support( 'post', 'page-attributes' );
+	}
 }

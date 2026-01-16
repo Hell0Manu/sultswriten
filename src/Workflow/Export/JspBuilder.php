@@ -5,24 +5,22 @@ use Sults\Writen\Contracts\JspBuilderInterface;
 
 class JspBuilder implements JspBuilderInterface {
 
-	public function build( string $html_content, string $page_title, array $meta_data, string $active_group = '' ): string {
+	public function build( string $html_content, string $sults_page_title, array $meta_data, string $active_group = '' ): string {
 
-		$seo_title = isset( $meta_data['title'] ) ? $meta_data['title'] : $page_title;
+		$seo_title = isset( $meta_data['title'] ) ? $meta_data['title'] : $sults_page_title;
 		$seo_desc  = isset( $meta_data['description'] ) ? $meta_data['description'] : '';
 
-		$safe_seo_title  = htmlspecialchars( $seo_title, ENT_QUOTES, 'UTF-8' );
-		$safe_seo_desc   = htmlspecialchars( $seo_desc, ENT_QUOTES, 'UTF-8' );
-		$safe_page_title = htmlspecialchars( $page_title, ENT_QUOTES, 'UTF-8' );
-        $safe_sidebar_name = htmlspecialchars( $active_group, ENT_QUOTES, 'UTF-8' );
+		$safe_seo_title    = htmlspecialchars( $seo_title, ENT_QUOTES, 'UTF-8' );
+		$safe_seo_desc     = htmlspecialchars( $seo_desc, ENT_QUOTES, 'UTF-8' );
+		$safe_page_title   = htmlspecialchars( $sults_page_title, ENT_QUOTES, 'UTF-8' );
+		$safe_sidebar_name = htmlspecialchars( $active_group, ENT_QUOTES, 'UTF-8' );
 
-        $title_parts = explode( ':', $page_title );
-        $active_item_raw = $title_parts[0];
-        $safe_active_item = htmlspecialchars( trim( $active_item_raw ), ENT_QUOTES, 'UTF-8' );
-
-		// A lógica de limpeza de HTML foi removida daqui e movida para JspHtmlSanitizer.
-		// O $html_content recebido já deve estar sanitizado.
+		$title_parts      = explode( ':', $sults_page_title );
+		$active_item_raw  = $title_parts[0];
+		$safe_active_item = htmlspecialchars( trim( $active_item_raw ), ENT_QUOTES, 'UTF-8' );
 
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
+		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
 		return <<<JSP
 <!DOCTYPE html>
 <html lang="pt-br">

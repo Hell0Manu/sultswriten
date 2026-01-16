@@ -41,33 +41,33 @@ class AdminAssetsManager {
 
 		wp_enqueue_script( 'sults-writen-status-js' );
 
-		$all_configs = StatusConfig::get_all();
-        $filtered_statuses = array();
+		$all_configs       = StatusConfig::get_all();
+		$filtered_statuses = array();
 
-        foreach ( $all_configs as $slug => $config ) {
-            $allowed = isset( $config['flow_rules']['roles_allowed'] ) ? $config['flow_rules']['roles_allowed'] : array();
-            $has_permission = false;
+		foreach ( $all_configs as $slug => $config ) {
+			$allowed        = isset( $config['flow_rules']['roles_allowed'] ) ? $config['flow_rules']['roles_allowed'] : array();
+			$has_permission = false;
 
 			foreach ( $user_roles as $role ) {
-                if ( in_array( $role, $allowed, true ) ) {
-                    $has_permission = true;
-                    break;
-                }
-            }
-            
-            if ( $has_permission ) {
-                $filtered_statuses[ $slug ] = $config['label'];
-            }
-        }
+				if ( in_array( $role, $allowed, true ) ) {
+					$has_permission = true;
+					break;
+				}
+			}
 
-        $this->asset_loader->localize_script(
-            'sults-writen-status-js',
-            'SultsWritenStatuses',
-            array(
-                'statuses'      => $filtered_statuses, 
-                'current_roles' => $user_roles,
-                'allowed_roles' => $user_roles,
-            )
-        );
+			if ( $has_permission ) {
+				$filtered_statuses[ $slug ] = $config['label'];
+			}
+		}
+
+		$this->asset_loader->localize_script(
+			'sults-writen-status-js',
+			'SultsWritenStatuses',
+			array(
+				'statuses'      => $filtered_statuses,
+				'current_roles' => $user_roles,
+				'allowed_roles' => $user_roles,
+			)
+		);
 	}
 }

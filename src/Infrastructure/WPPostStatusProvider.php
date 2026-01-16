@@ -14,12 +14,12 @@ namespace Sults\Writen\Infrastructure;
 use Sults\Writen\Contracts\WPPostStatusProviderInterface;
 
 class WPPostStatusProvider implements WPPostStatusProviderInterface {
-	public function register( string $post_type, array $args ): object {
-		return register_post_status( $post_type, $args );
+	public function register( string $sults_post_type, array $args ): object {
+		return register_post_status( $sults_post_type, $args );
 	}
 
-	public function get_status( int $post_id ): string {
-		$status = get_post_status( $post_id );
+	public function get_status( int $sults_post_id ): string {
+		$status = get_post_status( $sults_post_id );
 		return $status ? $status : '';
 	}
 

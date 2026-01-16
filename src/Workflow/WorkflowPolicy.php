@@ -34,15 +34,15 @@ class WorkflowPolicy {
 	 * Gera o HTML do badge de status para uso em tabelas e listas.
 	 *
 	 * @param string $status O slug do status.
-	 * @param string $label (Opcional) Label forçado, se já tiver sido buscado antes.
+	 * @param string $sults_label (Opcional) Label forçado, se já tiver sido buscado antes.
 	 * @return string HTML do span.
 	 */
-	public function get_status_badge( string $status, string $label = '' ): string {
+	public function get_status_badge( string $status, string $sults_label = '' ): string {
 		$config = StatusConfig::get_config( $status );
 
-		$final_label = ! empty( $label ) ? $label : $config['label'];
-		
-		$css_class   = 'sults-status-' . sanitize_html_class( $status );
+		$final_label = ! empty( $sults_label ) ? $sults_label : $config['label'];
+
+		$css_class = 'sults-status-' . sanitize_html_class( $status );
 
 		return sprintf(
 			'<span class="sults-status-badge %s">%s</span>',
