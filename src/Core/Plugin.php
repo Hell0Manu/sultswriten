@@ -6,36 +6,38 @@ use Sults\Writen\Providers\InfrastructureServiceProvider;
 use Sults\Writen\Providers\WorkflowServiceProvider;
 use Sults\Writen\Providers\DashboardServiceProvider;
 use Sults\Writen\Providers\StructureServiceProvider;
-use Sults\Writen\Infrastructure\PostConfigurator;
-use Sults\Writen\Infrastructure\HomeRedirector;
-use Sults\Writen\Infrastructure\NotFoundRedirector;
 
 /**
- * Classe principal que comanda o plugin Sults Writen.
+ * Classe principal que comanda o plugin.
  */
 class Plugin {
 
 	private string $version = SULTSWRITEN_VERSION;
 	private Container $container;
+    
+    /**
+     * @var \Sults\Writen\Contracts\ServiceProviderInterface[]
+     */
+    private array $service_providers = array();
 
 	public function __construct() {
 		$this->container = new Container();
-		$this->register_services();
+		$this->load_providers();
 	}
 
 	/**
-	 * Carrega os Service Providers.
+	 * Instancia e registra os Service Providers no container.
 	 */
-	private function register_services(): void {
-		$sults_providers = array(
+	private function load_providers(): void {
+		$this->service_providers = array(
 			new InfrastructureServiceProvider(),
 			new WorkflowServiceProvider(),
 			new DashboardServiceProvider(),
 			new StructureServiceProvider(),
 		);
 
-		foreach ( $sults_providers as $sults_provider ) {
-			$sults_provider->register( $this->container );
+		foreach ( $this->service_providers as $provider ) {
+			$provider->register( $this->container );
 		}
 	}
 
@@ -47,45 +49,14 @@ class Plugin {
 	}
 
 	/**
-	 * Inicializa os hooks do WP após todos os plugins carregarem.
+	 * Inicializa os hooks delegando para os providers.
 	 */
 	public function init(): void {
-		$hook_manager = $this->container->get( HookManager::class );
-
-		// Serviços Globais.
-		$global_services = array(
-			$this->container->get( \Sults\Writen\Interface\Theme\LoginTheme::class ),
-			$this->container->get( \Sults\Writen\Workflow\StatusManager::class ),
-			$this->container->get( \Sults\Writen\Workflow\Media\MediaUploadManager::class ),
-			$this->container->get( \Sults\Writen\Workflow\Media\ThumbnailDisabler::class ),
-			$this->container->get( \Sults\Writen\Infrastructure\FeatureDisabler::class ),
-			$this->container->get( \Sults\Writen\Interface\Editor\GutenbergManager::class ),
-			$this->container->get( \Sults\Writen\Interface\GlobalAssetsManager::class ),
-			$this->container->get( \Sults\Writen\Structure\StructureManager::class ),
-			$this->container->get( \Sults\Writen\Infrastructure\PostConfigurator::class ),
-			$this->container->get( \Sults\Writen\Infrastructure\HomeRedirector::class ),
-			$this->container->get( \Sults\Writen\Infrastructure\NotFoundRedirector::class ),
-		);
-
-		$hook_manager->register_services( $global_services );
-
-		// Serviços apenas do Admin.
-		if ( is_admin() ) {
-			$admin_services = array();
-
-			if ( defined( 'AIOSEO_VERSION' ) ) {
-				$admin_services[] = $this->container->get( \Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner::class );
-			}
-
-			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\WorkspaceController::class );
-			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager::class );
-			$admin_services[] = $this->container->get( \Sults\Writen\Interface\AdminMenuManager::class );
-			$admin_services[] = $this->container->get( \Sults\Writen\Interface\CategoryColorManager::class );
-			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\ExportController::class );
-			$admin_services[] = $this->container->get( \Sults\Writen\Interface\Dashboard\ExportAssetsManager::class );
-
-			$hook_manager->register_services( $admin_services );
-		}
+		foreach ( $this->service_providers as $provider ) {
+            if ( method_exists( $provider, 'boot' ) ) {
+                $provider->boot( $this->container );
+            }
+        }
 	}
 
 	public function get_version(): string {

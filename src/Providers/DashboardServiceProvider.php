@@ -3,6 +3,7 @@ namespace Sults\Writen\Providers;
 
 use Sults\Writen\Contracts\ServiceProviderInterface;
 use Sults\Writen\Core\Container;
+use Sults\Writen\Core\HookManager;
 
 // Dashboard & Export.
 use Sults\Writen\Interface\Dashboard\WorkspaceController;
@@ -215,4 +216,33 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 		$container->set( ExportNamingServiceInterface::class, fn() => new ExportNamingService() );
 		$container->set( JspHtmlSanitizerInterface::class, fn() => new JspHtmlSanitizer() );
 	}
+
+	public function boot( Container $container ): void {
+        $hook_manager = $container->get( HookManager::class );
+
+        $global_services = array(
+            $container->get( \Sults\Writen\Interface\Theme\LoginTheme::class ),
+            $container->get( \Sults\Writen\Interface\Editor\GutenbergManager::class ),
+            $container->get( \Sults\Writen\Interface\GlobalAssetsManager::class ),
+        );
+        $hook_manager->register_services( $global_services );
+
+        if ( is_admin() ) {
+            $admin_services = array();
+
+            if ( defined( 'AIOSEO_VERSION' ) ) {
+                $admin_services[] = $container->get( \Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner::class );
+            }
+
+            $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\WorkspaceController::class );
+            $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\WorkspaceAssetsManager::class );
+            $admin_services[] = $container->get( \Sults\Writen\Interface\AdminMenuManager::class );
+            $admin_services[] = $container->get( \Sults\Writen\Interface\CategoryColorManager::class );
+            
+            $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportController::class );
+            $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportAssetsManager::class );
+
+            $hook_manager->register_services( $admin_services );
+        }
+    }
 }

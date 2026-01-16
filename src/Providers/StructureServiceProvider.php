@@ -4,6 +4,7 @@ namespace Sults\Writen\Providers;
 
 use Sults\Writen\Contracts\ServiceProviderInterface;
 use Sults\Writen\Core\Container;
+use Sults\Writen\Core\HookManager;
 use Sults\Writen\Structure\StructureManager;
 use Sults\Writen\Contracts\WPUserProviderInterface;
 use Sults\Writen\Contracts\AssetLoaderInterface;
@@ -29,4 +30,14 @@ class StructureServiceProvider implements ServiceProviderInterface {
 			}
 		);
 	}
+
+	public function boot( Container $container ): void {
+        $hook_manager = $container->get( HookManager::class );
+
+        $services = array(
+            $container->get( \Sults\Writen\Structure\StructureManager::class ),
+        );
+
+        $hook_manager->register_services( $services );
+    }
 }

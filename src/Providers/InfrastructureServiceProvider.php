@@ -81,4 +81,18 @@ class InfrastructureServiceProvider implements ServiceProviderInterface {
 			fn() => new PostConfigurator()
 		);
 	}
+
+	public function boot( Container $container ): void {
+        $hook_manager = $container->get( HookManager::class );
+
+		$services = array(
+            $container->get( \Sults\Writen\Infrastructure\FeatureDisabler::class ),
+            $container->get( \Sults\Writen\Infrastructure\PostConfigurator::class ),
+            $container->get( \Sults\Writen\Infrastructure\HomeRedirector::class ),
+            $container->get( \Sults\Writen\Infrastructure\NotFoundRedirector::class ),
+        );
+
+        $hook_manager->register_services( $services );
+    }
+
 }

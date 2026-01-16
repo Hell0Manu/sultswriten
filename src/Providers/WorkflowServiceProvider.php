@@ -3,6 +3,7 @@ namespace Sults\Writen\Providers;
 
 use Sults\Writen\Contracts\ServiceProviderInterface;
 use Sults\Writen\Core\Container;
+use Sults\Writen\Core\HookManager;
 
 // Classes de Workflow e Status.
 use Sults\Writen\Workflow\StatusManager;
@@ -172,4 +173,16 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 			}
 		);
 	}
+
+	public function boot( Container $container ): void {
+        $hook_manager = $container->get( HookManager::class );
+
+        $services = array(
+            $container->get( \Sults\Writen\Workflow\StatusManager::class ),
+            $container->get( \Sults\Writen\Workflow\Media\MediaUploadManager::class ),
+            $container->get( \Sults\Writen\Workflow\Media\ThumbnailDisabler::class ),
+        );
+
+        $hook_manager->register_services( $services );
+    }
 }
