@@ -51,6 +51,8 @@ class ExportDownloadHandler implements HookableInterface {
         }
 
 		$raw_slug  = $sults_post->post_name;
+		$zip_base_name = $this->naming_service->generate_zip_filename( $raw_slug );
+
 		$base_name  = $this->naming_service->generate_zip_filename( $raw_slug );
 
 		$zip_images_prefix = $this->config->get_export_image_prefix();
@@ -64,13 +66,21 @@ class ExportDownloadHandler implements HookableInterface {
 			
 			$jsp_zip_path = $jsp_folder . $base_name . '.jsp';
 
-			$string_map = array(
-				$jsp_zip_path            => $result['jsp_content'],
-				$base_name . '-info.txt' => $result['info_content'],
-			);
+			if ( ! empty( $result['suggested_filename'] ) ) {
+                 $internal_filename = $result['suggested_filename'];
+            } else {
+                 $internal_filename = $zip_base_name;
+            }
+
+            $jsp_zip_path = $jsp_folder . $internal_filename . '.jsp';
+
+            $string_map = array(
+                $jsp_zip_path => $result['jsp_content'],
+                $internal_filename . '-info.txt' => $result['info_content'],
+            );
 
 			$upload_dir = wp_upload_dir();
-			$zip_filename_download  = $base_name . '.zip';
+			$zip_filename_download  = $zip_base_name . '.zip';
 			$zip_path               = $upload_dir['basedir'] . '/' . $zip_filename_download;
 
 			if ( $this->archiver->create( $zip_path, $files_map, $string_map ) ) {

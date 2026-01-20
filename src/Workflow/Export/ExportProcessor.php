@@ -42,6 +42,9 @@ class ExportProcessor {
 
 	public function execute( int $sults_post_id, string $zip_folder_prefix ): array {
 		$sults_post = get_post( $sults_post_id );
+		$sults_slug = $sults_post->post_name;
+
+
 		if ( ! $sults_post instanceof WP_Post ) {
 			throw new \InvalidArgumentException( 'Post não encontrado.' );
 		}
@@ -75,9 +78,15 @@ class ExportProcessor {
 			}
 		}
 
-		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $sults_page_title, $seo_data, $active_group_name );
+		if ( empty( $active_group_name ) ) {
+            $target_filename = 'visao-geral';
+        } else {
+            $target_filename = str_replace( '_', '-', $sults_slug );
+        }
 
-		$info_content    = $this->metadata_builder->build_info_file( $sults_post );
+		$jsp_content = $this->jsp_builder->build( $safe_html_for_jsp, $sults_page_title, $target_filename, $seo_data, $active_group_name );
+
+		$info_content    = $this->metadata_builder->build_info_file( $sults_post, $target_filename );
 		$jsp_folder_path = $this->calculate_jsp_folder_path( $sults_post_id );
 		return array(
 			'jsp_content'     => $jsp_content,
@@ -86,6 +95,7 @@ class ExportProcessor {
 			'html_clean'      => $html_clean,
 			'html_raw'        => $html_raw,
 			'jsp_folder_path' => $jsp_folder_path,
+			'suggested_filename' => $target_filename,
 		);
 	}
 
@@ -95,7 +105,6 @@ class ExportProcessor {
 	 */
 	private function calculate_jsp_folder_path( int $sults_post_id ): string {
 		$relative_path = PathHelper::get_relative_path( $sults_post_id );
-
 		$sults_parts = explode( '/', trim( $relative_path, '/' ) );
 
 		if ( count( $sults_parts ) > 0 ) {

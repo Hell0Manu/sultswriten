@@ -5,8 +5,7 @@ use Sults\Writen\Contracts\JspBuilderInterface;
 
 class JspBuilder implements JspBuilderInterface {
 
-	public function build( string $html_content, string $sults_page_title, array $meta_data, string $active_group = '' ): string {
-
+public function build( string $html_content, string $sults_page_title, string $post_slug, array $meta_data, string $active_group = '' ): string {
 		$seo_title = isset( $meta_data['title'] ) ? $meta_data['title'] : $sults_page_title;
 		$seo_desc  = isset( $meta_data['description'] ) ? $meta_data['description'] : '';
 
@@ -15,9 +14,13 @@ class JspBuilder implements JspBuilderInterface {
 		$safe_page_title   = htmlspecialchars( $sults_page_title, ENT_QUOTES, 'UTF-8' );
 		$safe_sidebar_name = htmlspecialchars( $active_group, ENT_QUOTES, 'UTF-8' );
 
-		$title_parts      = explode( ':', $sults_page_title );
-		$active_item_raw  = $title_parts[0];
-		$safe_active_item = htmlspecialchars( trim( $active_item_raw ), ENT_QUOTES, 'UTF-8' );
+        $processed_slug = str_replace( '-', ' ', $post_slug );
+		$active_item_raw  =  $processed_slug;
+
+        if ( empty( $active_group ) ) {
+            $active_item_raw = 'Visão Geral';
+        }
+        $safe_active_item = htmlspecialchars( trim( $active_item_raw ), ENT_QUOTES, 'UTF-8' );
 
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript

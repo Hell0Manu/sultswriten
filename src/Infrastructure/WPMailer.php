@@ -66,7 +66,7 @@ class WPMailer implements MailerInterface {
 						<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: <?php echo esc_attr( $white ); ?>; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
 							
 							<tr>
-								<td height="6" style="background-color: #0A171F; padding: 20px 40px; font-size: 0; line-height: 0;"><img src="<?php echo esc_url( $logo_url ); ?>" alt="SULTS" height="35" style="display: block; height: 35px; border: 0; justify-self: center;"></td>
+								<td height="6" style="background-color: #0A171F; padding: 20px 40px; font-size: 0; line-height: 0;justify-items: center;"><img src="<?php echo esc_url( $logo_url ); ?>" alt="SULTS" height="35" style="display: block; height: 35px; border: 0; justify-self: center;"></td>
 							</tr>
 
 							<tr>
