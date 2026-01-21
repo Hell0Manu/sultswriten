@@ -132,6 +132,10 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( 'Loop.' );
 		}
 
+		if ( ! $this->validate_hierarchy_depth( $sults_parent_id ) ) {
+			wp_send_json_error( 'Limite de hierarquia atingido. A estrutura máxima permitida é: Pai > Filho > Neto.' );
+		}
+
 		$this->post_repository->update(
 			array(
 				'ID'          => $sults_post_id,
@@ -150,6 +154,26 @@ class StructureManager implements HookableInterface {
 			}
 		}
 		wp_send_json_success();
+	}
+
+	/**
+	 * Valida se o movimento respeita o limite de 3 níveis (Pai > Filho > Neto).
+	 *
+	 * @param int $parent_id O ID do novo pai.
+	 * @return bool True se permitido, False se exceder o limite.
+	 */
+	private function validate_hierarchy_depth( int $parent_id ): bool {
+		if ( 0 === $parent_id ) {
+			return true;
+		}
+
+		$ancestors = get_post_ancestors( $parent_id );
+
+		if ( count( $ancestors ) >= 2 ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	public function ajax_get_post_details() {
@@ -434,11 +458,9 @@ class StructureManager implements HookableInterface {
 		$sults_style_title   = "color: {$sults_cat_color};";
 		$sults_style_bg_soft = 'background-color: ' . $this->hex2rgba( $sults_cat_color, 0.03 ) . ';';
 
-		$html = '<div class="sults-category-folder" style="' . $sults_style_border . ' ' . $sults_style_bg_soft . ' margin-bottom: 15px;">';
-
-		// Cabeçalho.
+		$html = '<div class="sults-category-folder sults-cat-closed" style="' . $sults_style_border . ' ' . $sults_style_bg_soft . ' margin-bottom: 15px;">';
 		$html .= '<div class="sults-category-header" style="' . $sults_style_title . '">
-                    <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
+                    <span class="sults-cat-toggle dashicons dashicons-arrow-right-alt2"></span>
                     <span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
                     <strong>' . esc_html( $sults_cat->name ) . '</strong>
                     <span class="count" style="color: #646970;">(' . count( $sults_cat->posts ) . ')</span>
@@ -466,14 +488,14 @@ class StructureManager implements HookableInterface {
 		return $html;
 	}
 
-	/**
+/**
 	 * Renderiza a pasta especial "Sem Categoria".
 	 */
 	private function render_uncategorized_folder( $sults_posts, $sults_posts_by_parent, $user_roles ): string {
-		$html = '<div class="sults-category-folder" style="border-left: 4px solid #646970; background-color: #f9f9f9; margin-bottom: 15px;">';
+		$html = '<div class="sults-category-folder sults-cat-closed" style="border-left: 4px solid #646970; background-color: #f9f9f9; margin-bottom: 15px;">';
 
 		$html .= '<div class="sults-category-header" style="color: #444;">
-                    <span class="sults-cat-toggle dashicons dashicons-arrow-down-alt2"></span>
+                    <span class="sults-cat-toggle dashicons dashicons-arrow-right-alt2"></span>
                     <span class="dashicons dashicons-admin-generic" style="margin-right:5px; opacity: 0.7;"></span> 
                     <strong>Geral / Sem Categoria</strong>
                     <span class="count">(' . count( $sults_posts ) . ')</span>
@@ -491,7 +513,7 @@ class StructureManager implements HookableInterface {
 		return $html;
 	}
 
-	private function build_html_item( $element, $sults_posts_by_parent, $user_roles ): string {
+private function build_html_item( $element, $sults_posts_by_parent, $user_roles ): string {
 		$children     = $sults_posts_by_parent[ $element->ID ] ?? array();
 		$has_children = ! empty( $children );
 
@@ -501,13 +523,11 @@ class StructureManager implements HookableInterface {
 		$status_label      = $sults_status_obj ? $sults_status_obj->label : $sults_status_slug;
 
 		$is_redator = in_array( RoleDefinitions::REDATOR, $user_roles, true );
-
 		if ( $is_redator ) {
 			$current_user_id = get_current_user_id();
 			$is_author       = ( (int) $element->post_author === $current_user_id );
 			$is_public       = ( $sults_status_slug === 'publish' );
-
-			$has_access = ( $is_author || $is_public );
+			$has_access      = ( $is_author || $is_public );
 		} else {
 			$has_access = true;
 		}
@@ -520,10 +540,8 @@ class StructureManager implements HookableInterface {
 		if ( ! $has_access ) {
 			$card_class .= ' disabled';
 			$icon_class .= ' disabled';
-
 			$link_html   = '<span class="sults-card-title">' . esc_html( $element->post_title ) . '</span>';
-			$action_html = '<span class="' . $icon_class . '" title="Acesso Restrito (Post de outro usuário)"><span class="dashicons dashicons-lock"></span></span>';
-
+			$action_html = '<span class="' . $icon_class . '" title="Acesso Restrito"><span class="dashicons dashicons-lock"></span></span>';
 		} else {
 			$is_locked_by_policy = $this->policy->is_editing_locked( $sults_status_slug, $user_roles );
 			$can_edit_native     = $this->user_provider->current_user_can( 'edit_post', $element->ID );
@@ -537,19 +555,20 @@ class StructureManager implements HookableInterface {
 				$action_title = 'Editar';
 				$target_url   = $sults_permalink;
 			}
-
-			$link_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" class="sults-card-title">' . esc_html( $element->post_title ) . '</a>';
-
-			$action_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" title="' . esc_attr( $action_title ) . '" class="' . $icon_class . '">
-                                <span class="dashicons ' . $action_icon . '"></span>
-                            </a>';
+			$link_html   = '<a href="' . esc_url( $target_url ) . '" target="_blank" class="sults-card-title">' . esc_html( $element->post_title ) . '</a>';
+			$action_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" title="' . esc_attr( $action_title ) . '" class="' . $icon_class . '"><span class="dashicons ' . $action_icon . '"></span></a>';
 		}
 
 		$toggle_html = $has_children
-			? '<span class="sults-toggle dashicons dashicons-arrow-down-alt2"></span>'
+			? '<span class="sults-toggle dashicons dashicons-arrow-right-alt2"></span>'
 			: '<span class="sults-toggle-placeholder"></span>';
 
-		$html = '<li class="sults-item" id="post-' . $element->ID . '" data-id="' . $element->ID . '">';
+		$li_class = 'sults-item';
+		if ( $has_children ) {
+			$li_class .= ' sults-closed';
+		}
+
+		$html = '<li class="' . $li_class . '" id="post-' . $element->ID . '" data-id="' . $element->ID . '">';
 
 		$html .= '
             <div class="' . $card_class . '">

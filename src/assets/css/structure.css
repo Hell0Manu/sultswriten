@@ -36,6 +36,10 @@
     display: none;
 }
 
+li.sults-item.sults-closed > ul.sults-sortable-nested {
+    display: none;
+}
+
 .sults-category-folder.sults-cat-closed {
     border-bottom: 1px solid #c3c4c7;
 }
@@ -520,6 +524,25 @@ li.sults-closed > ul.sults-sortable-nested { display: none; }
     cursor: pointer;
 }
 .sults-modal-cancel:hover { color: #1d2327; text-decoration: underline; }
+
+.sults-placeholder.sults-invalid {
+    background-color: #ffe6e6 !important;
+    border: 2px dashed #dc3232 !important;
+    position: relative;
+}
+
+.sults-placeholder.sults-invalid::after {
+    content: "Limite de 3 níveis atingido";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #dc3232;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    pointer-events: none;
+}
 
 @media (max-width: 480px) {
     .sults-drawer {

@@ -1,6 +1,9 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     const wrapper = $('.sults-structure-wrapper');
-    
+
+    const STORAGE_KEY_POSTS = 'sults_writen_open_posts';
+    const STORAGE_KEY_CATS  = 'sults_writen_open_cats';
+
     const $drawer = $('#sults-detail-drawer');
     const $backdrop = $('#sults-drawer-backdrop');
     const $drawerBody = $drawer.find('.sults-drawer-body');
@@ -8,51 +11,101 @@ jQuery(document).ready(function($) {
     const $contentState = $drawer.find('.sults-drawer-content');
 
 
-/* =========================================
-      MODAL DE CRIAÇÃO
+    /* =========================================
+       INICIALIZAÇÃO E RESTAURO DE ESTADO
        ========================================= */
+        restoreState();
+
+    function saveState() {
+        const openPosts = [];
+        $('.sults-item').not('.sults-closed').each(function() {
+            openPosts.push($(this).data('id'));
+        });
+
+        const openCats = [];
+        $('.sults-category-folder').not('.sults-cat-closed').each(function() {
+            const catId = $(this).find('.sults-sortable-root').data('category-id');
+            if (catId !== undefined) {
+                openCats.push(catId);
+            }
+        });
+
+        localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(openPosts));
+        localStorage.setItem(STORAGE_KEY_CATS, JSON.stringify(openCats));
+    }
+
+    function restoreState() {
+        const openPosts = JSON.parse(localStorage.getItem(STORAGE_KEY_POSTS) || '[]');
+        const openCats  = JSON.parse(localStorage.getItem(STORAGE_KEY_CATS) || '[]');
+
+        openPosts.forEach(id => {
+            const $item = $('#post-' + id);
+            if ($item.length) {
+                $item.removeClass('sults-closed');
+                $item.find('> .sults-card .sults-toggle')
+                     .removeClass('dashicons-arrow-right-alt2')
+                     .addClass('dashicons-arrow-down-alt2');
+            }
+        });
+
+        openCats.forEach(catId => {
+            const $ul = $('.sults-sortable-root[data-category-id="' + catId + '"]');
+            const $folder = $ul.closest('.sults-category-folder');
+            
+            if ($folder.length) {
+                $folder.removeClass('sults-cat-closed');
+                $folder.find('.sults-category-header .sults-cat-toggle')
+                       .removeClass('dashicons-arrow-right-alt2')
+                       .addClass('dashicons-arrow-down-alt2');
+            }
+        });
+    }
+
+    /* =========================================
+        MODAL DE CRIAÇÃO
+    ========================================= */
     const $modalBackdrop = $('#sults-modal-backdrop');
     const $form = $('#sults-create-post-form');
     const $titleInput = $('#new-post-title');
     const $slugInput = $('#new-post-slug');
-    
+
     const $sults_parentSelect = $('#new-post-parent');
     const $sults_parentGroup = $sults_parentSelect.closest('.sults-form-group');
-    
+
     const $sults_categorySelect = $('#new-post-category');
-    const $slugPrefix = $('#new-post-slug-prefix'); 
+    const $slugPrefix = $('#new-post-slug-prefix');
 
     const $allParentOptions = $sults_parentSelect.find('option').clone();
 
-    $('#btn-open-new-post').on('click', function(e) {
+    $('#btn-open-new-post').on('click', function (e) {
         e.preventDefault();
         $form[0].reset();
-        
+
         $slugPrefix.text('/');
         $('#hidden-cat-id').remove();
-        
-        $sults_parentGroup.hide(); 
-        
-        $sults_categorySelect.val(""); 
+
+        $sults_parentGroup.hide();
+
+        $sults_categorySelect.val("");
 
         $modalBackdrop.addClass('open');
         $titleInput.focus();
     });
 
-    $('.sults-modal-close, .sults-modal-cancel, #sults-modal-backdrop').on('click', function(e) {
+    $('.sults-modal-close, .sults-modal-cancel, #sults-modal-backdrop').on('click', function (e) {
         if (e.target !== this) return;
         $modalBackdrop.removeClass('open');
     });
 
-    $sults_categorySelect.on('change', function() {
+    $sults_categorySelect.on('change', function () {
         const selectedOption = $(this).find('option:selected');
 
-        const slug = selectedOption.data('slug'); 
+        const slug = selectedOption.data('slug');
         const parentSlug = selectedOption.data('parent-slug');
 
         const selectedCatId = $(this).val();
         let pathPrefix = '/';
-        
+
         if (slug) {
             if (parentSlug) {
                 pathPrefix = '/' + parentSlug + '/' + slug + '/';
@@ -65,14 +118,14 @@ jQuery(document).ready(function($) {
 
         if (selectedCatId) {
             $sults_parentSelect.empty();
-            
+
             const rootOption = $allParentOptions.filter('[value="0"]');
             $sults_parentSelect.append(rootOption);
 
-            const matchingParents = $allParentOptions.filter(function() {
+            const matchingParents = $allParentOptions.filter(function () {
                 return String($(this).data('cat-id')) === String(selectedCatId);
             });
-            
+
             $sults_parentSelect.append(matchingParents);
             $sults_parentSelect.val("0");
             $sults_parentGroup.fadeIn(200);
@@ -81,7 +134,7 @@ jQuery(document).ready(function($) {
         }
     });
 
-    $titleInput.on('input', function() {
+    $titleInput.on('input', function () {
         const val = $(this).val();
         const slug = val.toLowerCase()
             .replace(/[^\w\s-]/g, '')
@@ -90,19 +143,19 @@ jQuery(document).ready(function($) {
         $slugInput.val(slug);
     });
 
-    $form.on('submit', function(e) {
+    $form.on('submit', function (e) {
         e.preventDefault();
-        
+
         let formData = $(this).serialize();
         const $btn = $(this).find('button[type="submit"]');
-        
+
         $btn.prop('disabled', true).text('Criando...');
 
         $.ajax({
             url: sultsStructureParams.ajax_url,
             type: 'POST',
             data: formData + '&action=sults_create_post&security=' + sultsStructureParams.nonce,
-            success: function(res) {
+            success: function (res) {
                 if (res.success) {
                     $btn.text('Redirecionando...');
                     window.location.href = res.data.redirect_url;
@@ -111,7 +164,7 @@ jQuery(document).ready(function($) {
                     $btn.prop('disabled', false).text('Criar Página');
                 }
             },
-            error: function() {
+            error: function () {
                 alert('Erro de conexão.');
                 $btn.prop('disabled', false).text('Criar Página');
             }
@@ -130,10 +183,10 @@ jQuery(document).ready(function($) {
 
         seoTitle: $('#drawer-seo-title'),
         seoDesc: $('#drawer-seo-desc'),
-        
+
         btnEdit: $('#drawer-btn-edit'),
         btnView: $('#drawer-btn-view'),
-        
+
         // Quick Edit Fields
         quickEditId: $('#quick-edit-id'),
         quickEditTitle: $('#quick-edit-title'),
@@ -152,7 +205,7 @@ jQuery(document).ready(function($) {
        1. LÓGICA DO DRAWER (ABRIR/FECHAR)
        ========================================= */
 
-    wrapper.on('click', '.sults-card-title', function(e) {
+    wrapper.on('click', '.sults-card-title', function (e) {
 
         if ($(this).closest('.sults-card').hasClass('disabled')) {
             return;
@@ -165,22 +218,22 @@ jQuery(document).ready(function($) {
         openDrawer(postId);
     });
 
-    $('.sults-drawer-close, #sults-drawer-backdrop').on('click', function(e) {
+    $('.sults-drawer-close, #sults-drawer-backdrop').on('click', function (e) {
         e.preventDefault();
         closeDrawer();
     });
 
-    $(document).on('keyup', function(e) {
+    $(document).on('keyup', function (e) {
         if (e.key === "Escape") closeDrawer();
     });
 
     function openDrawer(postId) {
         $backdrop.addClass('open');
         $drawer.addClass('open');
-        
+
         $contentState.hide();
         $loadingState.show();
-        
+
         fetchPostDetails(postId);
     }
 
@@ -193,16 +246,16 @@ jQuery(document).ready(function($) {
        2. AJAX E PREENCHIMENTO DE DADOS
        ========================================= */
 
-function fetchPostDetails(postId) {
+    function fetchPostDetails(postId) {
         $.ajax({
             url: sultsStructureParams.ajax_url,
             type: 'POST',
             data: {
-                action: 'sults_get_post_details', 
+                action: 'sults_get_post_details',
                 security: sultsStructureParams.nonce,
                 post_id: postId
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     populateDrawer(response.data);
                 } else {
@@ -210,7 +263,7 @@ function fetchPostDetails(postId) {
                     closeDrawer();
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('AJAX Error:', status, error, xhr.responseText);
                 alert('Erro de conexão. Verifique o console para mais detalhes.');
                 closeDrawer();
@@ -222,7 +275,7 @@ function fetchPostDetails(postId) {
         fields.title.text(data.title);
         fields.id.text('ID: #' + data.id);
         fields.status.html(data.status_html);
-        
+
         fields.authorName.text(data.author.name);
         fields.authorAvatar.attr('src', data.author.avatar);
 
@@ -236,11 +289,11 @@ function fetchPostDetails(postId) {
         fields.seoDesc.text(data.seo.description);
 
         fields.btnView.attr('href', data.links.view);
-        
+
         if (data.links.can_edit) {
             fields.btnEdit.attr('href', data.links.edit).removeClass('disabled').show();
             fields.quickEditSection.show();
-            
+
             // Populate Quick Edit
             fields.quickEditId.val(data.id);
             fields.quickEditTitle.val(data.title);
@@ -256,47 +309,51 @@ function fetchPostDetails(postId) {
             fields.quickEditSection.hide();
         }
 
-        $loadingState.fadeOut(200, function() {
+        $loadingState.fadeOut(200, function () {
             $contentState.fadeIn(200);
         });
     }
-    
+
     /* =========================================
        3. INTERATIVIDADE DA ÁRVORE (LEGADO)
        ========================================= */
 
-    wrapper.on('click', '.sults-toggle', function(e) {
+    wrapper.on('click', '.sults-toggle', function (e) {
         e.preventDefault();
         e.stopPropagation();
         const icon = $(this);
         const li = icon.closest('li.sults-item');
         li.toggleClass('sults-closed');
-        
+
         if (li.hasClass('sults-closed')) {
             icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
         } else {
             icon.removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
         }
+
+        saveState();
     });
 
-    wrapper.on('click', '.sults-category-header', function(e) {
+    wrapper.on('click', '.sults-category-header', function (e) {
         e.preventDefault();
         const folder = $(this).closest('.sults-category-folder');
         const icon = $(this).find('.sults-cat-toggle');
-        
+
         folder.toggleClass('sults-cat-closed');
-        
+
         if (folder.hasClass('sults-cat-closed')) {
             icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
         } else {
             icon.removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
         }
+
+        saveState();
     });
 
     /* =========================================
        4. DRAG AND DROP (SORTABLE)
        ========================================= */
-    
+
     const canManage = Boolean(Number(sultsStructureParams.can_manage));
 
     if (canManage) {
@@ -305,36 +362,89 @@ function fetchPostDetails(postId) {
     } else {
         wrapper.addClass('sults-readonly');
     }
-
     function initSortable() {
         $('.sults-sortable-root, .sults-sortable-nested').sortable({
-            connectWith: '.sults-sortable-root, .sults-sortable-nested', 
-            handle: '.sults-handle', 
+            connectWith: '.sults-sortable-root, .sults-sortable-nested',
+            handle: '.sults-handle',
             placeholder: 'sults-placeholder',
             tolerance: 'pointer',
             cursor: 'grabbing',
-            start: function(e, ui) {
+            start: function (e, ui) {
                 ui.item.find('.sults-card-title').css('pointer-events', 'none');
+
+                ui.item.data('originalParent', ui.item.parent());
+                ui.item.data('originalIndex', ui.item.index());
+
+                let itemDepth = 1;
+
+                if (ui.item.find('li').length > 0) {
+                    itemDepth = 2;
+
+                    if (ui.item.find('li li').length > 0) {
+                        itemDepth = 3;
+                    }
+                }
+                ui.item.data('itemDepth', itemDepth);
             },
-            stop: function(event, ui) {
-                ui.item.find('.sults-card-title').css('pointer-events', ''); 
+            change: function (e, ui) {
+                const placeholder = ui.placeholder;
+
+                const parents = placeholder.parents('ul.sults-sortable-root, ul.sults-sortable-nested');
+                const targetLevel = parents.length;
+                const itemDepth = ui.item.data('itemDepth') || 1;
+
+                const predictedDepth = targetLevel + (itemDepth - 1);
+
+                if (predictedDepth > 3) {
+                    placeholder.addClass('sults-invalid');
+                } else {
+                    placeholder.removeClass('sults-invalid');
+                }
+            },
+            stop: function (event, ui) {
+                ui.item.find('.sults-card-title').css('pointer-events', '');
 
                 const item = ui.item;
-                const itemId = item.data('id');
                 const parentUl = item.parent();
-                
+                const parents = parentUl.parents('ul.sults-sortable-root, ul.sults-sortable-nested').add(parentUl);
+                const currentLevel = parents.length;
+                const itemDepth = item.data('itemDepth') || 1;
+
+                if ((currentLevel + (itemDepth - 1)) > 3) {
+                    const $originalParent = item.data('originalParent');
+                    const originalIndex = item.data('originalIndex');
+
+                    item.detach();
+
+                    const $siblings = $originalParent.children();
+                    if (originalIndex === 0) {
+                        $originalParent.prepend(item);
+                    } else {
+                        if ($siblings.length > 0 && originalIndex <= $siblings.length) {
+                            item.insertAfter($siblings.eq(originalIndex - 1));
+                        } else {
+                            $originalParent.append(item);
+                        }
+                    }
+
+                    return;
+                }
+
+                const itemId = item.data('id');
                 let parentId = 0;
                 if (parentUl.hasClass('sults-sortable-nested')) {
                     parentId = parentUl.closest('li.sults-item').data('id');
                 }
-                
+
                 const siblings = parentUl.sortable('toArray', { attribute: 'data-id' });
-                saveStructure(itemId, parentId, siblings);
+
+                saveStructure(itemId, parentId, siblings, item);
+                saveState();
             }
         });
     }
 
-    function saveStructure(postId, parentId, orderArray) {
+    function saveStructure(postId, parentId, orderArray, $item) {
         $.ajax({
             url: sultsStructureParams.ajax_url,
             type: 'POST',
@@ -345,8 +455,33 @@ function fetchPostDetails(postId) {
                 parent_id: parentId,
                 order: orderArray
             },
-            success: function(res) {
-                if(!res.success) alert('Erro ao salvar: ' + (res.data || 'Erro desconhecido'));
+            success: function (res) {
+                if (!res.success) {
+                    alert(res.data || 'Erro desconhecido');
+
+                    const $originalParent = $item.data('originalParent');
+                    const originalIndex = $item.data('originalIndex');
+
+                    if ($originalParent) {
+                        $item.detach();
+
+                        const $siblings = $originalParent.children();
+
+                        if (originalIndex === 0) {
+                            $originalParent.prepend($item);
+                        } else {
+                            if ($siblings.length > 0 && originalIndex <= $siblings.length) {
+                                $item.insertAfter($siblings.eq(originalIndex - 1));
+                            } else {
+                                $originalParent.append($item);
+                            }
+                        }
+                    }
+                }
+            },
+            error: function () {
+                alert('Erro de conexão ao salvar estrutura.');
+                window.location.reload();
             }
         });
     }
@@ -354,30 +489,30 @@ function fetchPostDetails(postId) {
     /* =========================================
        5. SALVAR EDIÇÃO RÁPIDA
        ========================================= */
-    fields.quickEditForm.on('submit', function(e) {
+    fields.quickEditForm.on('submit', function (e) {
         e.preventDefault();
         const $btn = $('#btn-save-quick-edit');
         const formData = $(this).serialize();
-        
+
         $btn.prop('disabled', true).text('Salvando...');
 
         $.ajax({
             url: sultsStructureParams.ajax_url,
             type: 'POST',
             data: formData + '&action=sults_save_quick_edit&security=' + sultsStructureParams.nonce,
-            success: function(res) {
+            success: function (res) {
                 if (res.success) {
                     $btn.text('Salvo!');
                     setTimeout(() => {
                         $btn.prop('disabled', false).text('Salvar Alterações');
-                        location.reload(); 
+                        location.reload();
                     }, 1000);
                 } else {
                     alert('Erro: ' + res.data);
                     $btn.prop('disabled', false).text('Salvar Alterações');
                 }
             },
-            error: function() {
+            error: function () {
                 alert('Erro de conexão.');
                 $btn.prop('disabled', false).text('Salvar Alterações');
             }
