@@ -114,7 +114,7 @@ class StructureManager implements HookableInterface {
 		);
 	}
 
-	public function ajax_handle_move() {
+public function ajax_handle_move() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 		if ( ! $this->can_manage_structure() ) {
 			wp_send_json_error( 'Sem permissão global.' );
@@ -127,13 +127,15 @@ class StructureManager implements HookableInterface {
 
 		$sults_parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
 		$order           = isset( $_POST['order'] ) ? array_map( 'absint', wp_unslash( $_POST['order'] ) ) : array();
+		
+		$target_cat_id   = isset( $_POST['target_cat_id'] ) ? intval( $_POST['target_cat_id'] ) : -1;
 
 		if ( $sults_post_id === $sults_parent_id ) {
-			wp_send_json_error( 'Loop.' );
+			wp_send_json_error( 'Loop inválido.' );
 		}
 
 		if ( ! $this->validate_hierarchy_depth( $sults_parent_id ) ) {
-			wp_send_json_error( 'Limite de hierarquia atingido. A estrutura máxima permitida é: Pai > Filho > Neto.' );
+			wp_send_json_error( 'Limite de hierarquia atingido.' );
 		}
 
 		$this->post_repository->update(
@@ -142,6 +144,21 @@ class StructureManager implements HookableInterface {
 				'post_parent' => $sults_parent_id,
 			)
 		);
+
+
+		if ( $sults_parent_id > 0 ) {
+			$this->sync_category_with_parent( $sults_post_id, $sults_parent_id );
+		} 
+
+		elseif ( $target_cat_id >= 0 ) {
+			
+			if ( $target_cat_id > 0 ) {
+				$this->post_repository->set_terms( $sults_post_id, array( $target_cat_id ), 'category' );
+			} else {
+				$this->post_repository->set_terms( $sults_post_id, array(), 'category' );
+			}
+		}
+		// ------------------------------------------
 
 		if ( ! empty( $order ) && is_array( $order ) ) {
 			foreach ( $order as $index => $sibling_id ) {
@@ -155,6 +172,7 @@ class StructureManager implements HookableInterface {
 		}
 		wp_send_json_success();
 	}
+
 
 	/**
 	 * Valida se o movimento respeita o limite de 3 níveis (Pai > Filho > Neto).
@@ -262,7 +280,7 @@ class StructureManager implements HookableInterface {
 	}
 
 
-	public function ajax_create_post() {
+public function ajax_create_post() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
 		if ( ! $this->can_manage_structure() ) {
@@ -292,7 +310,9 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( $sults_post_id->get_error_message() );
 		}
 
-		if ( $sults_cat_id > 0 ) {
+		if ( $sults_parent_id > 0 ) {
+			$this->sync_category_with_parent( $sults_post_id, $sults_parent_id );
+		} elseif ( $sults_cat_id > 0 ) {
 			$this->post_repository->set_terms( $sults_post_id, array( $sults_cat_id ), 'category' );
 		}
 
@@ -364,8 +384,8 @@ class StructureManager implements HookableInterface {
 		}
 	}
 
-	/**
-	 * Gera o HTML da árvore de posts de forma hierárquica (Pastas dentro de Pastas).
+/**
+	 * Gera o HTML da árvore de posts agrupando tudo nas Categorias Raiz.
 	 */
 	private function get_tree_html(): string {
 
@@ -375,8 +395,9 @@ class StructureManager implements HookableInterface {
 
 		$sults_posts_by_parent = array();
 		$all_posts_map         = array();
+		
 		foreach ( $sults_posts as $sults_p ) {
-			$all_posts_map[ $sults_p->ID ]                    = $sults_p;
+			$all_posts_map[ $sults_p->ID ]                = $sults_p;
 			$sults_posts_by_parent[ $sults_p->post_parent ][] = $sults_p;
 		}
 
@@ -393,35 +414,39 @@ class StructureManager implements HookableInterface {
 
 		foreach ( $root_posts as $sults_post ) {
 			$sults_cats = get_the_category( $sults_post->ID );
+			
 			if ( empty( $sults_cats ) ) {
 				$uncategorized_posts[] = $sults_post;
 			} else {
-				$sults_primary_cat                                       = $sults_cats[0];
-				$sults_category_buckets[ $sults_primary_cat->term_id ][] = $sults_post;
+				$primary_cat = $sults_cats[0];
+				
+
+				$root_term_id = $primary_cat->term_id;
+				$checker_cat  = $primary_cat;
+
+				while ( $checker_cat->parent > 0 ) {
+					$parent_cat = get_category( $checker_cat->parent );
+					if ( ! is_wp_error( $parent_cat ) && $parent_cat ) {
+						$root_term_id = $parent_cat->term_id;
+						$checker_cat  = $parent_cat;
+					} else {
+						break; 
+					}
+				}
+				
+				$sults_category_buckets[ $root_term_id ][] = $sults_post;
 			}
 		}
 
-		$all_categories  = get_categories( array( 'hide_empty' => false ) );
-		$sults_cat_index = array();
-		$sults_cat_tree  = array();
-
+		$all_categories = get_categories( array( 'hide_empty' => false, 'parent' => 0 ) );
+		
 		foreach ( $all_categories as $sults_cat ) {
-			$sults_cat->children                    = array(); // @phpstan-ignore-line
-			$sults_cat->posts                       = $sults_category_buckets[ $sults_cat->term_id ] ?? array(); // @phpstan-ignore-line
-			$sults_cat_index[ $sults_cat->term_id ] = $sults_cat;
-		}
-
-		foreach ( $all_categories as $sults_cat ) {
-			if ( $sults_cat->parent > 0 && isset( $sults_cat_index[ $sults_cat->parent ] ) ) {
-				$sults_cat_index[ $sults_cat->parent ]->children[] = $sults_cat; // @phpstan-ignore-line
-			} else {
-				$sults_cat_tree[] = $sults_cat;
-			}
+			$sults_cat->posts = $sults_category_buckets[ $sults_cat->term_id ] ?? array();
 		}
 
 		$html = '';
 
-		foreach ( $sults_cat_tree as $root_cat ) {
+		foreach ( $all_categories as $root_cat ) {
 			$html .= $this->render_category_node( $root_cat, $sults_posts_by_parent, $current_user_roles );
 		}
 
@@ -435,17 +460,11 @@ class StructureManager implements HookableInterface {
 
 		return $html;
 	}
-
 	/**
 	 * Renderiza uma pasta de categoria e, recursivamente, seus filhos.
 	 */
-	private function render_category_node( $sults_cat, $sults_posts_by_parent, $user_roles ): string {
-		$children_html = '';
-		foreach ( $sults_cat->children as $child ) {
-			$children_html .= $this->render_category_node( $child, $sults_posts_by_parent, $user_roles );
-		}
-
-		if ( empty( $sults_cat->posts ) && empty( $children_html ) ) {
+private function render_category_node( $sults_cat, $sults_posts_by_parent, $user_roles ): string {
+		if ( empty( $sults_cat->posts ) ) {
 			return '';
 		}
 
@@ -459,6 +478,7 @@ class StructureManager implements HookableInterface {
 		$sults_style_bg_soft = 'background-color: ' . $this->hex2rgba( $sults_cat_color, 0.03 ) . ';';
 
 		$html = '<div class="sults-category-folder sults-cat-closed" style="' . $sults_style_border . ' ' . $sults_style_bg_soft . ' margin-bottom: 15px;">';
+
 		$html .= '<div class="sults-category-header" style="' . $sults_style_title . '">
                     <span class="sults-cat-toggle dashicons dashicons-arrow-right-alt2"></span>
                     <span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
@@ -467,7 +487,7 @@ class StructureManager implements HookableInterface {
                   </div>';
 
 		$html .= '<div class="sults-category-content">';
-
+		
 		if ( ! empty( $sults_cat->posts ) ) {
 			$html .= '<ul class="sults-sortable-root" data-category-id="' . $sults_cat->term_id . '">';
 			foreach ( $sults_cat->posts as $root_post ) {
@@ -476,19 +496,12 @@ class StructureManager implements HookableInterface {
 			$html .= '</ul>';
 		}
 
-		if ( ! empty( $children_html ) ) {
-			$html .= '<div class="sults-subcategories" style="padding-left: 25px; border-left: 1px dashed #ddd; margin-left: 5px; margin-top: 10px;">';
-			$html .= $children_html;
-			$html .= '</div>';
-		}
-
 		$html .= '</div>';
 		$html .= '</div>';
 
 		return $html;
 	}
-
-/**
+	/**
 	 * Renderiza a pasta especial "Sem Categoria".
 	 */
 	private function render_uncategorized_folder( $sults_posts, $sults_posts_by_parent, $user_roles ): string {
@@ -559,6 +572,34 @@ private function build_html_item( $element, $sults_posts_by_parent, $user_roles 
 			$action_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" title="' . esc_attr( $action_title ) . '" class="' . $icon_class . '"><span class="dashicons ' . $action_icon . '"></span></a>';
 		}
 
+		$badge_html = '';
+		$cats = get_the_category( $element->ID );
+		$target_cat_name = '';
+
+		if ( ! empty( $cats ) ) {
+			$primary = $cats[0];
+			if ( $primary->parent > 0 ) {
+				$target_cat_name = $primary->name;
+			}
+		}
+		if ( empty( $target_cat_name ) && $element->post_parent > 0 ) {
+			$parent_post = get_post( $element->post_parent );
+			if ( $parent_post ) {
+				$parent_cats = get_the_category( $parent_post->ID );
+				if ( ! empty( $parent_cats ) ) {
+					$parent_primary = $parent_cats[0];
+					if ( $parent_primary->parent > 0 ) {
+						$target_cat_name = $parent_primary->name; 
+					}
+				}
+			}
+		}
+
+		if ( ! empty( $target_cat_name ) ) {
+			$badge_html = '<span class="sults-status-badge">' . esc_html( $target_cat_name ) . '</span>';
+		}
+		// ------------------------------------------------
+
 		$toggle_html = $has_children
 			? '<span class="sults-toggle dashicons dashicons-arrow-right-alt2"></span>'
 			: '<span class="sults-toggle-placeholder"></span>';
@@ -578,6 +619,7 @@ private function build_html_item( $element, $sults_posts_by_parent, $user_roles 
                     ' . $link_html . '
                 </div>
                 <div class="sults-card-right">
+                        ' . $badge_html . '
                         <span class="sults-status-badge sults-status-' . esc_attr( $sults_status_slug ) . '">' . esc_html( $status_label ) . '</span>
                         ' . $action_html . '
                 </div>
@@ -593,7 +635,7 @@ private function build_html_item( $element, $sults_posts_by_parent, $user_roles 
 
 		$html .= '</li>';
 		return $html;
-	}
+}
 
 	private function hex2rgba( $color, $opacity = false ) {
 		$default = 'rgb(0,0,0)';
@@ -619,5 +661,37 @@ private function build_html_item( $element, $sults_posts_by_parent, $user_roles 
 			$output = 'rgb(' . implode( ',', $rgb ) . ')';
 		}
 		return $output;
+	}
+
+	/**
+	 * Sincroniza as categorias, mas respeita se o filho já tiver uma subcategoria válida.
+	 */
+	private function sync_category_with_parent( int $child_id, int $parent_id ): void {
+		if ( $parent_id === 0 ) {
+			return;
+		}
+		$parent_cats = wp_get_post_terms( $parent_id, 'category', array( 'fields' => 'ids' ) );
+		if ( empty( $parent_cats ) || is_wp_error( $parent_cats ) ) {
+			return;
+		}
+		
+		$parent_main_cat_id = $parent_cats[0];
+
+		$child_cats = wp_get_post_terms( $child_id, 'category', array( 'fields' => 'ids' ) );
+		
+		$has_valid_subcat = false;
+
+		if ( ! empty( $child_cats ) && ! is_wp_error( $child_cats ) ) {
+			foreach ( $child_cats as $child_cat_id ) {
+				if ( $child_cat_id === $parent_main_cat_id || term_is_ancestor_of( $parent_main_cat_id, $child_cat_id, 'category' ) ) {
+					$has_valid_subcat = true;
+					break;
+				}
+			}
+		}
+
+		if ( ! $has_valid_subcat ) {
+			$this->post_repository->set_terms( $child_id, array( $parent_main_cat_id ), 'category' );
+		}
 	}
 }

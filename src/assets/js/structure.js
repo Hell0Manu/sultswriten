@@ -362,46 +362,43 @@ jQuery(document).ready(function ($) {
     } else {
         wrapper.addClass('sults-readonly');
     }
-    function initSortable() {
+function initSortable() {
         $('.sults-sortable-root, .sults-sortable-nested').sortable({
             connectWith: '.sults-sortable-root, .sults-sortable-nested',
             handle: '.sults-handle',
             placeholder: 'sults-placeholder',
+            forcePlaceholderSize: true,
             tolerance: 'pointer',
             cursor: 'grabbing',
-            start: function (e, ui) {
+            start: function(e, ui) {
                 ui.item.find('.sults-card-title').css('pointer-events', 'none');
-
+                
                 ui.item.data('originalParent', ui.item.parent());
                 ui.item.data('originalIndex', ui.item.index());
 
                 let itemDepth = 1;
-
                 if (ui.item.find('li').length > 0) {
                     itemDepth = 2;
-
                     if (ui.item.find('li li').length > 0) {
-                        itemDepth = 3;
+                        itemDepth = 3; 
                     }
                 }
                 ui.item.data('itemDepth', itemDepth);
             },
-            change: function (e, ui) {
+            change: function(e, ui) {
                 const placeholder = ui.placeholder;
-
                 const parents = placeholder.parents('ul.sults-sortable-root, ul.sults-sortable-nested');
-                const targetLevel = parents.length;
+                const targetLevel = parents.length; 
                 const itemDepth = ui.item.data('itemDepth') || 1;
-
                 const predictedDepth = targetLevel + (itemDepth - 1);
 
                 if (predictedDepth > 3) {
-                    placeholder.addClass('sults-invalid');
+                    placeholder.addClass('sults-invalid'); 
                 } else {
-                    placeholder.removeClass('sults-invalid');
+                    placeholder.removeClass('sults-invalid'); 
                 }
             },
-            stop: function (event, ui) {
+            stop: function(event, ui) {
                 ui.item.find('.sults-card-title').css('pointer-events', '');
 
                 const item = ui.item;
@@ -413,38 +410,43 @@ jQuery(document).ready(function ($) {
                 if ((currentLevel + (itemDepth - 1)) > 3) {
                     const $originalParent = item.data('originalParent');
                     const originalIndex = item.data('originalIndex');
-
                     item.detach();
-
                     const $siblings = $originalParent.children();
                     if (originalIndex === 0) {
                         $originalParent.prepend(item);
                     } else {
-                        if ($siblings.length > 0 && originalIndex <= $siblings.length) {
+                         if ($siblings.length > 0 && originalIndex <= $siblings.length) {
                             item.insertAfter($siblings.eq(originalIndex - 1));
                         } else {
                             $originalParent.append(item);
                         }
                     }
-
-                    return;
+                    return; 
                 }
 
                 const itemId = item.data('id');
                 let parentId = 0;
+                
                 if (parentUl.hasClass('sults-sortable-nested')) {
                     parentId = parentUl.closest('li.sults-item').data('id');
                 }
+                
+                const rootUl = item.closest('.sults-sortable-root');
+                let targetCatId = -1;
+                
+                if (rootUl.length) {
+                    targetCatId = rootUl.data('category-id'); 
+                }
 
                 const siblings = parentUl.sortable('toArray', { attribute: 'data-id' });
-
-                saveStructure(itemId, parentId, siblings, item);
+                
+                saveStructure(itemId, parentId, siblings, item, targetCatId);
                 saveState();
             }
         });
     }
 
-    function saveStructure(postId, parentId, orderArray, $item) {
+    function saveStructure(postId, parentId, orderArray, $item, targetCatId) {
         $.ajax({
             url: sultsStructureParams.ajax_url,
             type: 'POST',
@@ -453,24 +455,22 @@ jQuery(document).ready(function ($) {
                 security: sultsStructureParams.nonce,
                 post_id: postId,
                 parent_id: parentId,
-                order: orderArray
+                order: orderArray,
+                target_cat_id: targetCatId 
             },
-            success: function (res) {
+            success: function(res) {
                 if (!res.success) {
                     alert(res.data || 'Erro desconhecido');
-
-                    const $originalParent = $item.data('originalParent');
+                     const $originalParent = $item.data('originalParent');
                     const originalIndex = $item.data('originalIndex');
 
                     if ($originalParent) {
                         $item.detach();
-
                         const $siblings = $originalParent.children();
-
                         if (originalIndex === 0) {
                             $originalParent.prepend($item);
                         } else {
-                            if ($siblings.length > 0 && originalIndex <= $siblings.length) {
+                             if ($siblings.length > 0 && originalIndex <= $siblings.length) {
                                 $item.insertAfter($siblings.eq(originalIndex - 1));
                             } else {
                                 $originalParent.append($item);
@@ -479,7 +479,7 @@ jQuery(document).ready(function ($) {
                     }
                 }
             },
-            error: function () {
+            error: function() {
                 alert('Erro de conexão ao salvar estrutura.');
                 window.location.reload();
             }
