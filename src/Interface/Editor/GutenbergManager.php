@@ -4,6 +4,7 @@ namespace Sults\Writen\Interface\Editor;
 use Sults\Writen\Contracts\HookableInterface;
 use Sults\Writen\Contracts\AssetLoaderInterface;
 use Sults\Writen\Infrastructure\AssetPathResolver;
+use Sults\Writen\Workflow\PostStatus\StatusVisuals;
 
 class GutenbergManager implements HookableInterface {
 
@@ -28,12 +29,30 @@ class GutenbergManager implements HookableInterface {
 
 	public function enqueue_editor_scripts(): void {
 		$version = $this->asset_resolver->get_version();
+
 		$this->asset_loader->enqueue_script(
 			'sults-writen-gutenberg-restrictions',
 			$this->asset_resolver->get_js_url( 'gutenberg-restrictions.js' ),
 			array( 'wp-blocks', 'wp-dom-ready', 'wp-edit-post', 'wp-hooks', 'lodash' ),
 			$version,
 			true
+		);
+
+		$this->asset_loader->enqueue_script(
+			'sults-writen-gutenberg-workflow',
+			$this->asset_resolver->get_js_url( 'gutenberg-workflow.js' ),
+			array( 'wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data', 'jquery' ),
+			$version,
+			true
+		);
+
+		$this->asset_loader->localize_script(
+			'sults-writen-gutenberg-workflow',
+			'sultsWorkflowParams',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'sults_structure_nonce' ),
+			)
 		);
 
 		// $this->asset_loader->enqueue_script(
@@ -69,6 +88,13 @@ class GutenbergManager implements HookableInterface {
 			array( 'sults-writen-variables' ),
 			$version
 		);
+
+		if ( class_exists( StatusVisuals::class ) ) {
+			$status_css = StatusVisuals::get_css_rules();
+			if ( ! empty( $status_css ) ) {
+				wp_add_inline_style( 'sults-writen-gutenberg-styles', $status_css );
+			}
+		}
 	}
 
 	public function enqueue_frontend_scripts(): void {
