@@ -10,30 +10,51 @@ class StatusVisuals {
 	 */
 	public static function get_definitions(): array {
 		return array(
-			// Status Personalizados.
-			StatusConfig::SUSPENDED           => array(
-				'bg'   => 'var(--color-red-500)',
-				'text' => 'var(--color-red-100)',
-			),
-			StatusConfig::REQUIRES_ADJUSTMENT => array(
-				'bg'   => 'var(--color-orange-500)',
-				'text' => 'var(--color-orange-100)',
-			),
-			StatusConfig::REVIEW_IN_PROGRESS  => array(
-				'bg'   => 'var(--color-blue-500)',
+			// FLUXO DE TEXTO
+			StatusConfig::TEXT_IN_PROGRESS => array(
+				'bg'   => 'var(--color-blue-500)', 
 				'text' => 'var(--color-blue-100)',
 			),
-			StatusConfig::FINISHED            => array(
-				'bg'   => 'var(--color-green-500)',
-				'text' => 'var(--color-green-100)',
+			StatusConfig::TEXT_REVIEW      => array(
+				'bg'   => 'var(--color-orange-500)', 
+				'text' => 'var(--color-orange-100)',
 			),
-			StatusConfig::PENDING_IMAGE       => array(
+			StatusConfig::TEXT_ADJUSTMENT  => array(
+				'bg'   => 'var(--color-red-500)', 
+				'text' => 'var(--color-red-100)',
+			),
+
+			// FLUXO DE IMAGENS
+			StatusConfig::PENDING_IMAGE     => array(
 				'bg'   => 'var(--color-purple-500)',
 				'text' => 'var(--color-purple-100)',
 			),
-			// Status Nativos (Defaults).
+			StatusConfig::IMAGE_IN_PROGRESS => array(
+				'bg'   => 'var(--color-blue-500)',
+				'text' => 'var(--color-blue-100)',
+			),
+			StatusConfig::IMAGE_REVIEW      => array(
+				'bg'   => 'var(--color-orange-500)',
+				'text' => 'var(--color-orange-100)',
+			),
+			StatusConfig::IMAGE_ADJUSTMENT  => array(
+				'bg'   => 'var(--color-red-500)',
+				'text' => 'var(--color-red-100)',
+			),
+
+			// FLUXO FINAL
+			StatusConfig::PENDING_PUBLICATION => array(
+				'bg'   => 'var(--color-green-600)', 
+				'text' => 'var(--color-green-100)',
+			),
+			StatusConfig::SUSPENDED           => array(
+				'bg'   => 'var(--color-neutral-600)', 
+				'text' => 'var(--color-neutral-100)',
+			),
+
+			// STATUS NATIVOS
 			'publish'                         => array(
-				'bg'   => 'var(--color-verdigris-500)',
+				'bg'   => 'var(--color-verdigris-500)', 
 				'text' => 'var(--color-verdigris-100)',
 			),
 			'draft'                           => array(
@@ -55,8 +76,8 @@ class StatusVisuals {
 		);
 	}
 
-	/**
-	 * Gera as regras CSS para todos os status.
+/**
+	 * Gera as regras CSS para badges e botões.
 	 */
 	public static function get_css_rules(): string {
 		$css         = '';
@@ -67,7 +88,14 @@ class StatusVisuals {
 			$bg       = $sults_style['bg'];
 			$text     = $sults_style['text'];
 
-			$css .= "{$selector} { background: {$bg}; color: {$text}; } ";
+			$css .= "span{$selector} { background: {$bg}; color: {$text}; } ";
+
+			$css .= "button.sults-workflow-btn{$selector} { 
+				background-color: {$bg}; 
+				color: {$text}; 
+				border-color: {$bg};
+				text-shadow: none;
+			} ";
 		}
 
 		return $css;

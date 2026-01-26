@@ -544,6 +544,82 @@ li.sults-closed > ul.sults-sortable-nested { display: none; }
     pointer-events: none;
 }
 
+/* --- ÁREA DE AÇÕES DE WORKFLOW (DRAWER) --- */
+.sults-workflow-box {
+    background: #f0f0f1;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #dcdcde;
+}
+
+.sults-section-title {
+    margin: 0 0 5px 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #646970;
+    font-weight: 600;
+}
+
+.sults-workflow-desc {
+    margin: 0 0 15px 0;
+    color: #8c8f94;
+    font-size: 12px;
+}
+
+.sults-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+/* ESTILO DO BOTÃO MODERNO */
+.sults-workflow-btn {
+    display: inline-flex !important; /* Força flex para alinhar ícone */
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: auto !important;
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    border-radius: 6px !important;
+    border: 1px solid transparent !important;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-decoration: none;
+    
+    /* As cores virão da classe .sults-status-{slug} automaticamente */
+}
+
+.sults-workflow-btn .dashicons {
+    margin-right: 8px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Efeito Hover: Clareia ligeiramente e sobe o botão */
+.sults-workflow-btn:hover {
+    filter: brightness(110%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.sults-workflow-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.sults-workflow-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
+
 @media (max-width: 480px) {
     .sults-drawer {
         width: 100%;

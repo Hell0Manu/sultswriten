@@ -1,13 +1,6 @@
 <?php
 /**
- * Arquivo responsável pelo registro de status personalizados de post.
- *
- * Define a lista de novos status (como Suspenso, Finalizado) e utiliza
- * a infraestrutura do WordPress para registrá-los no sistema.
- *
- * @package    Sults\Writen
- * @subpackage Sults\Writen\Workflow\PostStatus
- * @since      0.1.0
+ * Arquivo responsável pelo registro de status personalizados.
  */
 
 namespace Sults\Writen\Workflow\PostStatus;
@@ -36,12 +29,16 @@ class PostStatusRegistrar {
 		$all_configs = StatusConfig::get_all();
 
 		foreach ( $all_configs as $slug => $config ) {
+			if ( empty( $config['wp_args'] ) ) {
+				continue;
+			}
+
 			$args = $config['wp_args'];
 
 			$sults_label   = $config['label'];
 			$args['label'] = $sults_label;
 
-			// phpcs:disable WordPress.WP.I18n.NonSingularStringLiteralSingular, WordPress.WP.I18n.NonSingularStringLiteralPlural
+			// phpcs:disable
 			$args['label_count'] = _n_noop(
 				$sults_label . ' <span class="count">(%s)</span>',
 				$sults_label . ' <span class="count">(%s)</span>',
@@ -56,7 +53,9 @@ class PostStatusRegistrar {
 	public static function get_custom_statuses(): array {
 		$output = array();
 		foreach ( StatusConfig::get_all() as $slug => $config ) {
-			$output[ $slug ] = $config['label'];
+			if ( ! empty( $config['wp_args'] ) ) {
+				$output[ $slug ] = $config['label'];
+			}
 		}
 		return $output;
 	}

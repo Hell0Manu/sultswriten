@@ -13,12 +13,12 @@ class WorkflowPolicy {
 	 * @return bool True se a edição estiver bloqueada.
 	 */
 	public function is_editing_locked( string $status, array $user_roles ): bool {
-		if ( in_array( RoleDefinitions::ADMIN, $user_roles, true ) ) {
-			return false;
-		}
+        if ( in_array( RoleDefinitions::ADMIN, $user_roles, true ) || in_array( RoleDefinitions::EDITOR_CHEFE, $user_roles, true ) ) {
+            return false;
+        }
 
 		$config = StatusConfig::get_config( $status );
-		$rules  = $config['flow_rules'];
+        $rules  = $config['flow_rules'] ?? array();
 
 		if ( empty( $rules['is_locked'] ) ) {
 			return false;
@@ -29,6 +29,30 @@ class WorkflowPolicy {
 
 		return ! $has_permission;
 	}
+
+/**
+     * Retorna transições permitidas filtradas por role.
+     */
+    public function get_allowed_transitions( string $current_status, array $user_roles ): array {
+        $config = StatusConfig::get_config( $current_status );
+        
+        $next_statuses = $config['next_statuses'] ?? array();
+
+        if ( empty( $next_statuses ) ) {
+            return array( StatusConfig::DRAFT, StatusConfig::PUBLISH );
+        }
+
+        if ( in_array( RoleDefinitions::REDATOR, $user_roles ) && ! in_array( RoleDefinitions::ADMIN, $user_roles ) && ! in_array( RoleDefinitions::EDITOR_CHEFE, $user_roles ) ) {
+            
+            $filtered = array_filter( $next_statuses, function( $status_slug ) {
+                return $status_slug !== StatusConfig::SUSPENDED;
+            });
+            
+            return array_values( $filtered ); // Reindexar array
+        }
+
+        return $next_statuses;
+    }
 
 	/**
 	 * Gera o HTML do badge de status para uso em tabelas e listas.

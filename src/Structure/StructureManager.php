@@ -53,6 +53,9 @@ class StructureManager implements HookableInterface {
 		add_action( 'wp_ajax_sults_get_post_details', array( $this, 'ajax_get_post_details' ) );
 		add_action( 'wp_ajax_sults_create_post', array( $this, 'ajax_create_post' ) );
 		add_action( 'wp_ajax_sults_save_quick_edit', array( $this, 'ajax_save_quick_edit' ) );
+		
+		// Atualizar apenas o STATUS via botão de ação
+		add_action( 'wp_ajax_sults_update_status', array( $this, 'ajax_update_status' ) );
 	}
 
 	public function register_menu(): void {
@@ -114,7 +117,7 @@ class StructureManager implements HookableInterface {
 		);
 	}
 
-public function ajax_handle_move() {
+	public function ajax_handle_move() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 		if ( ! $this->can_manage_structure() ) {
 			wp_send_json_error( 'Sem permissão global.' );
@@ -158,8 +161,7 @@ public function ajax_handle_move() {
 				$this->post_repository->set_terms( $sults_post_id, array(), 'category' );
 			}
 		}
-		// ------------------------------------------
-
+		
 		if ( ! empty( $order ) && is_array( $order ) ) {
 			foreach ( $order as $index => $sibling_id ) {
 				$this->post_repository->update(
@@ -173,13 +175,6 @@ public function ajax_handle_move() {
 		wp_send_json_success();
 	}
 
-
-	/**
-	 * Valida se o movimento respeita o limite de 3 níveis (Pai > Filho > Neto).
-	 *
-	 * @param int $parent_id O ID do novo pai.
-	 * @return bool True se permitido, False se exceder o limite.
-	 */
 	private function validate_hierarchy_depth( int $parent_id ): bool {
 		if ( 0 === $parent_id ) {
 			return true;
@@ -236,6 +231,18 @@ public function ajax_handle_move() {
 		$user_roles = $this->user_provider->get_current_user_roles();
 		$can_edit   = ! $this->policy->is_editing_locked( $sults_status_slug, $user_roles ) && current_user_can( 'edit_post', $sults_post_id );
 
+		$transitions = array();
+		$allowed_slugs = $this->policy->get_allowed_transitions( $sults_status_slug, $user_roles );
+		if ( current_user_can( 'edit_post', $sults_post_id ) ) {
+        foreach ( $allowed_slugs as $slug ) {
+            $cfg = StatusConfig::get_config( $slug );
+            $transitions[] = array(
+                'slug'  => $slug,
+                'label' => $cfg['label'],
+            );
+        }
+    }
+
 		$seo_title = get_post_meta( $sults_post_id, '_aioseo_title', true );
 		$seo_desc  = get_post_meta( $sults_post_id, '_aioseo_description', true );
 
@@ -274,13 +281,44 @@ public function ajax_handle_move() {
 				'view'     => $view_link,
 				'can_edit' => $can_edit,
 			),
+			'transitions' => $transitions, // Enviamos para o JS
 		);
 
 		wp_send_json_success( $response );
 	}
 
+	/**
+	 * Endpoint específico para atualizar status via botões de workflow.
+	 */
+	public function ajax_update_status() {
+		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
-public function ajax_create_post() {
+		$post_id    = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$new_status = isset( $_POST['new_status'] ) ? sanitize_text_field( $_POST['new_status'] ) : '';
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( 'Sem permissão.' );
+		}
+
+		if ( empty( $new_status ) ) {
+			wp_send_json_error( 'Status inválido.' );
+		}
+
+		// (Opcional) Poderias validar aqui se a transição é permitida via WorkflowPolicy para segurança extra
+
+		$updated = $this->post_repository->update( array(
+			'ID'          => $post_id,
+			'post_status' => $new_status
+		) );
+
+		if ( is_wp_error( $updated ) ) {
+			wp_send_json_error( $updated->get_error_message() );
+		}
+
+		wp_send_json_success( 'Status atualizado.' );
+	}
+
+	public function ajax_create_post() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
 		if ( ! $this->can_manage_structure() ) {
@@ -334,11 +372,13 @@ public function ajax_create_post() {
 			wp_send_json_error( 'Sem permissão para editar este post.' );
 		}
 
+		// NOTA: Removemos post_status daqui para evitar conflitos com os botões, 
+		// mas mantemos caso a edição rápida precise mudar outros campos.
+		
 		$sults_post_data = array(
 			'ID'            => $sults_post_id,
 			'post_title'    => isset( $_POST['post_title'] ) ? sanitize_text_field( wp_unslash( $_POST['post_title'] ) ) : '',
 			'post_name'     => isset( $_POST['post_name'] ) ? sanitize_title( wp_unslash( $_POST['post_name'] ) ) : '',
-			'post_status'   => isset( $_POST['post_status'] ) ? sanitize_text_field( wp_unslash( $_POST['post_status'] ) ) : 'draft',
 			'post_author'   => isset( $_POST['post_author'] ) ? absint( $_POST['post_author'] ) : get_current_user_id(),
 			'post_parent'   => isset( $_POST['post_parent'] ) ? absint( $_POST['post_parent'] ) : 0,
 			'post_password' => isset( $_POST['post_password'] ) ? sanitize_text_field( wp_unslash( $_POST['post_password'] ) ) : '',
@@ -384,9 +424,6 @@ public function ajax_create_post() {
 		}
 	}
 
-/**
-	 * Gera o HTML da árvore de posts agrupando tudo nas Categorias Raiz.
-	 */
 	private function get_tree_html(): string {
 
 		$statuses           = $this->status_provider->get_all_status_slugs();
@@ -460,10 +497,8 @@ public function ajax_create_post() {
 
 		return $html;
 	}
-	/**
-	 * Renderiza uma pasta de categoria e, recursivamente, seus filhos.
-	 */
-private function render_category_node( $sults_cat, $sults_posts_by_parent, $user_roles ): string {
+
+	private function render_category_node( $sults_cat, $sults_posts_by_parent, $user_roles ): string {
 		if ( empty( $sults_cat->posts ) ) {
 			return '';
 		}
@@ -501,9 +536,7 @@ private function render_category_node( $sults_cat, $sults_posts_by_parent, $user
 
 		return $html;
 	}
-	/**
-	 * Renderiza a pasta especial "Sem Categoria".
-	 */
+
 	private function render_uncategorized_folder( $sults_posts, $sults_posts_by_parent, $user_roles ): string {
 		$html = '<div class="sults-category-folder sults-cat-closed" style="border-left: 4px solid #646970; background-color: #f9f9f9; margin-bottom: 15px;">';
 
@@ -526,7 +559,7 @@ private function render_category_node( $sults_cat, $sults_posts_by_parent, $user
 		return $html;
 	}
 
-private function build_html_item( $element, $sults_posts_by_parent, $user_roles ): string {
+	private function build_html_item( $element, $sults_posts_by_parent, $user_roles ): string {
 		$children     = $sults_posts_by_parent[ $element->ID ] ?? array();
 		$has_children = ! empty( $children );
 
@@ -635,7 +668,7 @@ private function build_html_item( $element, $sults_posts_by_parent, $user_roles 
 
 		$html .= '</li>';
 		return $html;
-}
+	}
 
 	private function hex2rgba( $color, $opacity = false ) {
 		$default = 'rgb(0,0,0)';
@@ -663,9 +696,6 @@ private function build_html_item( $element, $sults_posts_by_parent, $user_roles 
 		return $output;
 	}
 
-	/**
-	 * Sincroniza as categorias, mas respeita se o filho já tiver uma subcategoria válida.
-	 */
 	private function sync_category_with_parent( int $child_id, int $parent_id ): void {
 		if ( $parent_id === 0 ) {
 			return;

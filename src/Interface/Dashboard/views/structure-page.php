@@ -5,13 +5,10 @@
  * @var string   $sults_tree_html         HTML da árvore de posts.
  * @var array    $sults_categories        Lista de categorias.
  * @var array    $sults_authors           Lista de autores.
- * @var array    $sults_all_statuses      Lista de slugs de status.
  * @var array    $sults_potential_parents Lista de posts que podem ser pais.
  */
 
 defined( 'ABSPATH' ) || exit;
-
-// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 ?>
 
 <div class="wrap">
@@ -32,6 +29,7 @@ defined( 'ABSPATH' ) || exit;
 		<div class="sults-drawer-body">
 			<div class="sults-drawer-loading"><span class="spinner is-active"></span> Carregando...</div>
 			<div class="sults-drawer-content" style="display:none;">
+				
 				<div class="sults-drawer-header-content">
 					<h2 id="drawer-title" class="sults-drawer-title"></h2>
 					<div class="sults-drawer-meta-row">
@@ -39,7 +37,15 @@ defined( 'ABSPATH' ) || exit;
 						<div id="drawer-status"></div>
 					</div>
 				</div>
+
 				<hr class="sults-drawer-divider">
+
+				<div id="drawer-workflow-section" class="sults-workflow-box" style="display:none;">
+					<h4 class="sults-section-title">Próxima Etapa</h4>
+					<p class="sults-workflow-desc">Mova este conteúdo para a próxima fase do fluxo editorial.</p>
+					<div id="drawer-workflow-actions" class="sults-actions-grid">
+						</div>
+				</div>
 				<div class="sults-info-group">
 					<label>CRIADO POR</label>
 					<div class="sults-author-block">
@@ -57,6 +63,7 @@ defined( 'ABSPATH' ) || exit;
 						<div id="drawer-category" class="sults-category-tag"></div>
 					</div>
 				</div>
+				
 				<div class="sults-seo-box">
 					<div class="sults-seo-header"><span class="dashicons dashicons-google"></span> Pré-visualização SEO</div>
 					<div class="sults-seo-preview">
@@ -64,6 +71,7 @@ defined( 'ABSPATH' ) || exit;
 						<div id="drawer-seo-desc" class="sults-seo-desc"></div>
 					</div>
 				</div>
+
 				<div class="sults-info-group">
 					<label>CAMINHO (PATH)</label>
 					<div class="sults-path-box">
@@ -90,14 +98,18 @@ defined( 'ABSPATH' ) || exit;
 
 						<div class="sults-info-grid">
 							<div class="sults-form-group">
-								<label for="quick-edit-status">Status</label>
-								<select name="post_status" id="quick-edit-status" class="sults-input">
+								<label for="quick-edit-category">Categoria</label>
+								<select name="post_category" id="quick-edit-category" class="sults-input">
+									<option value="0">Sem Categoria</option>
 									<?php
-									foreach ( $sults_all_statuses as $sults_status_slug ) :
-										$sults_status_obj = get_post_status_object( $sults_status_slug );
-										$sults_label      = $sults_status_obj ? $sults_status_obj->label : ucfirst( $sults_status_slug );
+									foreach ( $sults_categories as $sults_cat ) :
+										$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
+										$sults_indent = str_repeat( '— ', $sults_level );
+										$sults_style  = ( $sults_level === 0 );
 										?>
-										<option value="<?php echo esc_attr( $sults_status_slug ); ?>"><?php echo esc_html( $sults_label ); ?></option>
+										<option value="<?php echo esc_attr( $sults_cat->term_id ); ?>" style="<?php echo esc_attr( $sults_style ); ?>">
+											<?php echo esc_html( $sults_indent . $sults_cat->name ); ?>
+										</option>
 									<?php endforeach; ?>
 								</select>
 							</div>
@@ -109,25 +121,6 @@ defined( 'ABSPATH' ) || exit;
 									<?php endforeach; ?>
 								</select>
 							</div>
-						</div>
-
-						<div class="sults-info-grid">
-							<div class="sults-form-group">
-							<label for="quick-edit-category">Categoria</label>
-							<select name="post_category" id="quick-edit-category" class="sults-input">
-								<option value="0">Sem Categoria</option>
-								<?php
-								foreach ( $sults_categories as $sults_cat ) :
-									$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
-									$sults_indent = str_repeat( '— ', $sults_level );
-									$sults_style  = ( $sults_level === 0 );
-									?>
-									<option value="<?php echo esc_attr( $sults_cat->term_id ); ?>" style="<?php echo esc_attr( $sults_style ); ?>">
-										<?php echo esc_html( $sults_indent . $sults_cat->name ); ?>
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</div>
 						</div>
 
 						<div class="sults-info-grid">
@@ -158,14 +151,14 @@ defined( 'ABSPATH' ) || exit;
 						</div>
 
 						<div class="sults-quick-edit-actions">
-							<button type="submit" class="button button-primary" id="btn-save-quick-edit">Salvar Alterações</button>
+							<button type="submit" class="button button-primary" id="btn-save-quick-edit">Salvar Dados</button>
 						</div>
 					</form>
 				</div>
 
 				<div class="sults-drawer-footer">
 					<a id="drawer-btn-view" href="#" target="_blank" class="button sults-btn-view"><span class="dashicons dashicons-visibility"></span> Ver Página</a>
-					<a id="drawer-btn-edit" href="#" class="button button-primary sults-btn-edit"><span class="dashicons dashicons-edit"></span> Editar Página</a>
+					<a id="drawer-btn-edit" href="#" class="button button-primary sults-btn-edit"><span class="dashicons dashicons-edit"></span> Editar Conteúdo</a>
 				</div>
 			</div>
 		</div>
@@ -175,88 +168,83 @@ defined( 'ABSPATH' ) || exit;
 		<div class="sults-modal">
 			<div class="sults-modal-header">
 				<h2>Nova Página</h2>
-				<button type="button" class="sults-modal-close" st><span class="dashicons dashicons-no-alt"></span></button>
+				<button type="button" class="sults-modal-close"><span class="dashicons dashicons-no-alt"></span></button>
 			</div>
 			<div class="sults-modal-body">
-			<form id="sults-create-post-form">
-	
-	<div class="sults-form-group">
-		<label for="new-post-title">Nome do Post</label>
-		<input type="text" id="new-post-title" name="title" class="sults-input" placeholder="Ex: Guia de Instalação" required>
-	</div>
+				<form id="sults-create-post-form">
+					<div class="sults-form-group">
+						<label for="new-post-title">Nome do Post</label>
+						<input type="text" id="new-post-title" name="title" class="sults-input" placeholder="Ex: Guia de Instalação" required>
+					</div>
 
-	<div class="sults-form-group">
-			<label for="new-post-category">Categoria</label>
-<select id="new-post-category" name="cat_id" class="sults-input" style="max-width: 100%">
-	<option value="" selected disabled>Selecione uma categoria...</option>
-	<option value="0" data-slug="" data-parent-slug="">Sem Categoria</option>
-	
-	<?php
-	foreach ( $sults_categories as $sults_cat ) :
-		$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
-		$sults_indent = str_repeat( '— ', $sults_level );
-		$sults_style  = ( $sults_level === 0 );
+					<div class="sults-form-group">
+						<label for="new-post-category">Categoria</label>
+						<select id="new-post-category" name="cat_id" class="sults-input" style="max-width: 100%">
+							<option value="" selected disabled>Selecione uma categoria...</option>
+							<option value="0" data-slug="" data-parent-slug="">Sem Categoria</option>
+							<?php
+							foreach ( $sults_categories as $sults_cat ) :
+								$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
+								$sults_indent = str_repeat( '— ', $sults_level );
+								$sults_style  = ( $sults_level === 0 );
 
-		$sults_parent_slug = '';
+								$sults_parent_slug = '';
+								$sults_ancestors = get_ancestors( $sults_cat->term_id, 'category' );
+								if ( ! empty( $sults_ancestors ) ) {
+									$sults_ancestors = array_reverse( $sults_ancestors );
+									$sults_slugs     = array();
+									foreach ( $sults_ancestors as $sults_ancestor_id ) {
+										$sults_term = get_term( $sults_ancestor_id, 'category' );
+										if ( $sults_term && ! is_wp_error( $sults_term ) ) {
+											$sults_slugs[] = $sults_term->slug;
+										}
+									}
+									$sults_parent_slug = implode( '/', $sults_slugs );
+								}
+								?>
+								<option 
+									value="<?php echo esc_attr( $sults_cat->term_id ); ?>" 
+									data-slug="<?php echo esc_attr( $sults_cat->slug ); ?>"
+									data-parent-slug="<?php echo esc_attr( $sults_parent_slug ); ?>"
+									style="<?php echo esc_attr( $sults_style ); ?>"
+								>
+									<?php echo esc_html( $sults_indent . $sults_cat->name ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
 
-		$sults_ancestors = get_ancestors( $sults_cat->term_id, 'category' );
+					<div class="sults-form-group" id="group-new-post-parent" style="display:none;">
+						<label for="new-post-parent">Post Pai (Raiz)</label>
+						<select id="new-post-parent" name="parent_id" class="sults-input" style="max-width: 100%">
+							<option value="0" selected>Nenhum (Raiz)</option>
+							<?php
+							foreach ( $sults_potential_parents as $sults_p ) :
+								$sults_cats   = get_the_category( $sults_p->ID );
+								$sults_cat_id = ! empty( $sults_cats ) ? $sults_cats[0]->term_id : 0;
+								$sults_level  = isset( $sults_p->depth_level ) ? (int) $sults_p->depth_level : 0;
+								$sults_indent = str_repeat( '— ', $sults_level );
+								?>
+								<option value="<?php echo esc_attr( $sults_p->ID ); ?>" data-cat-id="<?php echo esc_attr( $sults_cat_id ); ?>">
+									<?php echo esc_html( $sults_indent . $sults_p->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
 
-		if ( ! empty( $sults_ancestors ) ) {
-			$sults_ancestors = array_reverse( $sults_ancestors );
-			$sults_slugs     = array();
+					<div class="sults-form-group">
+						<label for="new-post-slug">URL do Post (Slug)</label>
+						<div class="sults-input-group">
+							<span class="sults-input-prefix" id="new-post-slug-prefix">/</span>
+							<input type="text" id="new-post-slug" name="slug" class="sults-input" placeholder="guia-de-instalacao">
+						</div>
+					</div>
 
-			foreach ( $sults_ancestors as $sults_ancestor_id ) {
-				$sults_term = get_term( $sults_ancestor_id, 'category' );
-				if ( $sults_term && ! is_wp_error( $sults_term ) ) {
-					$sults_slugs[] = $sults_term->slug;
-				}
-			}
-			$sults_parent_slug = implode( '/', $sults_slugs );
-		}
-		?>
-		<option 
-			value="<?php echo esc_attr( $sults_cat->term_id ); ?>" 
-			data-slug="<?php echo esc_attr( $sults_cat->slug ); ?>"
-			data-parent-slug="<?php echo esc_attr( $sults_parent_slug ); ?>"
-			style="<?php echo esc_attr( $sults_style ); ?>"
-		>
-			<?php echo esc_html( $sults_indent . $sults_cat->name ); ?>
-		</option>
-	<?php endforeach; ?>
-</select>
-	</div>
-
-<div class="sults-form-group" id="group-new-post-parent" style="display:none;">
-		<label for="new-post-parent">Post Pai (Raiz)</label>
-		<select id="new-post-parent" name="parent_id" class="sults-input" style="max-width: 100%">
-			<option value="0" selected>Nenhum (Raiz)</option>
-			<?php
-			foreach ( $sults_potential_parents as $sults_p ) :
-				$sults_cats   = get_the_category( $sults_p->ID );
-				$sults_cat_id = ! empty( $sults_cats ) ? $sults_cats[0]->term_id : 0;
-				$sults_level  = isset( $sults_p->depth_level ) ? (int) $sults_p->depth_level : 0;
-				$sults_indent = str_repeat( '— ', $sults_level );
-				?>
-				<option value="<?php echo esc_attr( $sults_p->ID ); ?>" data-cat-id="<?php echo esc_attr( $sults_cat_id ); ?>">
-					<?php echo esc_html( $sults_indent . $sults_p->post_title ); ?>
-				</option>
-			<?php endforeach; ?>
-		</select>
-	</div>
-
-	<div class="sults-form-group">
-		<label for="new-post-slug">URL do Post (Slug)</label>
-		<div class="sults-input-group">
-			<span class="sults-input-prefix" id="new-post-slug-prefix">/</span>
-			<input type="text" id="new-post-slug" name="slug" class="sults-input" placeholder="guia-de-instalacao">
-		</div>
-	</div>
-
-	<div class="sults-modal-footer">
-		<button type="button" class="button sults-modal-cancel">Cancelar</button>
-		<button type="submit" class="button button-primary sults-btn-large">Criar Página</button>
-	</div>
-</form>
+					<div class="sults-modal-footer">
+						<button type="button" class="button sults-modal-cancel">Cancelar</button>
+						<button type="submit" class="button button-primary sults-btn-large">Criar Página</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	</div>

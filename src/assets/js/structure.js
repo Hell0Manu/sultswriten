@@ -10,11 +10,10 @@ jQuery(document).ready(function ($) {
     const $loadingState = $drawer.find('.sults-drawer-loading');
     const $contentState = $drawer.find('.sults-drawer-content');
 
-
     /* =========================================
        INICIALIZAÇÃO E RESTAURO DE ESTADO
        ========================================= */
-        restoreState();
+    restoreState();
 
     function saveState() {
         const openPosts = [];
@@ -83,11 +82,8 @@ jQuery(document).ready(function ($) {
 
         $slugPrefix.text('/');
         $('#hidden-cat-id').remove();
-
         $sults_parentGroup.hide();
-
         $sults_categorySelect.val("");
-
         $modalBackdrop.addClass('open');
         $titleInput.focus();
     });
@@ -118,7 +114,6 @@ jQuery(document).ready(function ($) {
 
         if (selectedCatId) {
             $sults_parentSelect.empty();
-
             const rootOption = $allParentOptions.filter('[value="0"]');
             $sults_parentSelect.append(rootOption);
 
@@ -145,7 +140,6 @@ jQuery(document).ready(function ($) {
 
     $form.on('submit', function (e) {
         e.preventDefault();
-
         let formData = $(this).serialize();
         const $btn = $(this).find('button[type="submit"]');
 
@@ -187,11 +181,14 @@ jQuery(document).ready(function ($) {
         btnEdit: $('#drawer-btn-edit'),
         btnView: $('#drawer-btn-view'),
 
+        // Workflow Action Area
+        workflowSection: $('#drawer-workflow-section'),
+        workflowActions: $('#drawer-workflow-actions'),
+
         // Quick Edit Fields
         quickEditId: $('#quick-edit-id'),
         quickEditTitle: $('#quick-edit-title'),
         quickEditSlug: $('#quick-edit-slug'),
-        quickEditStatus: $('#quick-edit-status'),
         quickEditCategory: $('#quick-edit-category'),
         quickEditAuthor: $('#quick-edit-author'),
         quickEditParent: $('#quick-edit-parent'),
@@ -206,7 +203,6 @@ jQuery(document).ready(function ($) {
        ========================================= */
 
     wrapper.on('click', '.sults-card-title', function (e) {
-
         if ($(this).closest('.sults-card').hasClass('disabled')) {
             return;
         }
@@ -230,10 +226,8 @@ jQuery(document).ready(function ($) {
     function openDrawer(postId) {
         $backdrop.addClass('open');
         $drawer.addClass('open');
-
         $contentState.hide();
         $loadingState.show();
-
         fetchPostDetails(postId);
     }
 
@@ -265,7 +259,7 @@ jQuery(document).ready(function ($) {
             },
             error: function (xhr, status, error) {
                 console.error('AJAX Error:', status, error, xhr.responseText);
-                alert('Erro de conexão. Verifique o console para mais detalhes.');
+                alert('Erro de conexão.');
                 closeDrawer();
             }
         });
@@ -290,6 +284,9 @@ jQuery(document).ready(function ($) {
 
         fields.btnView.attr('href', data.links.view);
 
+        // --- Renderizar Botões de Workflow ---
+        renderWorkflowButtons(data.id, data.transitions);
+
         if (data.links.can_edit) {
             fields.btnEdit.attr('href', data.links.edit).removeClass('disabled').show();
             fields.quickEditSection.show();
@@ -298,7 +295,6 @@ jQuery(document).ready(function ($) {
             fields.quickEditId.val(data.id);
             fields.quickEditTitle.val(data.title);
             fields.quickEditSlug.val(data.slug);
-            fields.quickEditStatus.val(data.status);
             fields.quickEditCategory.val(data.category.id);
             fields.quickEditAuthor.val(data.author.id);
             fields.quickEditParent.val(data.parent_id);
@@ -314,8 +310,75 @@ jQuery(document).ready(function ($) {
         });
     }
 
+    function renderWorkflowButtons(postId, transitions) {
+        fields.workflowActions.empty();
+
+        if (!transitions || transitions.length === 0) {
+            fields.workflowSection.hide();
+            return;
+        }
+
+        fields.workflowSection.show();
+
+        transitions.forEach(transition => {
+            const btn = $('<button></button>');
+            
+            btn.addClass(`button sults-workflow-btn sults-status-${transition.slug}`);
+            
+            let iconClass = 'dashicons-arrow-right-alt'; 
+            
+            if (transition.slug.includes('adjustment') || transition.slug.includes('suspend')) {
+                iconClass = 'dashicons-warning'; 
+            } else if (transition.slug.includes('publish') || transition.slug.includes('finish')) {
+                iconClass = 'dashicons-yes-alt';
+            } else if (transition.slug.includes('review')) {
+                iconClass = 'dashicons-visibility'; 
+            } else if (transition.slug.includes('image')) {
+                iconClass = 'dashicons-format-image'; 
+            }
+
+            btn.html(`<span class="dashicons ${iconClass}"></span> ${transition.label}`);
+            
+            btn.on('click', function(e) {
+                e.preventDefault();
+                updatePostStatus(postId, transition.slug);
+            });
+
+            fields.workflowActions.append(btn);
+        });
+    }
+
+    function updatePostStatus(postId, newStatus) {
+        const $btns = fields.workflowActions.find('button');
+        $btns.prop('disabled', true).addClass('updating');
+
+        $.ajax({
+            url: sultsStructureParams.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'sults_update_status',
+                security: sultsStructureParams.nonce,
+                post_id: postId,
+                new_status: newStatus
+            },
+            success: function(res) {
+                if (res.success) {
+                    fetchPostDetails(postId);
+                    location.reload(); 
+                } else {
+                    alert('Erro: ' + res.data);
+                    $btns.prop('disabled', false).removeClass('updating');
+                }
+            },
+            error: function() {
+                alert('Erro de conexão ao atualizar status.');
+                $btns.prop('disabled', false).removeClass('updating');
+            }
+        });
+    }
+
     /* =========================================
-       3. INTERATIVIDADE DA ÁRVORE (LEGADO)
+       3. INTERATIVIDADE DA ÁRVORE
        ========================================= */
 
     wrapper.on('click', '.sults-toggle', function (e) {
@@ -362,7 +425,8 @@ jQuery(document).ready(function ($) {
     } else {
         wrapper.addClass('sults-readonly');
     }
-function initSortable() {
+
+    function initSortable() {
         $('.sults-sortable-root, .sults-sortable-nested').sortable({
             connectWith: '.sults-sortable-root, .sults-sortable-nested',
             handle: '.sults-handle',
@@ -372,16 +436,12 @@ function initSortable() {
             cursor: 'grabbing',
             start: function(e, ui) {
                 ui.item.find('.sults-card-title').css('pointer-events', 'none');
-                
                 ui.item.data('originalParent', ui.item.parent());
                 ui.item.data('originalIndex', ui.item.index());
-
                 let itemDepth = 1;
                 if (ui.item.find('li').length > 0) {
                     itemDepth = 2;
-                    if (ui.item.find('li li').length > 0) {
-                        itemDepth = 3; 
-                    }
+                    if (ui.item.find('li li').length > 0) itemDepth = 3; 
                 }
                 ui.item.data('itemDepth', itemDepth);
             },
@@ -391,16 +451,11 @@ function initSortable() {
                 const targetLevel = parents.length; 
                 const itemDepth = ui.item.data('itemDepth') || 1;
                 const predictedDepth = targetLevel + (itemDepth - 1);
-
-                if (predictedDepth > 3) {
-                    placeholder.addClass('sults-invalid'); 
-                } else {
-                    placeholder.removeClass('sults-invalid'); 
-                }
+                if (predictedDepth > 3) placeholder.addClass('sults-invalid'); 
+                else placeholder.removeClass('sults-invalid'); 
             },
             stop: function(event, ui) {
                 ui.item.find('.sults-card-title').css('pointer-events', '');
-
                 const item = ui.item;
                 const parentUl = item.parent();
                 const parents = parentUl.parents('ul.sults-sortable-root, ul.sults-sortable-nested').add(parentUl);
@@ -412,34 +467,23 @@ function initSortable() {
                     const originalIndex = item.data('originalIndex');
                     item.detach();
                     const $siblings = $originalParent.children();
-                    if (originalIndex === 0) {
-                        $originalParent.prepend(item);
-                    } else {
-                         if ($siblings.length > 0 && originalIndex <= $siblings.length) {
-                            item.insertAfter($siblings.eq(originalIndex - 1));
-                        } else {
-                            $originalParent.append(item);
-                        }
+                    if (originalIndex === 0) $originalParent.prepend(item);
+                    else {
+                         if ($siblings.length > 0 && originalIndex <= $siblings.length) item.insertAfter($siblings.eq(originalIndex - 1));
+                         else $originalParent.append(item);
                     }
                     return; 
                 }
 
                 const itemId = item.data('id');
                 let parentId = 0;
-                
-                if (parentUl.hasClass('sults-sortable-nested')) {
-                    parentId = parentUl.closest('li.sults-item').data('id');
-                }
+                if (parentUl.hasClass('sults-sortable-nested')) parentId = parentUl.closest('li.sults-item').data('id');
                 
                 const rootUl = item.closest('.sults-sortable-root');
                 let targetCatId = -1;
-                
-                if (rootUl.length) {
-                    targetCatId = rootUl.data('category-id'); 
-                }
+                if (rootUl.length) targetCatId = rootUl.data('category-id'); 
 
                 const siblings = parentUl.sortable('toArray', { attribute: 'data-id' });
-                
                 saveStructure(itemId, parentId, siblings, item, targetCatId);
                 saveState();
             }
@@ -461,22 +505,7 @@ function initSortable() {
             success: function(res) {
                 if (!res.success) {
                     alert(res.data || 'Erro desconhecido');
-                     const $originalParent = $item.data('originalParent');
-                    const originalIndex = $item.data('originalIndex');
-
-                    if ($originalParent) {
-                        $item.detach();
-                        const $siblings = $originalParent.children();
-                        if (originalIndex === 0) {
-                            $originalParent.prepend($item);
-                        } else {
-                             if ($siblings.length > 0 && originalIndex <= $siblings.length) {
-                                $item.insertAfter($siblings.eq(originalIndex - 1));
-                            } else {
-                                $originalParent.append($item);
-                            }
-                        }
-                    }
+                    location.reload();
                 }
             },
             error: function() {
@@ -487,7 +516,7 @@ function initSortable() {
     }
 
     /* =========================================
-       5. SALVAR EDIÇÃO RÁPIDA
+       5. SALVAR EDIÇÃO RÁPIDA (SEM STATUS)
        ========================================= */
     fields.quickEditForm.on('submit', function (e) {
         e.preventDefault();
@@ -504,17 +533,17 @@ function initSortable() {
                 if (res.success) {
                     $btn.text('Salvo!');
                     setTimeout(() => {
-                        $btn.prop('disabled', false).text('Salvar Alterações');
+                        $btn.prop('disabled', false).text('Salvar Dados');
                         location.reload();
                     }, 1000);
                 } else {
                     alert('Erro: ' + res.data);
-                    $btn.prop('disabled', false).text('Salvar Alterações');
+                    $btn.prop('disabled', false).text('Salvar Dados');
                 }
             },
             error: function () {
                 alert('Erro de conexão.');
-                $btn.prop('disabled', false).text('Salvar Alterações');
+                $btn.prop('disabled', false).text('Salvar Dados');
             }
         });
     });

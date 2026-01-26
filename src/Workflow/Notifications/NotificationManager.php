@@ -39,6 +39,7 @@ class NotificationManager {
 
 		$current_user_id = $this->user_provider->get_current_user_id();
 
+		// Notificação interna no painel (sininho) se não fui eu que mudei
 		if ( $current_user_id !== (int) $sults_post->post_author ) {
 			$sults_status_obj = $this->status_provider->get_status_object( $new_status );
 			$status_label     = ( $sults_status_obj && isset( $sults_status_obj->label ) ) ? $sults_status_obj->label : $new_status;
@@ -61,14 +62,20 @@ class NotificationManager {
 			$this->notification_repository->add_notification( $sults_post->post_author, $notification );
 		}
 
-		if ( $new_status === StatusConfig::REQUIRES_ADJUSTMENT ) {
+		if ( $new_status === StatusConfig::TEXT_ADJUSTMENT || $new_status === StatusConfig::IMAGE_ADJUSTMENT ) {
 			$color     = '#ff8914';
 			$edit_link = get_edit_post_link( $sults_post->ID, 'raw' );
+
+			$tipo_ajuste = ( $new_status === StatusConfig::IMAGE_ADJUSTMENT ) ? 'a imagem' : 'o texto';
 
 			$this->mailer->send(
 				$sults_post->post_author,
 				'Seu artigo precisa de ajustes',
-				sprintf( '<p>Olá! O artigo <strong>"%s"</strong> foi revisado e retornou para ajustes. Por favor, verifique os comentários na plataforma.</p>', esc_html( $sults_post->post_title ) ),
+				sprintf( 
+					'<p>Olá! O artigo <strong>"%s"</strong> foi revisado e retornou para ajustar %s. Por favor, verifique os comentários na plataforma.</p>', 
+					esc_html( $sults_post->post_title ),
+					$tipo_ajuste
+				),
 				array(
 					'color'      => $color,
 					'link'       => $edit_link,
@@ -77,6 +84,7 @@ class NotificationManager {
 			);
 		}
 
+		// Notificação para Designers
 		if ( $new_status === StatusConfig::PENDING_IMAGE ) {
 
 			$designers = get_users( array( 'role' => RoleDefinitions::DESIGNER ) );
