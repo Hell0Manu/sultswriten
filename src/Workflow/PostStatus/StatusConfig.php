@@ -34,7 +34,7 @@ class StatusConfig {
                     'is_locked'     => false,
                     'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::REDATOR ),
                 ),
-                'next_statuses' => array( self::TEXT_IN_PROGRESS, self::SUSPENDED ),
+                'next_statuses' => array( self::TEXT_IN_PROGRESS, self::TEXT_REVIEW, self::SUSPENDED ),
             ),
 
             // FLUXO DE TEXTO
@@ -45,7 +45,7 @@ class StatusConfig {
                     'is_locked'     => false,
                     'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::REDATOR ),
                 ),
-                'next_statuses' => array( self::TEXT_REVIEW, self::SUSPENDED ),
+                'next_statuses' => array( self::TEXT_REVIEW, self::TEXT_IN_PROGRESS, self::SUSPENDED ),
             ),
 
             self::TEXT_REVIEW => array(
@@ -65,7 +65,7 @@ class StatusConfig {
                     'is_locked'     => false,
                     'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::REDATOR ),
                 ),
-                'next_statuses' => array( self::TEXT_IN_PROGRESS, self::SUSPENDED ),
+                'next_statuses' => array( self::TEXT_IN_PROGRESS, self::TEXT_REVIEW, self::SUSPENDED ),
             ),
 
             // FLUXO DE IMAGEM
