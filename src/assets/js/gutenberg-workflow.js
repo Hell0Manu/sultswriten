@@ -1,94 +1,114 @@
-(function(wp, $) {
-    const { registerPlugin } = wp.plugins;
-    const { PluginPostStatusInfo } = wp.editPost; 
-    const { select, dispatch } = wp.data;
-    const { createElement, useState, useEffect } = wp.element;
-    const { Button, Spinner } = wp.components;
+(function($) {
+    $(document).ready(function() {
 
-    const WorkflowPanel = () => {
-        const [transitions, setTransitions] = useState([]);
-        const [loading, setLoading] = useState(true);
-        const [processing, setProcessing] = useState(false);
-        
-        const postId = select('core/editor').getCurrentPostId();
-        const postStatus = select('core/editor').getEditedPostAttribute('status');
+        /**
+         * Retorna a configuração completa para o status atual
+         */
+        function obterConfigStatus() {
+            var statusAtual = wp.data.select('core/editor').getEditedPostAttribute('status');
+            var params = typeof sultsWorkflowParams !== 'undefined' ? sultsWorkflowParams : {};
+            var map = params.statusMap || {};
 
-        useEffect(() => {
-            if (postId) {
-                fetchTransitions();
+            if (map && map[statusAtual]) {
+                return map[statusAtual];
             }
-        }, [postId, postStatus]);
+            return null;
+        }
 
-        const fetchTransitions = () => {
-            $.ajax({
-                url: sultsWorkflowParams.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'sults_get_post_details', 
-                    security: sultsWorkflowParams.nonce,
-                    post_id: postId
-                },
-                success: (res) => {
-                    if(res.success && res.data.transitions) {
-                        setTransitions(res.data.transitions);
-                    }
-                    setLoading(false);
-                },
-                error: () => setLoading(false)
-            });
-        };
+        /**
+         * Ação: Muda status (opcional) e Salva
+         */
+        function executarAcao(novoStatus) {
+            if (novoStatus) {
+                console.log('Sults Workflow: Alterando status para ' + novoStatus + ' e salvando...');
+                wp.data.dispatch('core/editor').editPost({ status: novoStatus });
+            } else {
+                console.log('Sults Workflow: Salvando no status atual...');
+            }
 
-        const handleTransition = (slug) => {
-             if (!confirm('Tem certeza que deseja mudar o status?')) return;
-             
-             setProcessing(true);
-             
-             dispatch('core/editor').savePost().then(() => {
-                 $.ajax({
-                    url: sultsWorkflowParams.ajax_url,
-                    type: 'POST',
-                    data: {
-                        action: 'sults_update_status',
-                        security: sultsWorkflowParams.nonce,
-                        post_id: postId,
-                        new_status: slug
-                    },
-                    success: (res) => {
-                        if(res.success) {
-                             window.location.reload();
-                        } else {
-                            alert('Erro: ' + res.data);
-                            setProcessing(false);
-                        }
-                    },
-                    error: () => {
-                        alert('Erro de conexão.');
-                        setProcessing(false);
+            // Pequeno delay para garantir que o estado do React atualizou antes do save
+            setTimeout(function() {
+                wp.data.dispatch('core/editor').savePost();
+            }, 100);
+        }
+
+        /**
+         * Substitui um botão específico com base no tipo (Primário ou Secundário)
+         */
+        function gerenciarBotao(seletor, tipoBotao) {
+            var $botaoOriginal = $(seletor);
+
+            if (!$botaoOriginal.length) return;
+
+            if (wp.data.select('core/editor').isSavingPost()) return;
+
+            var configStatus = obterConfigStatus();
+            var config = null;
+
+            if (configStatus) {
+                config = (tipoBotao === 'primary') ? configStatus.primary : configStatus.secondary;
+            }
+
+            var textoBotao = config ? config.text : (tipoBotao === 'primary' ? 'Salvar/Publicar' : 'Salvar');
+            var proximoStatus = config ? config.target_status : null;
+
+            var classeClone = 'sults-botao-' + tipoBotao;
+            var $nossoBotao = $('.' + classeClone);
+
+            if (!$nossoBotao.length) {
+                var $clone = $botaoOriginal.clone();
+
+                $clone.addClass(classeClone)
+                      .addClass('sults-workflow-btn')
+                      .removeClass('editor-post-save-draft')
+                      .removeClass('editor-post-publish-button__button')
+                      .removeAttr('disabled')
+                      .css({
+                          'z-index': 10,
+                          'position': 'relative',
+                          'margin-left': '8px',
+                          'width': 'auto',
+                          'min-width': '100px'
+                      })
+                      .text(textoBotao);
+
+                $botaoOriginal.after($clone);
+                $botaoOriginal.hide();
+
+                $clone.on('click', function(e) {
+                    e.preventDefault();
+                    if (proximoStatus) {
+                        executarAcao(proximoStatus);
+                    } else {
+                        $botaoOriginal.trigger('click');
                     }
                 });
-             });
-        };
 
-        if (loading) return createElement('div', {style: {padding:'10px'}}, 'Carregando fluxo...');
-        
-        if (!transitions || transitions.length === 0) return null;
+            } else {
+                $botaoOriginal.hide();
 
-        return createElement('div', { className: 'sults-gutenberg-workflow' },
-            createElement('h4', null, 'Próxima Etapa'),
-            processing ? createElement(Spinner) : 
-            transitions.map(t => 
-                createElement(Button, {
-                    key: t.slug,
-                    isPrimary: true,
-                    className: `sults-gutenberg-btn sults-status-${t.slug}`, 
-                    onClick: () => handleTransition(t.slug)
-                }, t.label)
-            )
-        );
-    }
+                if ($nossoBotao.text() !== textoBotao) {
+                    $nossoBotao.text(textoBotao);
+                }
 
-    registerPlugin('sults-workflow-panel', {
-        render: () => createElement(PluginPostStatusInfo, null, createElement(WorkflowPanel))
+                $nossoBotao.off('click').on('click', function(e) {
+                    e.preventDefault();
+                    if (proximoStatus) {
+                        executarAcao(proximoStatus);
+                    } else {
+                        $botaoOriginal.trigger('click');
+                    }
+                });
+            }
+        }
+
+        setInterval(function() {
+
+            gerenciarBotao('button.editor-post-save-draft', 'secondary');
+
+            gerenciarBotao('.editor-post-publish-button__button', 'primary');
+            
+        }, 500);
     });
 
-})(window.wp, jQuery);
+})(jQuery);

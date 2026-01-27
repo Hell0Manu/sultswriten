@@ -30,7 +30,7 @@ class WorkflowPolicy {
 		return ! $has_permission;
 	}
 
-/**
+	/**
      * Retorna transições permitidas filtradas por role.
      */
     public function get_allowed_transitions( string $current_status, array $user_roles ): array {
@@ -48,7 +48,7 @@ class WorkflowPolicy {
                 return $status_slug !== StatusConfig::SUSPENDED;
             });
             
-            return array_values( $filtered ); // Reindexar array
+            return array_values( $filtered ); 
         }
 
         return $next_statuses;
