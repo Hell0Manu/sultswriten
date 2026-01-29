@@ -21,7 +21,9 @@
     "yoast/phpunit-polyfills": "^4.0",
     "phpcompatibility/phpcompatibility-wp": "^2.1",
     "phpstan/phpstan": "^2.1",
-    "szepeviktor/phpstan-wordpress": "^2.0"
+    "szepeviktor/phpstan-wordpress": "^2.0",
+    "phpdocumentor/phpdocumentor": "^3.9",
+    "php-stubs/wordpress-stubs": "^6.9"
   },
   "autoload": {
       "psr-4": {

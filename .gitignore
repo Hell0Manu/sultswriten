@@ -8,3 +8,9 @@ vendor/
 *.sql
 *.tar.gz
 *.zip
+
+# Documentação Gerada Automaticamente
+docs/api/
+docs/html/
+build/
+.phpdoc/cache/

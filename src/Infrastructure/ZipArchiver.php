@@ -5,7 +5,14 @@ use Sults\Writen\Contracts\ArchiverInterface;
 use ZipArchive;
 
 class ZipArchiver implements ArchiverInterface {
-
+	/**
+	 * Cria um arquivo ZIP com os arquivos e strings fornecidos.
+	 *
+	 * @param string $output_path O caminho onde o arquivo ZIP será salvo.
+	 * @param array $files_map Mapa de arquivos reais para caminhos dentro do ZIP.
+	 * @param array $string_map Mapa de nomes de arquivos para conteúdos de strings.
+	 * @return bool Retorna true se o arquivo ZIP foi criado com sucesso, false caso contrário.
+	 */
 	public function create( string $output_path, array $files_map, array $string_map ): bool {
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			return false;
