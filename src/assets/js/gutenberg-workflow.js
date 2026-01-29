@@ -1,7 +1,7 @@
 (function(wp, $) {
     const { registerPlugin } = wp.plugins;
     const { PluginPrePublishPanel } = wp.editPost; 
-    const { select, dispatch } = wp.data;
+    const { select, dispatch, useSelect } = wp.data;
     const { createElement, useState, useEffect } = wp.element;
     const { Button, Spinner, RadioControl } = wp.components;
 
@@ -16,7 +16,20 @@
         const [selectedOption, setSelectedOption] = useState('');
         const [processing, setProcessing] = useState(false);
         
-        const postId = select('core/editor').getCurrentPostId();
+        const { lockPostSaving, unlockPostSaving } = dispatch('core/editor');
+        
+        const isSidebarEnabled = useSelect( ( select ) => select( 'core/editor' ).isPublishSidebarEnabled(), [] );
+        const postId = useSelect( ( select ) => select( 'core/editor' ).getCurrentPostId(), [] );
+
+        useEffect(() => {
+            if ( isSidebarEnabled ) {
+                lockPostSaving( 'sults-workflow-lock' );
+            } else {
+                unlockPostSaving( 'sults-workflow-lock' );
+            }
+            
+            return () => unlockPostSaving( 'sults-workflow-lock' );
+        }, [ isSidebarEnabled ] );
 
         useEffect(() => {
             if (postId) fetchTransitions();
@@ -46,6 +59,8 @@
              
              setProcessing(true);
              
+             unlockPostSaving( 'sults-workflow-lock' );
+             
              dispatch('core/editor').savePost().then(() => {
                  $.ajax({
                     url: params.ajax_url,
@@ -61,14 +76,23 @@
                         else {
                             alert('Erro: ' + res.data);
                             setProcessing(false);
+                            lockPostSaving( 'sults-workflow-lock' );
                         }
                     },
-                    error: () => setProcessing(false)
+                    error: () => {
+                        setProcessing(false);
+                        lockPostSaving( 'sults-workflow-lock' );
+                    }
                 });
+             }).catch((err) => {
+                 console.error(err);
+                 setProcessing(false);
+                 lockPostSaving( 'sults-workflow-lock' );
              });
         };
 
         if (loading) return createElement('p', null, 'Carregando opções...');
+        
         if (!transitions.length) return createElement('p', null, 'Nenhuma ação disponível.');
 
         const options = transitions.map(t => ({ label: t.label, value: t.slug }));
@@ -107,47 +131,31 @@
 
 
     // =========================================================================
-    // 2. O HACK VISUAL (JQUERY) - Igual ao PublishPress
+    // 2. O HACK VISUAL (JQUERY) 
     // =========================================================================
     $(document).ready(function() {
         
         function mascararBotaoPublicar() {
             var $btn = $('.editor-post-publish-button__button'); 
             
-            if ($btn.length && $btn.text() !== 'Workflow') {
+            if ($btn.length && $btn.text() !== 'Salvar') {
                 
                 $btn.addClass('sults-workflow-main-btn');
                 
-
-                $btn.text('Workflow'); 
+                $btn.text('Salvar'); 
                 
-                if ($btn.attr('aria-disabled') === 'true' && !wp.data.select('core/editor').isSavingPost()) {
-                    $btn.attr('aria-disabled', 'false');
-                }
             }
         }
 
 
         function forcarPrePublishCheck() {
             const isPrePublishEnabled = wp.data.select('core/editor').isPublishSidebarEnabled();
-            if (!isPrePublishEnabled) {
-                wp.data.dispatch('core/editor').enablePublishSidebar();
+            if (!isPrePublishEnabled && !wp.data.select('core/editor').isSavingPost()) {
+
             }
         }
-
-        function moverPainelParaTopo() {
-            var $meuPainel = $('.sults-workflow-panel');
-            var $container = $('.editor-post-publish-panel__prepublish');
-
-
-            if ($meuPainel.length && $container.length && !$container.children().first().is($meuPainel)) {
-                $container.prepend($meuPainel); 
-            }
-        }
-
         setInterval(function() {
             mascararBotaoPublicar();
-            forcarPrePublishCheck();
         }, 500);
 
     });

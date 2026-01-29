@@ -76,7 +76,7 @@ class StatusConfig {
                     'is_locked'     => true,
                     'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::DESIGNER ),
                 ),
-                'next_statuses' => array( self::IMAGE_IN_PROGRESS, self::SUSPENDED ),
+                'next_statuses' => array(self::PENDING_IMAGE, self::IMAGE_IN_PROGRESS, self::SUSPENDED ),
             ),
 
             self::IMAGE_IN_PROGRESS => array(
@@ -86,7 +86,7 @@ class StatusConfig {
                     'is_locked'     => false,
                     'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE, RoleDefinitions::DESIGNER ),
                 ),
-                'next_statuses' => array( self::IMAGE_REVIEW, self::SUSPENDED ),
+                'next_statuses' => array(  self::IMAGE_IN_PROGRESS, self::IMAGE_REVIEW, self::SUSPENDED ),
             ),
 
             self::IMAGE_REVIEW => array(
@@ -106,7 +106,7 @@ class StatusConfig {
                     'is_locked'     => false,
                     'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE ),
                 ),
-                'next_statuses' => array( self::IMAGE_IN_PROGRESS, self::SUSPENDED ),
+                'next_statuses' => array( self::IMAGE_ADJUSTMENT, self::IMAGE_IN_PROGRESS, self::SUSPENDED ),
             ),
             
             // FLUXO FINAL 
@@ -117,7 +117,7 @@ class StatusConfig {
                     'is_locked'     => true,
                     'roles_allowed' => array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE ),
                 ),
-                'next_statuses' => array( self::PUBLISH, self::SUSPENDED ),
+                'next_statuses' => array(self::PENDING_PUBLICATION, self::PUBLISH, self::SUSPENDED ),
             ),
 
             self::PUBLISH => array(
