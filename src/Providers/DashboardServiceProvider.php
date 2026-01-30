@@ -34,6 +34,8 @@ use Sults\Writen\Workflow\Export\ExportNamingService;
 use Sults\Writen\Workflow\Export\JspHtmlSanitizer;
 use Sults\Writen\Workflow\Export\ExportMetadataBuilder;
 
+use Sults\Writen\Integrations\ReactAppLoader;
+
 class DashboardServiceProvider implements ServiceProviderInterface {
 
 	public function register( Container $container ): void {
@@ -248,7 +250,13 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 		$container->set( JspHtmlSanitizer::class, fn() => new JspHtmlSanitizer() );
 		$container->set( ExportNamingServiceInterface::class, fn() => new ExportNamingService() );
 		$container->set( JspHtmlSanitizerInterface::class, fn() => new JspHtmlSanitizer() );
-	}
+		$container->set(
+            ReactAppLoader::class,
+            function () {
+                return new ReactAppLoader();
+            }
+        );
+    }
 
 	public function boot( Container $container ): void {
         $hook_manager = $container->get( HookManager::class );
@@ -275,6 +283,8 @@ class DashboardServiceProvider implements ServiceProviderInterface {
             $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportController::class );
 			$admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportDownloadHandler::class ); 
             $admin_services[] = $container->get( \Sults\Writen\Interface\Dashboard\ExportAssetsManager::class );
+
+			$admin_services[] = $container->get( ReactAppLoader::class );
 
             $hook_manager->register_services( $admin_services );
         }
