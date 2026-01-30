@@ -7,6 +7,13 @@ export default defineConfig({
   plugins: [react()],
   
   base: './', 
+  
+  server: {
+    port: 5173,
+    strictPort: true,
+    host: true, 
+    origin: 'http://localhost:5173', 
+  },
 
   resolve: {
     alias: {
@@ -16,11 +23,8 @@ export default defineConfig({
 
   build: {
     manifest: true,
-
     outDir: '../assets/react-app',
-    
     emptyOutDir: true,
-
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),

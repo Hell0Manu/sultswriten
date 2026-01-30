@@ -35,6 +35,7 @@
   --sidebar-accent-foreground: 240 5.9% 10%;
   --sidebar-border: 240 5.9% 90%;
   --sidebar-ring: 240 10% 3.9%;
+  --brand: #00ACAC;
 }
 
 .dark {
@@ -100,6 +101,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-brand: var(--brand);
 }
 
 /* 3. Estilos Base */
@@ -139,6 +141,14 @@ body.sults-fullscreen #sults-writen-app {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-html.wp-toolbar {
+html.wp-toolbar, #wpbody {
   padding-top: 0;
+}
+
+.sults-sidebar h1 {
+    color: white;
+}
+
+.sults-sidebar p {
+  margin: 0;
 }

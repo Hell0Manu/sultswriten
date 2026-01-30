@@ -12,6 +12,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+define( 'SULTS_WRITEN_DEV_MODE', false );
 define( 'SULTSWRITEN_FILE', __FILE__ );
 define( 'SULTSWRITEN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SULTSWRITEN_URL', plugin_dir_url( __FILE__ ) );
