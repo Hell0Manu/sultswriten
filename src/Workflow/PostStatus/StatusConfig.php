@@ -25,6 +25,9 @@ class StatusConfig {
 					'show_in_admin_all_list'    => true,
 					'show_in_admin_status_list' => true,
 					'protected'                 => true,
+					'show_in_graphql' => true,
+					'graphql_single_name' => 'suspended',
+					'graphql_plural_name' => 'suspendedItems',
 				),
 				'flow_rules' => array(
 					'is_locked'     => true,
@@ -39,6 +42,10 @@ class StatusConfig {
 					'show_in_admin_all_list'    => true,
 					'show_in_admin_status_list' => true,
 					'protected'                 => true,
+					'show_in_graphql' => true,
+        'graphql_single_name' => 'requiresAdjustment',
+        'graphql_plural_name' => 'requiresAdjustmentItems',
+					
 				),
 				'flow_rules' => array(
 					'is_locked'     => false,
@@ -53,6 +60,9 @@ class StatusConfig {
 					'show_in_admin_all_list'    => true,
 					'show_in_admin_status_list' => true,
 					'protected'                 => true,
+					'show_in_graphql' => true,
+        'graphql_single_name' => 'reviewInProgress',
+        'graphql_plural_name' => 'reviewInProgressItems',
 				),
 				'flow_rules' => array(
 					'is_locked'     => true,
@@ -67,6 +77,9 @@ class StatusConfig {
 					'show_in_admin_all_list'    => true,
 					'show_in_admin_status_list' => true,
 					'protected'                 => true,
+					'show_in_graphql' => true,
+		'graphql_single_name' => 'finished',
+		'graphql_plural_name' => 'finishedItems',
 				),
 				'flow_rules' => array(
 					'is_locked'     => true,
@@ -81,6 +94,9 @@ class StatusConfig {
 					'show_in_admin_all_list'    => true,
 					'show_in_admin_status_list' => true,
 					'protected'                 => true,
+					'show_in_graphql' => true,
+		'graphql_single_name' => 'pendingImage',
+		'graphql_plural_name' => 'pendingImageItems',
 				),
 				'flow_rules' => array(
 					'is_locked'     => false,

@@ -129,7 +129,7 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 			MailerInterface::class,
 			function ( $c ) {
 				return new WPMailer(
-					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class ) // Injetando aqui!
+					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class ) 
 				);
 			}
 		);
@@ -175,6 +175,46 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 	}
 
 	public function boot( Container $container ): void {
+		add_action( 'graphql_register_types', function() {
+            
+            register_graphql_object_type( 'WorkflowStatusConfig', [
+                'description' => 'Configuração visual e lógica dos status',
+                'fields' => [
+                    'slug'      => [ 'type' => 'String' ],
+                    'label'     => [ 'type' => 'String' ],
+                    'bgStyle'   => [ 'type' => 'String' ],
+                    'textStyle' => [ 'type' => 'String' ],
+                ],
+            ] );
+
+            register_graphql_field( 'RootQuery', 'workflowStatuses', [
+                'type'    => [ 'list_of' => 'WorkflowStatusConfig' ],
+                'resolve' => function() {
+                    $all_statuses = \Sults\Writen\Workflow\PostStatus\StatusConfig::get_all();
+                    $visuals      = \Sults\Writen\Workflow\PostStatus\StatusVisuals::get_definitions();
+                    $result       = [];
+
+                    $result[] = [
+                        'slug'      => 'draft',
+                        'label'     => 'Rascunho',
+                        'bgStyle'   => $visuals['draft']['bg'] ?? 'var(--color-neutral-500)',
+                        'textStyle' => $visuals['draft']['text'] ?? 'var(--color-neutral-100)',
+                    ];
+
+                    foreach ( $all_statuses as $slug => $config ) {
+                        $visual = isset($visuals[$slug]) ? $visuals[$slug] : ['bg' => '#ccc', 'text' => '#000'];
+                        $result[] = [
+                            'slug'      => $slug,
+                            'label'     => $config['label'],
+                            'bgStyle'   => $visual['bg'],
+                            'textStyle' => $visual['text'],
+                        ];
+                    }
+                    return $result;
+                },
+            ] );
+        });
+
         $hook_manager = $container->get( HookManager::class );
 
         $services = array(
@@ -184,5 +224,7 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
         );
 
         $hook_manager->register_services( $services );
+
+		
     }
 }

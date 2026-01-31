@@ -2,28 +2,13 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client/react';
 import { client } from '@/lib/apollo';
 import { ThemeProvider } from "@/components/theme-provider";
-import { MainLayout } from '@/components/layout/MainLayout'; 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Dashboard } from "@/pages/Dashboard";
 
-const WorkspacePage = () => (
-    <div className="space-y-6">
-        <div className="flex items-center justify-between">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight">Workspace</h2>
-                <p className="text-muted-foreground">Gerencie seus artigos.</p>
-            </div>
-            <Button>+ Novo Artigo</Button>
-        </div>
-        <Card>
-            <CardHeader><CardTitle>Posts</CardTitle></CardHeader>
-            <CardContent>Tabela aqui</CardContent>
-        </Card>
-    </div>
-);
-
-const StructurePage = () => <div>Estrutura</div>;
-const SettingsPage = () => <div>Configurações</div>;
+const StructurePage = () => <div className="p-6 text-white">Estrutura (Em breve)</div>;
+const SettingsPage = () => <div className="p-6 text-white">Configurações (Em breve)</div>;
+const ProfilePage = () => <div className="p-6 text-white">Perfil (Em breve)</div>;
+const SupportPage = () => <div className="p-6 text-white">Suporte (Em breve)</div>;
 
 function App() {
   return (
@@ -32,9 +17,12 @@ function App() {
         <HashRouter>
           <MainLayout>
             <Routes>
-              <Route path="/" element={<WorkspacePage />} />
+              <Route path="/" element={<Dashboard />} />
+              
               <Route path="/structure" element={<StructurePage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/support" element={<SupportPage />} />
             </Routes>
           </MainLayout>
         </HashRouter>

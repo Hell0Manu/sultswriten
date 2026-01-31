@@ -1,6 +1,7 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 
+
 declare global {
   interface Window {
     sultsSettings: {
@@ -10,17 +11,25 @@ declare global {
       user: { id: number; name: string; }
     };
   }
+
 }
+const LOCAL_WP_URL = ' http://sults-api.local/graphql'; 
+
+const uri = import.meta.env.MODE === 'development' 
+  ? LOCAL_WP_URL
+  : '/graphql';  
 
 const httpLink = createHttpLink({
-  uri: () => window.sultsSettings?.rootUrl ? window.sultsSettings.rootUrl.replace('/wp-json/', '/graphql') : '',
+  uri: uri,
 });
 
 const authLink = setContext((_, { headers }) => {
+  const nonce = window.sultsSettings?.nonce || '';
+  
   return {
     headers: {
       ...headers,
-      'X-WP-Nonce': window.sultsSettings?.nonce,
+      'X-WP-Nonce': nonce, 
     }
   }
 });
