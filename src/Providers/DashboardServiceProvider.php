@@ -1,4 +1,12 @@
 <?php
+/**
+ * Provedor de serviços para o Painel Administrativo e Exportação.
+ *
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Providers
+ * @since      0.1.0
+ */
+
 namespace Sults\Writen\Providers;
 
 use Sults\Writen\Contracts\ServiceProviderInterface;
@@ -34,11 +42,40 @@ use Sults\Writen\Workflow\Export\ExportNamingService;
 use Sults\Writen\Workflow\Export\JspHtmlSanitizer;
 use Sults\Writen\Workflow\Export\ExportMetadataBuilder;
 
+/**
+ * Classe DashboardServiceProvider.
+ *
+ * Responsável por registrar e inicializar todos os serviços relacionados à
+ * Interface Administrativa (Dashboard) e ao sistema de Exportação de Conteúdo.
+ *
+ * Diferente dos outros providers que focam em regras de negócio (Workflow) ou
+ * baixo nível (Infrastructure), este provider foca na interação com o usuário
+ * e na geração de arquivos finais.
+ *
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Providers
+ * @author     Sults
+ * @since      0.1.0
+ */
 class DashboardServiceProvider implements ServiceProviderInterface {
 
+	/**
+	 * Registra os serviços de UI e Exportação no Container.
+	 *
+	 * Configura:
+	 * 1. Workspace: O painel principal de gestão de pautas.
+	 * 2. Exportação: A pipeline complexa de transformação de HTML para JSP/ZIP.
+	 * 3. Integrações: Ajustes para plugins de terceiros (AIOSEO, Gutenberg).
+	 * 4. Assets: Scripts e estilos globais ou específicos de admin.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Container $container O container de DI.
+	 * @return void
+	 */
 	public function register( Container $container ): void {
 
-		// Assets do Workspace.
+		// --- WORKSPACE (Área de Trabalho) ---
 		$container->set(
 			WorkspaceAssetsManager::class,
 			function ( $c ) {
@@ -49,7 +86,6 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Workspace Controller.
 		$container->set(
 			WorkspaceController::class,
 			function ( $c ) {
@@ -62,7 +98,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Export Assets.
+		// --- EXPORTAÇÃO (Pipeline de Transformação) ---
 		$container->set(
 			ExportAssetsManager::class,
 			function ( $c ) {
@@ -73,13 +109,14 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Html Extractor.
+		// HTML Extractor: O motor que converte blocos do Gutenberg em array estruturado.
 		$container->set(
 			\Sults\Writen\Contracts\HtmlExtractorInterface::class,
 			function ( $c ) {
 				$attachment_provider = $c->get( \Sults\Writen\Contracts\AttachmentProviderInterface::class );
 				$config_provider     = $c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class );
 
+				// Lista de transformadores para limpar e formatar o conteúdo.
 				$transformers = array(
 					new ImageTransformer( $attachment_provider, $config_provider ),
 					new LinkTransformer( $config_provider ),
@@ -93,6 +130,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
+		// Export Processor: O orquestrador que gera o ZIP final.
 		$container->set(
 			ExportProcessor::class,
 			function ( $c ) {
@@ -107,16 +145,17 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		    $container->set(
-            ViewRendererInterface::class,
+			// Renderizador de Views (PHP Templates).
+		$container->set(
+			\Sults\Writen\Contracts\ViewRendererInterface::class,
+			function () {
+				// Define o caminho base para as views do Dashboard.
+				$views_path = dirname( __DIR__ ) . '/Interface/Dashboard/views/';
+				return new SimpleViewRenderer( $views_path );
+			}
+		);
 
-            function () {
-                $views_path = dirname( __DIR__ ) . '/Interface/Dashboard/views/';
-                return new SimpleViewRenderer( $views_path );
-            }
-
-        );
-
+		// Export Controller: A interface que recebe o clique do usuário.
 		$container->set(
 			ExportController::class,
 			function ( $c ) {
@@ -125,11 +164,12 @@ class DashboardServiceProvider implements ServiceProviderInterface {
                     $c->get( \Sults\Writen\Contracts\WPUserProviderInterface::class ),
                     $c->get( ExportProcessor::class ),
                     $c->get( \Sults\Writen\Contracts\ConfigProviderInterface::class ),
-                   $c->get( ViewRendererInterface::class )
+				   $c->get( \Sults\Writen\Contracts\ViewRendererInterface::class )
 				);
 			}
 		);
 
+		// --- INTEGRAÇÕES E CUSTOMIZAÇÕES ---
 		$container->set(
 			LoginTheme::class,
 			function ( $c ) {
@@ -154,7 +194,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Integrations.
+		// Integração AIOSEO.
 		$container->set(
 			AIOSEOCleaner::class,
 			function ( $c ) {
@@ -162,7 +202,6 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Integrations: AIOSEO Data Provider.
 		$container->set(
 			\Sults\Writen\Contracts\SeoDataProviderInterface::class,
 			function () {
@@ -184,6 +223,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
+		// Transformers individuais (caso precisem ser instanciados fora do Extractor).
 		$container->set(
 			LinkTransformer::class,
 			function ( $c ) {
@@ -201,6 +241,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
+		// Customizações do Gutenberg.
 		$container->set(
 			GutenbergManager::class,
 			function ( $c ) {
@@ -221,6 +262,7 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
+		// Download Handler: Processa o download do arquivo ZIP gerado.
 		$container->set(
             \Sults\Writen\Interface\Dashboard\ExportDownloadHandler::class,
             function ( $c ) {
@@ -250,9 +292,22 @@ class DashboardServiceProvider implements ServiceProviderInterface {
 		$container->set( JspHtmlSanitizerInterface::class, fn() => new JspHtmlSanitizer() );
 	}
 
+	/**
+	 * Inicializa os serviços de Dashboard e Exportação.
+	 *
+	 * Registra os hooks globais (login, editor) e, se estiver no admin,
+	 * registra os controllers das páginas de gestão.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Container $container O container de DI.
+	 * @return void
+	 */
 	public function boot( Container $container ): void {
+		/** @var HookManager $hook_manager */
         $hook_manager = $container->get( HookManager::class );
 
+		// Serviços que rodam em todo lugar (Login, Editor de Posts, Assets Globais).
         $global_services = array(
             $container->get( \Sults\Writen\Interface\Theme\LoginTheme::class ),
             $container->get( \Sults\Writen\Interface\Editor\GutenbergManager::class ),
@@ -260,9 +315,11 @@ class DashboardServiceProvider implements ServiceProviderInterface {
         );
         $hook_manager->register_services( $global_services );
 
+		// Serviços exclusivos da área administrativa (is_admin).
         if ( is_admin() ) {
             $admin_services = array();
 
+			// Limpeza do AIOSEO (se o plugin estiver ativo).
             if ( defined( 'AIOSEO_VERSION' ) ) {
                 $admin_services[] = $container->get( \Sults\Writen\Integrations\AIOSEO\AIOSEOCleaner::class );
             }

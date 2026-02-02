@@ -1,17 +1,23 @@
 <?php
 /**
- * View de Prévia de Exportação.
+ * View: Tela de Prévia de Exportação (Code Diff).
  *
- * @var \WP_Post $sults_post
- * @var string $back_url
- * @var string $html_raw
- * @var string $html_clean
- * @var string $jsp_content
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Interface\Dashboard\Views
+ * @since      0.1.0
+ *
+ * @var \WP_Post $sults_post  O objeto do post sendo visualizado.
+ * @var string   $back_url    URL para retornar à listagem de exportação.
+ * @var string   $html_raw    O HTML original do WordPress (antes do processamento).
+ * @var string   $html_clean  O HTML higienizado (após HtmlCleaner e Transformers).
+ * @var string   $jsp_content O conteúdo final encapsulado na estrutura JSP.
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Gera a URL para o download direto do ZIP (Endpoint POST).
 $sultswriten_download_url = add_query_arg(
 	array(
 		'action'   => 'sults_export_download', 
@@ -32,6 +38,7 @@ $sultswriten_download_url = add_query_arg(
 			<span class="dashicons dashicons-download" style="margin-top:4px;"></span> Baixar ZIP
 		</a>
 	</div>
+
 	<nav class="nav-tab-wrapper wp-clearfix" style="margin-top: 20px;">   
 		<a href="#" class="nav-tab nav-tab-active sults-view-toggle" data-mode="conversion">
 			<span class="dashicons dashicons-media-code" style="margin-right:5px; margin-top:3px;"></span>
@@ -42,7 +49,9 @@ $sultswriten_download_url = add_query_arg(
 			HTML Puro &rarr; Limpo
 		</a>
 	</nav>
+
 	<div class="sults-preview-flex-container">
+		
 		<div class="sults-code-pane">
 			<div class="sults-editor-wrapper">
 				<button type="button" class="sults-copy-btn" data-target="left">
@@ -52,6 +61,7 @@ $sultswriten_download_url = add_query_arg(
 				<textarea id="code-left" name="code-left"></textarea>
 			</div>
 		</div>
+
 		<div class="sults-code-pane">
 			<div class="sults-editor-wrapper">
 				<button type="button" class="sults-copy-btn" data-target="right">
@@ -62,6 +72,7 @@ $sultswriten_download_url = add_query_arg(
 			</div>
 		</div>
 	</div>
+
 	<input type="hidden" id="data-raw" value="<?php echo esc_attr( $html_raw ); ?>">
 	<input type="hidden" id="data-clean" value="<?php echo esc_attr( $html_clean ); ?>">
 	<input type="hidden" id="data-jsp" value="<?php echo esc_attr( $jsp_content ); ?>">

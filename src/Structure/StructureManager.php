@@ -1,4 +1,11 @@
 <?php
+/**
+ * Gerenciador da Estrutura de Conteúdo (Árvore Hierárquica).
+ *
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Structure
+ * @since      0.1.0
+ */
 
 namespace Sults\Writen\Structure;
 
@@ -14,15 +21,46 @@ use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Utils\HierarchyHelper;
 use Sults\Writen\Utils\PathHelper;
 
+/**
+ * Classe StructureManager.
+ *
+ * Responsável por renderizar e manipular a página "Estrutura" do painel administrativo.
+ *
+ * Funcionalidades principais:
+ * 1. Renderização Visual: Constrói a árvore HTML de categorias e posts (nested sortable).
+ * 2. Manipulação AJAX: Processa o arrastar-e-soltar (drag & drop) para reordenar ou aninhar posts.
+ * 3. Gestão de Dados: Criação rápida, edição rápida e atualização de status via Drawer lateral.
+ *
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Structure
+ * @author     Sults
+ * @since      0.1.0
+ */
 class StructureManager implements HookableInterface {
 
+	/** @var WPUserProviderInterface Serviço de usuário. */
 	private WPUserProviderInterface $user_provider;
+
+	/** @var AssetLoaderInterface Carregador de assets. */
 	private AssetLoaderInterface $asset_loader;
+
+	/** @var WPPostStatusProviderInterface Provedor de status. */
 	private WPPostStatusProviderInterface $status_provider;
+
+	/** @var CategoryColorManager Gerenciador de cores de categoria. */
 	private CategoryColorManager $color_manager;
+
+	/** @var WorkflowPolicy Políticas de workflow. */
 	private WorkflowPolicy $policy;
+
+	/** @var PostRepositoryInterface Repositório de posts (CRUD). */
 	private PostRepositoryInterface $post_repository;
 
+	/**
+	 * Construtor.
+	 *
+	 * Injeta todas as dependências necessárias para operar a estrutura.
+	 */
 	public function __construct(
 		WPUserProviderInterface $user_provider,
 		AssetLoaderInterface $asset_loader,
@@ -39,30 +77,46 @@ class StructureManager implements HookableInterface {
 		$this->post_repository = $post_repository;
 	}
 
+	/**
+	 * Verifica se o usuário atual tem permissão para gerenciar a estrutura.
+	 *
+	 * @return bool True se for Admin ou Editor Chefe.
+	 */
 	private function can_manage_structure(): bool {
 		$user          = wp_get_current_user();
 		$allowed_roles = array( RoleDefinitions::ADMIN, RoleDefinitions::EDITOR_CHEFE );
 		return (bool) array_intersect( $allowed_roles, (array) $user->roles );
 	}
 
+	/**
+	 * Registra hooks e ações.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public function register(): void {
+		// Menu e Assets.
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 
+		// Endpoints AJAX para manipulação da estrutura.
 		add_action( 'wp_ajax_sults_update_structure', array( $this, 'ajax_handle_move' ) );
 		add_action( 'wp_ajax_sults_get_post_details', array( $this, 'ajax_get_post_details' ) );
 		add_action( 'wp_ajax_sults_create_post', array( $this, 'ajax_create_post' ) );
 		add_action( 'wp_ajax_sults_save_quick_edit', array( $this, 'ajax_save_quick_edit' ) );
 		
-		// Atualizar apenas o STATUS via botão de ação
+		// Atualizar apenas o STATUS via botão de ação do Drawer.
 		add_action( 'wp_ajax_sults_update_status', array( $this, 'ajax_update_status' ) );
 	}
 
+	/**
+	 * Adiciona a página "Estrutura" ao menu do WordPress.
+	 */
 	public function register_menu(): void {
 		add_menu_page(
 			__( 'Estrutura', 'sultswriten' ),
 			__( 'Estrutura', 'sultswriten' ),
-			'edit_posts',
+			'edit_posts', // Capability básica para ver, controle fino feito no render.
 			'sults-writen-structure',
 			array( $this, 'render_page' ),
 			'dashicons-networking',
@@ -70,28 +124,37 @@ class StructureManager implements HookableInterface {
 		);
 	}
 
+	/**
+	 * Enfileira scripts e estilos específicos da página de Estrutura.
+	 *
+	 * Inclui jQuery UI Sortable para o Drag & Drop.
+	 *
+	 * @param string $hook O hook da página atual.
+	 */
 	public function enqueue_assets( $hook ): void {
 		if ( strpos( $hook, 'sults-writen-structure' ) === false ) {
 			return;
 		}
 
 		wp_enqueue_style( 'sults-writen-variables' );
-		wp_enqueue_script( 'jquery-ui-sortable' );
+		wp_enqueue_script( 'jquery-ui-sortable' ); // Core do Drag & Drop.
 
 		wp_enqueue_style( 'sults-writen-status-css' );
 		wp_enqueue_style( 'sults-writen-structure-css' );
 
+		// Estilos inline para estados de UI (disabled, empty placeholder).
 		wp_add_inline_style(
 			'sults-writen-structure-css',
 			'
-            .sults-card.disabled { opacity: 0.6; background: #fcfcfc; }
-            .sults-card.disabled .sults-card-title { pointer-events: none; color: #a0a5aa; text-decoration: none; cursor: default; }
-            .sults-card.disabled:hover { border-color: #e2e4e7; box-shadow: none; }
-            .sults-action-icon.disabled { pointer-events: none; cursor: default; color: #d63638; }
-            ul.sults-sortable-nested:empty { min-height: 10px; padding: 0; margin: 0; border: none; }
-        '
+			.sults-card.disabled { opacity: 0.6; background: #fcfcfc; }
+			.sults-card.disabled .sults-card-title { pointer-events: none; color: #a0a5aa; text-decoration: none; cursor: default; }
+			.sults-card.disabled:hover { border-color: #e2e4e7; box-shadow: none; }
+			.sults-action-icon.disabled { pointer-events: none; cursor: default; color: #d63638; }
+			ul.sults-sortable-nested:empty { min-height: 10px; padding: 0; margin: 0; border: none; }
+		'
 		);
 
+		// Injeta CSS dinâmico dos status (cores).
 		if ( class_exists( StatusConfig::class ) ) {
 			if ( class_exists( \Sults\Writen\Workflow\PostStatus\StatusVisuals::class ) ) {
 				$status_css = \Sults\Writen\Workflow\PostStatus\StatusVisuals::get_css_rules();
@@ -106,6 +169,7 @@ class StructureManager implements HookableInterface {
 
 		wp_enqueue_script( 'sults-writen-structure-js' );
 
+		// Passa dados para o JS (Nonce, URLs, Permissões).
 		wp_localize_script(
 			'sults-writen-structure-js',
 			'sultsStructureParams',
@@ -117,13 +181,24 @@ class StructureManager implements HookableInterface {
 		);
 	}
 
+	/**
+	 * AJAX: Processa a movimentação de um post (Drag & Drop).
+	 *
+	 * Atualiza:
+	 * 1. Parente (Hierarquia).
+	 * 2. Categoria (Sincronização opcional).
+	 * 3. Ordem (Menu Order).
+	 */
 	public function ajax_handle_move() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
+		
 		if ( ! $this->can_manage_structure() ) {
 			wp_send_json_error( 'Sem permissão global.' );
 		}
 
 		$sults_post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		
+		// Verifica permissão no objeto específico.
 		if ( ! current_user_can( 'edit_post', $sults_post_id ) ) {
 			wp_send_json_error( 'Você não tem permissão para mover este item.' );
 		}
@@ -131,16 +206,20 @@ class StructureManager implements HookableInterface {
 		$sults_parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
 		$order           = isset( $_POST['order'] ) ? array_map( 'absint', wp_unslash( $_POST['order'] ) ) : array();
 		
+		// -1 significa "não mudou de bucket de categoria".
 		$target_cat_id   = isset( $_POST['target_cat_id'] ) ? intval( $_POST['target_cat_id'] ) : -1;
 
+		// Prevenção de loop infinito.
 		if ( $sults_post_id === $sults_parent_id ) {
 			wp_send_json_error( 'Loop inválido.' );
 		}
 
+		// Validação de profundidade (Ex: máximo 2 níveis).
 		if ( ! $this->validate_hierarchy_depth( $sults_parent_id ) ) {
 			wp_send_json_error( 'Limite de hierarquia atingido.' );
 		}
 
+		// Atualiza o parente.
 		$this->post_repository->update(
 			array(
 				'ID'          => $sults_post_id,
@@ -148,20 +227,21 @@ class StructureManager implements HookableInterface {
 			)
 		);
 
-
+		// Lógica de Sincronização de Categoria.
 		if ( $sults_parent_id > 0 ) {
+			// Se moveu para dentro de um pai, tenta herdar a categoria do pai.
 			$this->sync_category_with_parent( $sults_post_id, $sults_parent_id );
 		} 
-
 		elseif ( $target_cat_id >= 0 ) {
-			
+			// Se moveu para a raiz de uma categoria específica (Dropzone).
 			if ( $target_cat_id > 0 ) {
 				$this->post_repository->set_terms( $sults_post_id, array( $target_cat_id ), 'category' );
 			} else {
-				$this->post_repository->set_terms( $sults_post_id, array(), 'category' );
+				$this->post_repository->set_terms( $sults_post_id, array(), 'category' ); // Sem categoria.
 			}
 		}
 		
+		// Atualiza a ordem dos irmãos.
 		if ( ! empty( $order ) && is_array( $order ) ) {
 			foreach ( $order as $index => $sibling_id ) {
 				$this->post_repository->update(
@@ -175,6 +255,9 @@ class StructureManager implements HookableInterface {
 		wp_send_json_success();
 	}
 
+	/**
+	 * Valida se a hierarquia não excede o limite permitido (ex: 3 níveis).
+	 */
 	private function validate_hierarchy_depth( int $parent_id ): bool {
 		if ( 0 === $parent_id ) {
 			return true;
@@ -182,6 +265,8 @@ class StructureManager implements HookableInterface {
 
 		$ancestors = get_post_ancestors( $parent_id );
 
+		// Se o pai já tem 2 ancestrais, ele é neto (nível 3). Adicionar um filho cria nível 4.
+		// Ajuste conforme regra de negócio.
 		if ( count( $ancestors ) >= 2 ) {
 			return false;
 		}
@@ -189,6 +274,9 @@ class StructureManager implements HookableInterface {
 		return true;
 	}
 
+	/**
+	 * AJAX: Retorna detalhes de um post para o Drawer Lateral.
+	 */
 	public function ajax_get_post_details() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
@@ -199,6 +287,7 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( 'Post não encontrado' );
 		}
 
+		// Coleta metadados (Autor, Status, Categoria, Caminho).
 		$sults_author_id     = $sults_post->post_author;
 		$sults_author_name   = get_the_author_meta( 'display_name', $sults_author_id );
 		$sults_author_avatar = get_avatar_url( $sults_author_id, array( 'size' => 64 ) );
@@ -212,37 +301,43 @@ class StructureManager implements HookableInterface {
 			esc_html( $status_label )
 		);
 
+		// Dados de Categoria com cor.
 		$sults_cats     = get_the_category( $sults_post_id );
 		$sults_cat_data = array(
 			'name'  => 'Sem Categoria',
 			'color' => '#ccc',
 		);
 		if ( ! empty( $sults_cats ) ) {
-			$sults_primary_cat       = $sults_cats[0];
-			$sults_cat_data['name']  = $sults_primary_cat->name;
+			$sults_primary_cat      = $sults_cats[0];
+			$sults_cat_data['name'] = $sults_primary_cat->name;
 			$sults_cat_data['color'] = $this->color_manager->get_color( $sults_primary_cat->term_id );
 		}
 
+		// Caminho relativo para preview.
 		$relative_path = PathHelper::get_relative_path( $sults_post_id );
 
 		$edit_link = get_edit_post_link( $sults_post_id, 'raw' );
 		$view_link = get_permalink( $sults_post_id );
 
+		// Verificação de permissões de workflow.
 		$user_roles = $this->user_provider->get_current_user_roles();
 		$can_edit   = ! $this->policy->is_editing_locked( $sults_status_slug, $user_roles ) && current_user_can( 'edit_post', $sults_post_id );
 
+		// Transições de status permitidas (para botões do Drawer).
 		$transitions = array();
 		$allowed_slugs = $this->policy->get_allowed_transitions( $sults_status_slug, $user_roles );
+		
 		if ( current_user_can( 'edit_post', $sults_post_id ) ) {
-        foreach ( $allowed_slugs as $slug ) {
-            $cfg = StatusConfig::get_config( $slug );
-            $transitions[] = array(
-                'slug'  => $slug,
-                'label' => $cfg['label'],
-            );
-        }
-    }
+			foreach ( $allowed_slugs as $slug ) {
+				$cfg = StatusConfig::get_config( $slug );
+				$transitions[] = array(
+					'slug'  => $slug,
+					'label' => $cfg['label'],
+				);
+			}
+		}
 
+		// Dados de SEO (AIOSEO ou Fallback).
 		$seo_title = get_post_meta( $sults_post_id, '_aioseo_title', true );
 		$seo_desc  = get_post_meta( $sults_post_id, '_aioseo_description', true );
 
@@ -281,14 +376,14 @@ class StructureManager implements HookableInterface {
 				'view'     => $view_link,
 				'can_edit' => $can_edit,
 			),
-			'transitions' => $transitions, // Enviamos para o JS
+			'transitions' => $transitions,
 		);
 
 		wp_send_json_success( $response );
 	}
 
 	/**
-	 * Endpoint específico para atualizar status via botões de workflow.
+	 * AJAX: Atualiza o status do post.
 	 */
 	public function ajax_update_status() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
@@ -304,8 +399,6 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( 'Status inválido.' );
 		}
 
-		// (Opcional) Poderias validar aqui se a transição é permitida via WorkflowPolicy para segurança extra
-
 		$updated = $this->post_repository->update( array(
 			'ID'          => $post_id,
 			'post_status' => $new_status
@@ -318,6 +411,9 @@ class StructureManager implements HookableInterface {
 		wp_send_json_success( 'Status atualizado.' );
 	}
 
+	/**
+	 * AJAX: Cria um novo post via Modal.
+	 */
 	public function ajax_create_post() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
@@ -348,6 +444,7 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( $sults_post_id->get_error_message() );
 		}
 
+		// Atribui categoria ou herda do pai.
 		if ( $sults_parent_id > 0 ) {
 			$this->sync_category_with_parent( $sults_post_id, $sults_parent_id );
 		} elseif ( $sults_cat_id > 0 ) {
@@ -364,6 +461,9 @@ class StructureManager implements HookableInterface {
 		);
 	}
 
+	/**
+	 * AJAX: Salva dados da Edição Rápida.
+	 */
 	public function ajax_save_quick_edit() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
 
@@ -372,9 +472,6 @@ class StructureManager implements HookableInterface {
 			wp_send_json_error( 'Sem permissão para editar este post.' );
 		}
 
-		// NOTA: Removemos post_status daqui para evitar conflitos com os botões, 
-		// mas mantemos caso a edição rápida precise mudar outros campos.
-		
 		$sults_post_data = array(
 			'ID'            => $sults_post_id,
 			'post_title'    => isset( $_POST['post_title'] ) ? sanitize_text_field( wp_unslash( $_POST['post_title'] ) ) : '',
@@ -397,6 +494,9 @@ class StructureManager implements HookableInterface {
 		wp_send_json_success( 'Post atualizado com sucesso.' );
 	}
 
+	/**
+	 * Renderiza a página principal (View).
+	 */
 	public function render_page(): void {
 		$sults_tree_html = $this->get_tree_html();
 
@@ -424,12 +524,16 @@ class StructureManager implements HookableInterface {
 		}
 	}
 
+	/**
+	 * Constrói o HTML da árvore de estrutura (Lógica de Apresentação).
+	 */
 	private function get_tree_html(): string {
 
 		$statuses           = $this->status_provider->get_all_status_slugs();
 		$sults_posts        = $this->post_repository->get_by_status( $statuses );
 		$current_user_roles = $this->user_provider->get_current_user_roles();
 
+		// Agrupa posts pelo ID do pai para facilitar recursão.
 		$sults_posts_by_parent = array();
 		$all_posts_map         = array();
 		
@@ -438,6 +542,7 @@ class StructureManager implements HookableInterface {
 			$sults_posts_by_parent[ $sults_p->post_parent ][] = $sults_p;
 		}
 
+		// Tratamento para órfãos (se o pai não estiver na lista filtrada, move para a raiz).
 		foreach ( $sults_posts as $sults_post ) {
 			if ( $sults_post->post_parent > 0 && ! isset( $all_posts_map[ $sults_post->post_parent ] ) ) {
 				$sults_post->post_parent    = 0;
@@ -449,6 +554,7 @@ class StructureManager implements HookableInterface {
 		$sults_category_buckets = array();
 		$uncategorized_posts    = array();
 
+		// Agrupa posts raiz por Categoria Principal.
 		foreach ( $root_posts as $sults_post ) {
 			$sults_cats = get_the_category( $sults_post->ID );
 			
@@ -457,7 +563,7 @@ class StructureManager implements HookableInterface {
 			} else {
 				$primary_cat = $sults_cats[0];
 				
-
+				// Encontra a categoria raiz (ancestral mais alto).
 				$root_term_id = $primary_cat->term_id;
 				$checker_cat  = $primary_cat;
 
@@ -483,10 +589,12 @@ class StructureManager implements HookableInterface {
 
 		$html = '';
 
+		// Renderiza pastas de categoria.
 		foreach ( $all_categories as $root_cat ) {
 			$html .= $this->render_category_node( $root_cat, $sults_posts_by_parent, $current_user_roles );
 		}
 
+		// Renderiza pasta "Sem Categoria".
 		if ( ! empty( $uncategorized_posts ) ) {
 			$html .= $this->render_uncategorized_folder( $uncategorized_posts, $sults_posts_by_parent, $current_user_roles );
 		}
@@ -498,6 +606,9 @@ class StructureManager implements HookableInterface {
 		return $html;
 	}
 
+	/**
+	 * Renderiza o nó HTML de uma categoria (Folder).
+	 */
 	private function render_category_node( $sults_cat, $sults_posts_by_parent, $user_roles ): string {
 		if ( empty( $sults_cat->posts ) ) {
 			return '';
@@ -515,11 +626,11 @@ class StructureManager implements HookableInterface {
 		$html = '<div class="sults-category-folder sults-cat-closed" style="' . $sults_style_border . ' ' . $sults_style_bg_soft . ' margin-bottom: 15px;">';
 
 		$html .= '<div class="sults-category-header" style="' . $sults_style_title . '">
-                    <span class="sults-cat-toggle dashicons dashicons-arrow-right-alt2"></span>
-                    <span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
-                    <strong>' . esc_html( $sults_cat->name ) . '</strong>
-                    <span class="count" style="color: #646970;">(' . count( $sults_cat->posts ) . ')</span>
-                  </div>';
+					<span class="sults-cat-toggle dashicons dashicons-arrow-right-alt2"></span>
+					<span class="dashicons dashicons-category" style="margin-right:5px; opacity: 0.7;"></span> 
+					<strong>' . esc_html( $sults_cat->name ) . '</strong>
+					<span class="count" style="color: #646970;">(' . count( $sults_cat->posts ) . ')</span>
+				  </div>';
 
 		$html .= '<div class="sults-category-content">';
 		
@@ -537,15 +648,18 @@ class StructureManager implements HookableInterface {
 		return $html;
 	}
 
+	/**
+	 * Renderiza a pasta de posts sem categoria.
+	 */
 	private function render_uncategorized_folder( $sults_posts, $sults_posts_by_parent, $user_roles ): string {
 		$html = '<div class="sults-category-folder sults-cat-closed" style="border-left: 4px solid #646970; background-color: #f9f9f9; margin-bottom: 15px;">';
 
 		$html .= '<div class="sults-category-header" style="color: #444;">
-                    <span class="sults-cat-toggle dashicons dashicons-arrow-right-alt2"></span>
-                    <span class="dashicons dashicons-admin-generic" style="margin-right:5px; opacity: 0.7;"></span> 
-                    <strong>Geral / Sem Categoria</strong>
-                    <span class="count">(' . count( $sults_posts ) . ')</span>
-                  </div>';
+					<span class="sults-cat-toggle dashicons dashicons-arrow-right-alt2"></span>
+					<span class="dashicons dashicons-admin-generic" style="margin-right:5px; opacity: 0.7;"></span> 
+					<strong>Geral / Sem Categoria</strong>
+					<span class="count">(' . count( $sults_posts ) . ')</span>
+				  </div>';
 
 		$html .= '<div class="sults-category-content">';
 		$html .= '<ul class="sults-sortable-root" data-category-id="0">';
@@ -559,6 +673,9 @@ class StructureManager implements HookableInterface {
 		return $html;
 	}
 
+	/**
+	 * Constrói o HTML de um item individual (Post) e seus filhos recursivamente.
+	 */
 	private function build_html_item( $element, $sults_posts_by_parent, $user_roles ): string {
 		$children     = $sults_posts_by_parent[ $element->ID ] ?? array();
 		$has_children = ! empty( $children );
@@ -568,6 +685,7 @@ class StructureManager implements HookableInterface {
 		$sults_status_obj  = get_post_status_object( $sults_status_slug );
 		$status_label      = $sults_status_obj ? $sults_status_obj->label : $sults_status_slug;
 
+		// Verifica acesso do Redator (Apenas seus posts ou publicados).
 		$is_redator = in_array( RoleDefinitions::REDATOR, $user_roles, true );
 		if ( $is_redator ) {
 			$current_user_id = get_current_user_id();
@@ -589,6 +707,7 @@ class StructureManager implements HookableInterface {
 			$link_html   = '<span class="sults-card-title">' . esc_html( $element->post_title ) . '</span>';
 			$action_html = '<span class="' . $icon_class . '" title="Acesso Restrito"><span class="dashicons dashicons-lock"></span></span>';
 		} else {
+			// Verifica bloqueio de edição por política de workflow.
 			$is_locked_by_policy = $this->policy->is_editing_locked( $sults_status_slug, $user_roles );
 			$can_edit_native     = $this->user_provider->current_user_can( 'edit_post', $element->ID );
 
@@ -605,6 +724,7 @@ class StructureManager implements HookableInterface {
 			$action_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" title="' . esc_attr( $action_title ) . '" class="' . $icon_class . '"><span class="dashicons ' . $action_icon . '"></span></a>';
 		}
 
+		// Badge de categoria "alvo" (se estiver aninhado mas a categoria não bater com a pasta).
 		$badge_html = '';
 		$cats = get_the_category( $element->ID );
 		$target_cat_name = '';
@@ -615,6 +735,7 @@ class StructureManager implements HookableInterface {
 				$target_cat_name = $primary->name;
 			}
 		}
+		// Herança de nome para exibição se o post pai tiver categoria.
 		if ( empty( $target_cat_name ) && $element->post_parent > 0 ) {
 			$parent_post = get_post( $element->post_parent );
 			if ( $parent_post ) {
@@ -645,18 +766,18 @@ class StructureManager implements HookableInterface {
 		$html = '<li class="' . $li_class . '" id="post-' . $element->ID . '" data-id="' . $element->ID . '">';
 
 		$html .= '
-            <div class="' . $card_class . '">
-                ' . $toggle_html . '
-                <div class="sults-card-left">
-                    <span class="dashicons dashicons-move sults-handle"></span>
-                    ' . $link_html . '
-                </div>
-                <div class="sults-card-right">
-                        ' . $badge_html . '
-                        <span class="sults-status-badge sults-status-' . esc_attr( $sults_status_slug ) . '">' . esc_html( $status_label ) . '</span>
-                        ' . $action_html . '
-                </div>
-            </div>';
+			<div class="' . $card_class . '">
+				' . $toggle_html . '
+				<div class="sults-card-left">
+					<span class="dashicons dashicons-move sults-handle"></span>
+					' . $link_html . '
+				</div>
+				<div class="sults-card-right">
+						' . $badge_html . '
+						<span class="sults-status-badge sults-status-' . esc_attr( $sults_status_slug ) . '">' . esc_html( $status_label ) . '</span>
+						' . $action_html . '
+				</div>
+			</div>';
 
 		$html .= '<ul class="sults-sortable-nested">';
 		if ( $has_children ) {
@@ -670,6 +791,9 @@ class StructureManager implements HookableInterface {
 		return $html;
 	}
 
+	/**
+	 * Helper: Converte cor Hex para RGBA.
+	 */
 	private function hex2rgba( $color, $opacity = false ) {
 		$default = 'rgb(0,0,0)';
 		if ( empty( $color ) ) {
@@ -696,6 +820,9 @@ class StructureManager implements HookableInterface {
 		return $output;
 	}
 
+	/**
+	 * Helper: Sincroniza a categoria de um filho com base no pai.
+	 */
 	private function sync_category_with_parent( int $child_id, int $parent_id ): void {
 		if ( $parent_id === 0 ) {
 			return;
@@ -713,6 +840,7 @@ class StructureManager implements HookableInterface {
 
 		if ( ! empty( $child_cats ) && ! is_wp_error( $child_cats ) ) {
 			foreach ( $child_cats as $child_cat_id ) {
+				// Verifica se a categoria atual do filho é a mesma do pai ou uma subcategoria dela.
 				if ( $child_cat_id === $parent_main_cat_id || term_is_ancestor_of( $parent_main_cat_id, $child_cat_id, 'category' ) ) {
 					$has_valid_subcat = true;
 					break;

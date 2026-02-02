@@ -1,27 +1,88 @@
 <?php
+/**
+ * Implementação do enviador de e-mails do plugin.
+ *
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Infrastructure
+ * @since      0.1.0
+ */
+
 namespace Sults\Writen\Infrastructure;
 
 use Sults\Writen\Contracts\MailerInterface;
 use Sults\Writen\Infrastructure\AssetPathResolver;
 
+/**
+ * Classe WPMailer.
+ *
+ * Responsável pelo envio de e-mails transacionais (notificações) formatados em HTML.
+ *
+ * Diferenciais desta implementação:
+ * 1. Utiliza um template HTML responsivo e limpo.
+ * 2. Faz o parsing do arquivo `variables.css` para injetar as cores reais da marca
+ * diretamente no estilo inline do e-mail, garantindo consistência visual.
+ *
+ * @see MailerInterface
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Infrastructure
+ * @author     Sults
+ * @since      0.1.0
+ */
 class WPMailer implements MailerInterface {
 
+	/**
+	 * Cache estático das variáveis CSS lidas do arquivo.
+	 * Evita ler o arquivo de disco múltiplas vezes na mesma requisição.
+	 *
+	 * @var array
+	 */
 	private static array $css_vars = array();
+
+	/**
+	 * Resolvedor de caminhos para assets (imagens, logos).
+	 *
+	 * @var AssetPathResolver
+	 */
 	private AssetPathResolver $asset_resolver;
 
+	/**
+	 * Construtor.
+	 *
+	 * @since 0.1.0
+	 * @param AssetPathResolver $asset_resolver Utilitário para encontrar URLs de imagens.
+	 */
 	public function __construct( AssetPathResolver $asset_resolver ) {
 		$this->asset_resolver = $asset_resolver;
 	}
 
+	/**
+	 * Envia um e-mail formatado em HTML para um usuário.
+	 *
+	 * Constrói o corpo do e-mail utilizando output buffering (`ob_start`) para
+	 * manter o template HTML organizado e legível.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int    $user_id ID do usuário destinatário.
+	 * @param string $subject Assunto do e-mail.
+	 * @param string $message Corpo da mensagem (aceita HTML seguro).
+	 * @param array  $options Opções adicionais:
+	 * - 'color' (string): Cor de destaque (hex).
+	 * - 'link' (string): URL para o botão de ação.
+	 * - 'link_label' (string): Texto do botão.
+	 * @return bool True se o e-mail foi enviado com sucesso, false caso contrário.
+	 */
 	public function send( int $user_id, string $subject, string $message, array $options = array() ): bool {
 		$user_info = get_userdata( $user_id );
 		if ( ! $user_info ) {
 			return false;
 		}
 
-		$to             = $user_info->user_email;
+		$to = $user_info->user_email;
+
+		// Recupera cores do tema ou usa fallbacks.
 		$brand_color    = isset( $options['color'] ) ? $options['color'] : $this->get_css_var( 'color-verdigris-500', '#00acac' );
-		$bg_color       = $this->get_css_var( 'color-verdigris-100', '#f6fcfc' );
+		$bg_color       = $this->get_css_var( 'color-verdigris-100', '#f6fcfc' ); // Mantido para referência, embora não usado diretamente no template atual.
 		$text_color     = $this->get_css_var( 'color-neutral-900', '#202527' );
 		$white          = $this->get_css_var( 'color-neutral-100', '#ffffff' );
 		$muted_text     = $this->get_css_var( 'color-neutral-500', '#7e8d95' );
@@ -31,17 +92,18 @@ class WPMailer implements MailerInterface {
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
+		// Monta o botão de ação se um link for fornecido.
 		$button_html = '';
 		if ( ! empty( $options['link'] ) ) {
 			$btn_label   = ! empty( $options['link_label'] ) ? $options['link_label'] : 'Acessar Artigo';
 			$button_html = sprintf(
 				'<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-top: 30px; margin-bottom: 10px; width: 100%%;">
-                    <tr>
-                        <td align="center">
-                             <a href="%s" style="background-color: %s; color: %s; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">%s</a>
-                        </td>
-                    </tr>
-                </table>',
+					<tr>
+						<td align="center">
+							 <a href="%s" style="background-color: %s; color: %s; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">%s</a>
+						</td>
+					</tr>
+				</table>',
 				esc_url( $options['link'] ),
 				esc_attr( $brand_color ),
 				esc_attr( $white ),
@@ -100,23 +162,54 @@ class WPMailer implements MailerInterface {
 		return wp_mail( $to, $subject, $body, $headers );
 	}
 
+	/**
+	 * Recupera o valor hexadecimal de uma variável CSS.
+	 *
+	 * Tenta encontrar a variável no arquivo `variables.css`. Se não encontrar,
+	 * retorna o valor de fallback.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $var_name O nome da variável (ex: 'color-neutral-900').
+	 * @param string $fallback O valor padrão caso a variável não seja encontrada.
+	 * @return string O código de cor hexadecimal.
+	 */
 	private function get_css_var( string $var_name, string $fallback ): string {
 		if ( empty( self::$css_vars ) ) {
-			$this->load_css_variables(); }
+			$this->load_css_variables();
+		}
+		
+		// Limpa a sintaxe var(--nome) se for passada inteira.
 		$clean_name = str_replace( 'var(--', '', str_replace( ')', '', $var_name ) );
 		$clean_name = ltrim( $clean_name, '-' );
+		
 		return isset( self::$css_vars[ $clean_name ] ) ? self::$css_vars[ $clean_name ] : $fallback;
 	}
 
+	/**
+	 * Lê e processa o arquivo `variables.css` para extrair as cores.
+	 *
+	 * Utiliza expressão regular para encontrar padrões `--nome: #hex;`.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private function load_css_variables(): void {
+		// Define o caminho absoluto para o arquivo CSS de variáveis.
 		$css_path = plugin_dir_path( dirname( __DIR__ ) . '/sultswriten.php' ) . 'src/assets/css/variables.css';
+		
 		if ( ! file_exists( $css_path ) ) {
-			return; }
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			return;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		$css_content = file_get_contents( $css_path );
+		
+		// Extrai todas as variáveis CSS que são cores hexadecimais.
 		if ( preg_match_all( '/--([a-zA-Z0-9-]+)\s*:\s*(#[a-fA-F0-9]{3,6})/', $css_content, $matches ) ) {
 			foreach ( $matches[1] as $index => $name ) {
-				self::$css_vars[ $name ] = $matches[2][ $index ]; }
+				self::$css_vars[ $name ] = $matches[2][ $index ];
+			}
 		}
 	}
 }

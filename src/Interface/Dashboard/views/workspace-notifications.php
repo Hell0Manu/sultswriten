@@ -1,10 +1,15 @@
 <?php
 /**
- * Partial: Painel de Notificações.
+ * Partial: Painel de Notificações (Sidebar).
  *
- * @var array $notifications
- * @var int $unread_count
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Interface\Dashboard\Views
+ * @since      0.1.0
+ *
+ * @var array $notifications Lista de notificações do usuário.
+ * @var int   $unread_count  Número de notificações não lidas.
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -28,6 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<ul style="margin: 0; list-style: none;">
 			<?php
 			foreach ( $notifications as $sultswriten_notif ) :
+				// Gera URL para dispensar a notificação.
 				$sultswriten_dismiss_url = wp_nonce_url(
 					add_query_arg(
 						array(
@@ -46,6 +52,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div style="display:flex; justify-content: space-between; align-items: center;">
 						<span style="color:#a7aaad; font-size: 11px;">
 							<?php
+							// Exibe tempo relativo (ex: "2 horas atrás").
 							echo esc_html( human_time_diff( $sultswriten_notif['time'] ) . ' atrás' );
 							?>
 						</span>
@@ -59,9 +66,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php endforeach; ?>
 		</ul>
 	</div>
+
 <?php else : ?>
+	
 	<div class="sults-notification-empty" style="background: #fff; border-radius: 8px; border: 1px dashed #dcdcde; padding: 30px; text-align: center; color: #a7aaad;">
 		<span class="dashicons dashicons-yes-alt" style="font-size: 32px; width: 32px; height: 32px; margin-bottom: 10px; opacity: 0.5;"></span>
 		<p style="margin:0; font-size: 13px;">Tudo em dia! Nenhuma notificação pendente.</p>
 	</div>
+
 <?php endif; ?>

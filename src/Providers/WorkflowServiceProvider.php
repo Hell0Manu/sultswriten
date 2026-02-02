@@ -30,11 +30,42 @@ use Sults\Writen\Infrastructure\Media\GDWebPProcessor;
 use Sults\Writen\Infrastructure\WPMailer;
 use Sults\Writen\Contracts\MailerInterface;
 
+/**
+ * Classe WorkflowServiceProvider.
+ *
+ * Responsável por registrar e inicializar todos os serviços relacionados à
+ * lógica de negócio do fluxo editorial, incluindo:
+ * - Registro de Status Personalizados (Post Status).
+ * - Gestão de Permissões e Bloqueios de Edição.
+ * - Controle de Visibilidade de Posts e Mídia.
+ * - Disparo de Notificações de E-mail.
+ * - Manipulação e Otimização de Uploads.
+ *
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Providers
+ * @author     Sults
+ * @since      0.1.0
+ */
 class WorkflowServiceProvider implements ServiceProviderInterface {
 
+	/**
+	 * Registra os serviços de workflow no container.
+	 *
+	 * Define as dependências para:
+	 * 1. Políticas (Policies): Regras de validação reutilizáveis.
+	 * 2. Componentes de Status: Registro e apresentação visual dos status.
+	 * 3. Permissões: Controle fino do que cada role (Redator, Editor) pode fazer.
+	 * 4. Notificações: Envio de e-mails transacionais.
+	 * 5. Mídia: Otimização para WebP e restrições da biblioteca.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Container $container O container de DI.
+	 * @return void
+	 */
 	public function register( Container $container ): void {
 
-		// Policies.
+		// --- Policies (Regras de Negócio) ---
 		$container->set( WorkflowPolicy::class, fn() => new WorkflowPolicy() );
 		$container->set(
 			VisibilityPolicy::class,
@@ -43,7 +74,7 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Status Components.
+		// --- Componentes de Status ---
 		$container->set(
 			PostStatusRegistrar::class,
 			function ( $c ) {
@@ -72,7 +103,7 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Permission Components.
+		// --- Componentes de Permissão e Segurança ---
 		$container->set( RoleLabelUpdater::class, fn() => new RoleLabelUpdater() );
 		$container->set( DeletePrevention::class, fn() => new DeletePrevention() );
 
@@ -124,12 +155,12 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Notifications.
+		// --- Notificações ---
 		$container->set(
 			MailerInterface::class,
 			function ( $c ) {
 				return new WPMailer(
-					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class ) // Injetando aqui!
+					$c->get( \Sults\Writen\Infrastructure\AssetPathResolver::class ) 
 				);
 			}
 		);
@@ -146,7 +177,7 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Media.
+		// --- Mídia e Uploads ---
 		$container->set( \Sults\Writen\Contracts\ImageProcessorInterface::class, fn() => new GDWebPProcessor() );
 		$container->set( ThumbnailDisabler::class, fn() => new ThumbnailDisabler() );
 
@@ -157,7 +188,7 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 			}
 		);
 
-		// Manager Principal (Facade).
+		// --- Fachada Principal (Workflow Manager) ---
 		$container->set(
 			StatusManager::class,
 			function ( $c ) {
@@ -174,6 +205,14 @@ class WorkflowServiceProvider implements ServiceProviderInterface {
 		);
 	}
 
+	/**
+	 * Inicializa os serviços de workflow registrando seus hooks.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Container $container O container de DI.
+	 * @return void
+	 */
 	public function boot( Container $container ): void {
         $hook_manager = $container->get( HookManager::class );
 

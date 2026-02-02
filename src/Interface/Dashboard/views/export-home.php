@@ -1,11 +1,15 @@
 <?php
 /**
- * View da Home de Exportação.
+ * View: Tela Principal de Exportação.
  *
- * @var \WP_Query $query
- * @var array $filters
- * @var string $sults_categories_dropdown
- * @var string $sults_author_dropdown
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Interface\Dashboard\Views
+ * @since      0.1.0
+ *
+ * @var \WP_Query $query                      Query contendo os posts filtrados.
+ * @var array     $filters                    Array com os filtros ativos (s, author, cat).
+ * @var string    $sults_categories_dropdown  HTML do select de categorias (wp_dropdown_categories).
+ * @var string    $sults_author_dropdown      HTML do select de autores (wp_dropdown_users).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -59,17 +63,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 					$query->the_post();
 					$sults_post = get_post();
 
-					$sultswriten_author_id = $sults_post->post_author;
+					$sultswriten_author_id  = $sults_post->post_author;
 					$sultswriten_categories = get_the_category();
 
-					$sultswriten_cat_name   = 'Sem Categoria';
-					$sultswriten_cat_color  = \Sults\Writen\Interface\CategoryColorManager::DEFAULT_COLOR;
+					// Resolve dados da categoria para o Badge.
+					$sultswriten_cat_name  = 'Sem Categoria';
+					$sultswriten_cat_color = \Sults\Writen\Interface\CategoryColorManager::DEFAULT_COLOR;
 
 					if ( ! empty( $sultswriten_categories ) ) {
-						$sultswriten_cat_obj  = $sultswriten_categories[0];
-						$sultswriten_cat_name = $sultswriten_cat_obj->name;
-
-						$sultswriten_cat_color = \Sults\Writen\Interface\CategoryColorManager::get_color( $sultswriten_cat_obj->term_id );
+						$sultswriten_cat_obj    = $sultswriten_categories[0];
+						$sultswriten_cat_name   = $sultswriten_cat_obj->name;
+						$sultswriten_cat_color  = \Sults\Writen\Interface\CategoryColorManager::get_color( $sultswriten_cat_obj->term_id );
 					}
 					?>
 					<tr>
@@ -105,6 +109,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<div class="sults-download-actions" style="justify-content: center;">
 							
 							<?php
+							// URL de Preview (Visualização do Código).
 							$sultswriten_preview_url = add_query_arg(
 								array(
 									'page'    => \Sults\Writen\Interface\Dashboard\ExportController::PAGE_SLUG,
@@ -115,6 +120,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 							);
 							$sultswriten_preview_url = wp_nonce_url( $sultswriten_preview_url, 'sults_preview_' . get_the_ID() );
 
+							// URL de Download (Geração do ZIP).
+							// Aponta para admin-post.php para processamento sem UI.
 							$sultswriten_download_url = add_query_arg(
 								array(
 									'action'   => 'sults_export_download', 

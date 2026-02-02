@@ -1,11 +1,15 @@
 <?php
 /**
- * View para a página de Estrutura.
+ * View: Tela de Estrutura de Conteúdo (Árvore Hierárquica).
  *
- * @var string   $sults_tree_html         HTML da árvore de posts.
- * @var array    $sults_categories        Lista de categorias.
- * @var array    $sults_authors           Lista de autores.
- * @var array    $sults_potential_parents Lista de posts que podem ser pais.
+ * @package    Sults\Writen
+ * @subpackage Sults\Writen\Interface\Dashboard\Views
+ * @since      0.1.0
+ *
+ * @var string $sults_tree_html         HTML pré-renderizado da árvore de posts (lista aninhada/sortable).
+ * @var array  $sults_categories        Lista de categorias (WP_Term) para os dropdowns.
+ * @var array  $sults_authors           Lista de usuários (WP_User) para atribuição.
+ * @var array  $sults_potential_parents Lista de posts que podem servir de "Pai" para novos conteúdos.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -26,8 +30,10 @@ defined( 'ABSPATH' ) || exit;
 	<div id="sults-drawer-backdrop" class="sults-drawer-backdrop"></div>
 	<div id="sults-detail-drawer" class="sults-drawer">
 		<button type="button" class="sults-drawer-close" title="Fechar"><span class="dashicons dashicons-no-alt"></span></button>
+		
 		<div class="sults-drawer-body">
 			<div class="sults-drawer-loading"><span class="spinner is-active"></span> Carregando...</div>
+			
 			<div class="sults-drawer-content" style="display:none;">
 				
 				<div class="sults-drawer-header-content">
@@ -46,6 +52,7 @@ defined( 'ABSPATH' ) || exit;
 					<div id="drawer-workflow-actions" class="sults-actions-grid">
 						</div>
 				</div>
+
 				<div class="sults-info-group">
 					<label>CRIADO POR</label>
 					<div class="sults-author-block">
@@ -53,6 +60,7 @@ defined( 'ABSPATH' ) || exit;
 						<span id="drawer-author-name"></span>
 					</div>
 				</div>
+
 				<div class="sults-info-grid">
 					<div class="sults-info-group">
 						<label>DATA</label>
@@ -105,7 +113,7 @@ defined( 'ABSPATH' ) || exit;
 									foreach ( $sults_categories as $sults_cat ) :
 										$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
 										$sults_indent = str_repeat( '— ', $sults_level );
-										$sults_style  = ( $sults_level === 0 );
+										$sults_style  = ( $sults_level === 0 ); // Estilo para categorias raiz.
 										?>
 										<option value="<?php echo esc_attr( $sults_cat->term_id ); ?>" style="<?php echo esc_attr( $sults_style ); ?>">
 											<?php echo esc_html( $sults_indent . $sults_cat->name ); ?>
@@ -113,6 +121,7 @@ defined( 'ABSPATH' ) || exit;
 									<?php endforeach; ?>
 								</select>
 							</div>
+							
 							<div class="sults-form-group">
 								<label for="quick-edit-author">Autor</label>
 								<select name="post_author" id="quick-edit-author" class="sults-input">
@@ -184,12 +193,13 @@ defined( 'ABSPATH' ) || exit;
 							<option value="0" data-slug="" data-parent-slug="">Sem Categoria</option>
 							<?php
 							foreach ( $sults_categories as $sults_cat ) :
+								// Lógica para calcular o slug completo da categoria (para o prefixo da URL).
 								$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
 								$sults_indent = str_repeat( '— ', $sults_level );
 								$sults_style  = ( $sults_level === 0 );
 
 								$sults_parent_slug = '';
-								$sults_ancestors = get_ancestors( $sults_cat->term_id, 'category' );
+								$sults_ancestors   = get_ancestors( $sults_cat->term_id, 'category' );
 								if ( ! empty( $sults_ancestors ) ) {
 									$sults_ancestors = array_reverse( $sults_ancestors );
 									$sults_slugs     = array();
