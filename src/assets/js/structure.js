@@ -70,18 +70,28 @@ jQuery(document).ready(function ($) {
 
     const $sults_parentSelect = $('#new-post-parent');
     const $sults_parentGroup = $sults_parentSelect.closest('.sults-form-group');
-
     const $sults_categorySelect = $('#new-post-category');
-    const $slugPrefix = $('#new-post-slug-prefix');
+    
+    // Selects de Equipe do Modal
+    const $newPostAuthor = $('#new-post-author');
+    const $newPostProofreader = $('#new-post-proofreader');
+    const $newPostDesigner = $('#new-post-designer');
 
+    const $slugPrefix = $('#new-post-slug-prefix');
     const $allParentOptions = $sults_parentSelect.find('option').clone();
 
     $('#btn-open-new-post').on('click', function (e) {
         e.preventDefault();
-        $form[0].reset();
+        $form[0].reset(); // Limpa título, slug, etc.
 
+        // Reseta os selects de equipe para os valores padrão (0 ou usuário atual)
+        // Nota: O reset() do form já deve fazer isso se o HTML tiver 'selected', 
+        // mas forçamos para garantir.
+        $newPostProofreader.val("0");
+        $newPostDesigner.val("0");
+        // Para o autor, tentamos voltar ao usuário logado (primeira opção válida ou value no HTML)
+        
         $slugPrefix.text('/');
-        $('#hidden-cat-id').remove();
         $sults_parentGroup.hide();
         $sults_categorySelect.val("");
         $modalBackdrop.addClass('open');
@@ -165,12 +175,20 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    /* =========================================
+       DRAWER E CAMPOS
+       ========================================= */
     const fields = {
         title: $('#drawer-title'),
         id: $('#drawer-id'),
         status: $('#drawer-status'),
+        
+        // Exibição (Texto/Avatar)
         authorName: $('#drawer-author-name'),
         authorAvatar: $('#drawer-author-avatar'),
+        proofreaderName: $('#drawer-proofreader-name'),
+        designerName: $('#drawer-designer-name'),
+
         date: $('#drawer-date'),
         category: $('#drawer-category'),
         path: $('#drawer-path'),
@@ -185,15 +203,20 @@ jQuery(document).ready(function ($) {
         workflowSection: $('#drawer-workflow-section'),
         workflowActions: $('#drawer-workflow-actions'),
 
-        // Quick Edit Fields
+        // Quick Edit Inputs
         quickEditId: $('#quick-edit-id'),
         quickEditTitle: $('#quick-edit-title'),
         quickEditSlug: $('#quick-edit-slug'),
         quickEditCategory: $('#quick-edit-category'),
-        quickEditAuthor: $('#quick-edit-author'),
         quickEditParent: $('#quick-edit-parent'),
         quickEditPassword: $('#quick-edit-password'),
         quickEditDate: $('#quick-edit-date'),
+        
+        // Quick Edit Equipe
+        quickEditAuthor: $('#quick-edit-author'),
+        quickEditProofreader: $('#quick-edit-proofreader'),
+        quickEditDesigner: $('#quick-edit-designer'),
+
         quickEditForm: $('#sults-quick-edit-form'),
         quickEditSection: $('.sults-quick-edit-section')
     };
@@ -270,8 +293,29 @@ jQuery(document).ready(function ($) {
         fields.id.text('ID: #' + data.id);
         fields.status.html(data.status_html);
 
+        // -- Preenche Exibição da Equipe --
         fields.authorName.text(data.author.name);
         fields.authorAvatar.attr('src', data.author.avatar);
+
+        // Se o proofreader_id vier vazio ou 0, mostra traço
+        if (data.assigned.proofreader && data.assigned.proofreader != 0) {
+            // Como só temos o ID no assigned, precisamos pegar o nome do select (hack rápido)
+            // ou o backend poderia mandar o nome. Para simplificar, vou deixar o select atualizar
+            // e pegar o texto do select selecionado DEPOIS de setar o valor no Quick Edit.
+            // Mas visualmente, podemos mostrar "ID #..." ou buscar via JS se necessário.
+            // MELHORIA: O backend idealmente enviaria 'proofreader_name'.
+            // Vamos assumir que você vai usar o select para ver quem é.
+            fields.proofreaderName.text('Selecionado (ID: ' + data.assigned.proofreader + ')');
+        } else {
+            fields.proofreaderName.text('-');
+        }
+        
+        // Mesma lógica para designer
+        if (data.assigned.designer && data.assigned.designer != 0) {
+            fields.designerName.text('Selecionado (ID: ' + data.assigned.designer + ')');
+        } else {
+            fields.designerName.text('-');
+        }
 
         fields.date.text(data.date);
         fields.path.text(data.path);
@@ -291,15 +335,23 @@ jQuery(document).ready(function ($) {
             fields.btnEdit.attr('href', data.links.edit).removeClass('disabled').show();
             fields.quickEditSection.show();
 
-            // Populate Quick Edit
+            // -- Preenche Formulário de Edição Rápida --
             fields.quickEditId.val(data.id);
             fields.quickEditTitle.val(data.title);
             fields.quickEditSlug.val(data.slug);
             fields.quickEditCategory.val(data.category.id);
-            fields.quickEditAuthor.val(data.author.id);
             fields.quickEditParent.val(data.parent_id);
             fields.quickEditPassword.val(data.password);
             fields.quickEditDate.val(data.date);
+            
+            // Equipe
+            fields.quickEditAuthor.val(data.author.id);
+            fields.quickEditProofreader.val(data.assigned.proofreader);
+            fields.quickEditDesigner.val(data.assigned.designer);
+            
+            // Atualiza os labels de texto com base no que foi selecionado no select agora
+            updateTeamLabelsFromSelects();
+
         } else {
             fields.btnEdit.attr('href', '#').addClass('disabled').hide();
             fields.quickEditSection.hide();
@@ -308,6 +360,15 @@ jQuery(document).ready(function ($) {
         $loadingState.fadeOut(200, function () {
             $contentState.fadeIn(200);
         });
+    }
+
+    // Função auxiliar para mostrar nomes bonitos no drawer em vez de IDs
+    function updateTeamLabelsFromSelects() {
+        const pName = fields.quickEditProofreader.find('option:selected').text();
+        const dName = fields.quickEditDesigner.find('option:selected').text();
+        
+        if (fields.quickEditProofreader.val() != 0) fields.proofreaderName.text(pName);
+        if (fields.quickEditDesigner.val() != 0) fields.designerName.text(dName);
     }
 
     function renderWorkflowButtons(postId, transitions) {
@@ -378,22 +439,22 @@ jQuery(document).ready(function ($) {
     }
 
     /* =========================================
-       3. INTERATIVIDADE DA ÁRVORE
+       3. INTERATIVIDADE DA ÁRVORE (Drag & Drop, Toggle)
        ========================================= */
-
+    // ... (O código de Toggle e Sortable permanece inalterado) ...
+    // Vou incluir aqui o bloco Sortable para garantir que o arquivo fique completo e funcional
+    
     wrapper.on('click', '.sults-toggle', function (e) {
         e.preventDefault();
         e.stopPropagation();
         const icon = $(this);
         const li = icon.closest('li.sults-item');
         li.toggleClass('sults-closed');
-
         if (li.hasClass('sults-closed')) {
             icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
         } else {
             icon.removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
         }
-
         saveState();
     });
 
@@ -401,24 +462,16 @@ jQuery(document).ready(function ($) {
         e.preventDefault();
         const folder = $(this).closest('.sults-category-folder');
         const icon = $(this).find('.sults-cat-toggle');
-
         folder.toggleClass('sults-cat-closed');
-
         if (folder.hasClass('sults-cat-closed')) {
             icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
         } else {
             icon.removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
         }
-
         saveState();
     });
 
-    /* =========================================
-       4. DRAG AND DROP (SORTABLE)
-       ========================================= */
-
     const canManage = Boolean(Number(sultsStructureParams.can_manage));
-
     if (canManage) {
         wrapper.addClass('sults-can-manage');
         initSortable();
@@ -516,7 +569,7 @@ jQuery(document).ready(function ($) {
     }
 
     /* =========================================
-       5. SALVAR EDIÇÃO RÁPIDA (SEM STATUS)
+       5. SALVAR EDIÇÃO RÁPIDA (COM EQUIPE)
        ========================================= */
     fields.quickEditForm.on('submit', function (e) {
         e.preventDefault();
@@ -532,6 +585,9 @@ jQuery(document).ready(function ($) {
             success: function (res) {
                 if (res.success) {
                     $btn.text('Salvo!');
+                    // Atualiza a UI imediatamente para refletir os nomes sem reload se quisermos
+                    updateTeamLabelsFromSelects();
+                    
                     setTimeout(() => {
                         $btn.prop('disabled', false).text('Salvar Dados');
                         location.reload();

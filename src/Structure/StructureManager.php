@@ -183,11 +183,6 @@ class StructureManager implements HookableInterface {
 
 	/**
 	 * AJAX: Processa a movimentação de um post (Drag & Drop).
-	 *
-	 * Atualiza:
-	 * 1. Parente (Hierarquia).
-	 * 2. Categoria (Sincronização opcional).
-	 * 3. Ordem (Menu Order).
 	 */
 	public function ajax_handle_move() {
 		check_ajax_referer( 'sults_structure_nonce', 'security' );
@@ -198,28 +193,22 @@ class StructureManager implements HookableInterface {
 
 		$sults_post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		
-		// Verifica permissão no objeto específico.
 		if ( ! current_user_can( 'edit_post', $sults_post_id ) ) {
 			wp_send_json_error( 'Você não tem permissão para mover este item.' );
 		}
 
 		$sults_parent_id = isset( $_POST['parent_id'] ) ? absint( $_POST['parent_id'] ) : 0;
 		$order           = isset( $_POST['order'] ) ? array_map( 'absint', wp_unslash( $_POST['order'] ) ) : array();
-		
-		// -1 significa "não mudou de bucket de categoria".
 		$target_cat_id   = isset( $_POST['target_cat_id'] ) ? intval( $_POST['target_cat_id'] ) : -1;
 
-		// Prevenção de loop infinito.
 		if ( $sults_post_id === $sults_parent_id ) {
 			wp_send_json_error( 'Loop inválido.' );
 		}
 
-		// Validação de profundidade (Ex: máximo 2 níveis).
 		if ( ! $this->validate_hierarchy_depth( $sults_parent_id ) ) {
 			wp_send_json_error( 'Limite de hierarquia atingido.' );
 		}
 
-		// Atualiza o parente.
 		$this->post_repository->update(
 			array(
 				'ID'          => $sults_post_id,
@@ -227,21 +216,17 @@ class StructureManager implements HookableInterface {
 			)
 		);
 
-		// Lógica de Sincronização de Categoria.
 		if ( $sults_parent_id > 0 ) {
-			// Se moveu para dentro de um pai, tenta herdar a categoria do pai.
 			$this->sync_category_with_parent( $sults_post_id, $sults_parent_id );
 		} 
 		elseif ( $target_cat_id >= 0 ) {
-			// Se moveu para a raiz de uma categoria específica (Dropzone).
 			if ( $target_cat_id > 0 ) {
 				$this->post_repository->set_terms( $sults_post_id, array( $target_cat_id ), 'category' );
 			} else {
-				$this->post_repository->set_terms( $sults_post_id, array(), 'category' ); // Sem categoria.
+				$this->post_repository->set_terms( $sults_post_id, array(), 'category' );
 			}
 		}
 		
-		// Atualiza a ordem dos irmãos.
 		if ( ! empty( $order ) && is_array( $order ) ) {
 			foreach ( $order as $index => $sibling_id ) {
 				$this->post_repository->update(
@@ -262,15 +247,10 @@ class StructureManager implements HookableInterface {
 		if ( 0 === $parent_id ) {
 			return true;
 		}
-
 		$ancestors = get_post_ancestors( $parent_id );
-
-		// Se o pai já tem 2 ancestrais, ele é neto (nível 3). Adicionar um filho cria nível 4.
-		// Ajuste conforme regra de negócio.
 		if ( count( $ancestors ) >= 2 ) {
 			return false;
 		}
-
 		return true;
 	}
 
@@ -291,6 +271,10 @@ class StructureManager implements HookableInterface {
 		$sults_author_id     = $sults_post->post_author;
 		$sults_author_name   = get_the_author_meta( 'display_name', $sults_author_id );
 		$sults_author_avatar = get_avatar_url( $sults_author_id, array( 'size' => 64 ) );
+
+		// -- RECUPERA OS RESPONSÁVEIS EXTRAS --
+		$proofreader_id = get_post_meta( $sults_post_id, '_sults_proofreader_id', true );
+		$designer_id    = get_post_meta( $sults_post_id, '_sults_designer_id', true );
 
 		$sults_status_slug = $sults_post->post_status;
 		$sults_status_obj  = get_post_status_object( $sults_status_slug );
@@ -313,17 +297,13 @@ class StructureManager implements HookableInterface {
 			$sults_cat_data['color'] = $this->color_manager->get_color( $sults_primary_cat->term_id );
 		}
 
-		// Caminho relativo para preview.
 		$relative_path = PathHelper::get_relative_path( $sults_post_id );
-
 		$edit_link = get_edit_post_link( $sults_post_id, 'raw' );
 		$view_link = get_permalink( $sults_post_id );
 
-		// Verificação de permissões de workflow.
 		$user_roles = $this->user_provider->get_current_user_roles();
 		$can_edit   = ! $this->policy->is_editing_locked( $sults_status_slug, $user_roles ) && current_user_can( 'edit_post', $sults_post_id );
 
-		// Transições de status permitidas (para botões do Drawer).
 		$transitions = array();
 		$allowed_slugs = $this->policy->get_allowed_transitions( $sults_status_slug, $user_roles );
 		
@@ -337,7 +317,6 @@ class StructureManager implements HookableInterface {
 			}
 		}
 
-		// Dados de SEO (AIOSEO ou Fallback).
 		$seo_title = get_post_meta( $sults_post_id, '_aioseo_title', true );
 		$seo_desc  = get_post_meta( $sults_post_id, '_aioseo_description', true );
 
@@ -361,6 +340,11 @@ class StructureManager implements HookableInterface {
 				'id'     => $sults_author_id,
 				'name'   => $sults_author_name,
 				'avatar' => $sults_author_avatar,
+			),
+			// -- ENVIA DADOS PARA O FRONTEND --
+			'assigned'    => array(
+				'proofreader' => $proofreader_id,
+				'designer'    => $designer_id,
 			),
 			'date'        => get_the_date( 'Y-m-d\TH:i', $sults_post ),
 			'category'    => array_merge( $sults_cat_data, array( 'id' => ! empty( $sults_cats ) ? $sults_cats[0]->term_id : 0 ) ),
@@ -426,6 +410,15 @@ class StructureManager implements HookableInterface {
 		$sults_cat_id    = isset( $_POST['cat_id'] ) ? absint( $_POST['cat_id'] ) : 0;
 		$slug            = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
 
+		$author_id      = isset( $_POST['author_id'] ) ? absint( $_POST['author_id'] ) : get_current_user_id();
+		$proofreader_id = isset( $_POST['proofreader_id'] ) ? absint( $_POST['proofreader_id'] ) : 0;
+		$designer_id    = isset( $_POST['designer_id'] ) ? absint( $_POST['designer_id'] ) : 0;
+
+		$briefing_objective = isset( $_POST['briefing_objective'] ) ? sanitize_textarea_field( wp_unslash( $_POST['briefing_objective'] ) ) : '';
+		$briefing_type      = isset( $_POST['briefing_type'] ) ? sanitize_text_field( wp_unslash( $_POST['briefing_type'] ) ) : '';
+		$briefing_style     = isset( $_POST['briefing_style'] ) ? sanitize_text_field( wp_unslash( $_POST['briefing_style'] ) ) : '';
+		$briefing_deadline  = isset( $_POST['briefing_deadline'] ) ? sanitize_text_field( wp_unslash( $_POST['briefing_deadline'] ) ) : '';
+
 		if ( empty( $title ) ) {
 			wp_send_json_error( 'O título é obrigatório.' );
 		}
@@ -436,6 +429,7 @@ class StructureManager implements HookableInterface {
 			'post_status' => 'draft',
 			'post_type'   => 'post',
 			'post_parent' => $sults_parent_id,
+			'post_author' => $author_id, // Define o Redator escolhido
 		);
 
 		$sults_post_id = $this->post_repository->create( $sults_post_data );
@@ -450,6 +444,19 @@ class StructureManager implements HookableInterface {
 		} elseif ( $sults_cat_id > 0 ) {
 			$this->post_repository->set_terms( $sults_post_id, array( $sults_cat_id ), 'category' );
 		}
+
+		// -- SALVA OS META DADOS EXTRAS --
+		if ( $proofreader_id > 0 ) {
+			update_post_meta( $sults_post_id, '_sults_proofreader_id', $proofreader_id );
+		}
+		if ( $designer_id > 0 ) {
+			update_post_meta( $sults_post_id, '_sults_designer_id', $designer_id );
+		}
+
+		if ( ! empty( $briefing_objective ) ) update_post_meta( $sults_post_id, '_sults_briefing_objective', $briefing_objective );
+		if ( ! empty( $briefing_type ) ) update_post_meta( $sults_post_id, '_sults_briefing_type', $briefing_type );
+		if ( ! empty( $briefing_style ) ) update_post_meta( $sults_post_id, '_sults_briefing_style', $briefing_style );
+		if ( ! empty( $briefing_deadline ) ) update_post_meta( $sults_post_id, '_sults_briefing_deadline', $briefing_deadline );
 
 		$redirect_url = get_edit_post_link( $sults_post_id, 'raw' );
 
@@ -491,6 +498,14 @@ class StructureManager implements HookableInterface {
 		$sults_cat_id = isset( $_POST['post_category'] ) ? absint( $_POST['post_category'] ) : 0;
 		$this->post_repository->set_terms( $sults_post_id, $sults_cat_id > 0 ? array( $sults_cat_id ) : array(), 'category' );
 
+		// -- ATUALIZAÇÃO DOS RESPONSÁVEIS EXTRAS NA EDIÇÃO RÁPIDA --
+		if ( isset( $_POST['proofreader_id'] ) ) {
+			update_post_meta( $sults_post_id, '_sults_proofreader_id', absint( $_POST['proofreader_id'] ) );
+		}
+		if ( isset( $_POST['designer_id'] ) ) {
+			update_post_meta( $sults_post_id, '_sults_designer_id', absint( $_POST['designer_id'] ) );
+		}
+
 		wp_send_json_success( 'Post atualizado com sucesso.' );
 	}
 
@@ -503,12 +518,27 @@ class StructureManager implements HookableInterface {
 		$sults_categories = get_categories( array( 'hide_empty' => false ) );
 		$sults_categories = HierarchyHelper::build_hierarchy( $sults_categories, 0, 0, 'term_id', 'parent' );
 
-		$sults_authors      = get_users(
+		// Lista padrão para o "Autor" (Geralmente redatores, mas inclui quem pode editar)
+		$sults_authors = get_users(
 			array(
 				'capability__in' => array( 'edit_posts' ),
 				'orderby'        => 'display_name',
 			)
 		);
+
+		// -- NOVAS LISTAS FILTRADAS POR ROLE --
+		// Corretores (Role: Author)
+		$sults_proofreaders = get_users( array( 
+			'role'    => RoleDefinitions::CORRETOR,
+			'orderby' => 'display_name' 
+		) );
+
+		// Designers (Role: Designer)
+		$sults_designers = get_users( array( 
+			'role'    => RoleDefinitions::DESIGNER,
+			'orderby' => 'display_name' 
+		) );
+
 		$sults_all_statuses = $this->status_provider->get_all_status_slugs();
 
 		$raw_parents = $this->post_repository->get_all_for_parents();
@@ -524,6 +554,12 @@ class StructureManager implements HookableInterface {
 		}
 	}
 
+    // ... (O resto do arquivo mantém-se igual: get_tree_html, render_category_node, etc.)
+    // Incluí apenas os métodos alterados acima para referência, mas no ficheiro final deves manter os métodos privados auxiliares.
+    // Para simplificar, vou assumir que você copia e cola este bloco substituindo o original, 
+    // mas não esqueça de manter o final do arquivo que lida com o HTML da árvore se eu o tiver omitido aqui.
+    // (Vou incluir o método get_tree_html e os helpers no bloco abaixo para garantir que o arquivo fique completo).
+
 	/**
 	 * Constrói o HTML da árvore de estrutura (Lógica de Apresentação).
 	 */
@@ -533,7 +569,6 @@ class StructureManager implements HookableInterface {
 		$sults_posts        = $this->post_repository->get_by_status( $statuses );
 		$current_user_roles = $this->user_provider->get_current_user_roles();
 
-		// Agrupa posts pelo ID do pai para facilitar recursão.
 		$sults_posts_by_parent = array();
 		$all_posts_map         = array();
 		
@@ -542,7 +577,6 @@ class StructureManager implements HookableInterface {
 			$sults_posts_by_parent[ $sults_p->post_parent ][] = $sults_p;
 		}
 
-		// Tratamento para órfãos (se o pai não estiver na lista filtrada, move para a raiz).
 		foreach ( $sults_posts as $sults_post ) {
 			if ( $sults_post->post_parent > 0 && ! isset( $all_posts_map[ $sults_post->post_parent ] ) ) {
 				$sults_post->post_parent    = 0;
@@ -554,7 +588,6 @@ class StructureManager implements HookableInterface {
 		$sults_category_buckets = array();
 		$uncategorized_posts    = array();
 
-		// Agrupa posts raiz por Categoria Principal.
 		foreach ( $root_posts as $sults_post ) {
 			$sults_cats = get_the_category( $sults_post->ID );
 			
@@ -562,8 +595,6 @@ class StructureManager implements HookableInterface {
 				$uncategorized_posts[] = $sults_post;
 			} else {
 				$primary_cat = $sults_cats[0];
-				
-				// Encontra a categoria raiz (ancestral mais alto).
 				$root_term_id = $primary_cat->term_id;
 				$checker_cat  = $primary_cat;
 
@@ -576,25 +607,21 @@ class StructureManager implements HookableInterface {
 						break; 
 					}
 				}
-				
 				$sults_category_buckets[ $root_term_id ][] = $sults_post;
 			}
 		}
 
 		$all_categories = get_categories( array( 'hide_empty' => false, 'parent' => 0 ) );
-		
 		foreach ( $all_categories as $sults_cat ) {
 			$sults_cat->posts = $sults_category_buckets[ $sults_cat->term_id ] ?? array();
 		}
 
 		$html = '';
 
-		// Renderiza pastas de categoria.
 		foreach ( $all_categories as $root_cat ) {
 			$html .= $this->render_category_node( $root_cat, $sults_posts_by_parent, $current_user_roles );
 		}
 
-		// Renderiza pasta "Sem Categoria".
 		if ( ! empty( $uncategorized_posts ) ) {
 			$html .= $this->render_uncategorized_folder( $uncategorized_posts, $sults_posts_by_parent, $current_user_roles );
 		}
@@ -685,7 +712,6 @@ class StructureManager implements HookableInterface {
 		$sults_status_obj  = get_post_status_object( $sults_status_slug );
 		$status_label      = $sults_status_obj ? $sults_status_obj->label : $sults_status_slug;
 
-		// Verifica acesso do Redator (Apenas seus posts ou publicados).
 		$is_redator = in_array( RoleDefinitions::REDATOR, $user_roles, true );
 		if ( $is_redator ) {
 			$current_user_id = get_current_user_id();
@@ -707,7 +733,6 @@ class StructureManager implements HookableInterface {
 			$link_html   = '<span class="sults-card-title">' . esc_html( $element->post_title ) . '</span>';
 			$action_html = '<span class="' . $icon_class . '" title="Acesso Restrito"><span class="dashicons dashicons-lock"></span></span>';
 		} else {
-			// Verifica bloqueio de edição por política de workflow.
 			$is_locked_by_policy = $this->policy->is_editing_locked( $sults_status_slug, $user_roles );
 			$can_edit_native     = $this->user_provider->current_user_can( 'edit_post', $element->ID );
 
@@ -724,7 +749,6 @@ class StructureManager implements HookableInterface {
 			$action_html = '<a href="' . esc_url( $target_url ) . '" target="_blank" title="' . esc_attr( $action_title ) . '" class="' . $icon_class . '"><span class="dashicons ' . $action_icon . '"></span></a>';
 		}
 
-		// Badge de categoria "alvo" (se estiver aninhado mas a categoria não bater com a pasta).
 		$badge_html = '';
 		$cats = get_the_category( $element->ID );
 		$target_cat_name = '';
@@ -735,7 +759,6 @@ class StructureManager implements HookableInterface {
 				$target_cat_name = $primary->name;
 			}
 		}
-		// Herança de nome para exibição se o post pai tiver categoria.
 		if ( empty( $target_cat_name ) && $element->post_parent > 0 ) {
 			$parent_post = get_post( $element->post_parent );
 			if ( $parent_post ) {
@@ -752,7 +775,6 @@ class StructureManager implements HookableInterface {
 		if ( ! empty( $target_cat_name ) ) {
 			$badge_html = '<span class="sults-status-badge">' . esc_html( $target_cat_name ) . '</span>';
 		}
-		// ------------------------------------------------
 
 		$toggle_html = $has_children
 			? '<span class="sults-toggle dashicons dashicons-arrow-right-alt2"></span>'
@@ -840,7 +862,6 @@ class StructureManager implements HookableInterface {
 
 		if ( ! empty( $child_cats ) && ! is_wp_error( $child_cats ) ) {
 			foreach ( $child_cats as $child_cat_id ) {
-				// Verifica se a categoria atual do filho é a mesma do pai ou uma subcategoria dela.
 				if ( $child_cat_id === $parent_main_cat_id || term_is_ancestor_of( $parent_main_cat_id, $child_cat_id, 'category' ) ) {
 					$has_valid_subcat = true;
 					break;

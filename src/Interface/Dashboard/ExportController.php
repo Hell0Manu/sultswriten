@@ -99,6 +99,7 @@ class ExportController implements HookableInterface {
 	 */
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
+		add_action( 'wp_ajax_sults_export_change_status', array( $this, 'ajax_update_status' ) );
 	}
 
 	/**
@@ -139,6 +140,38 @@ class ExportController implements HookableInterface {
 	}
 
 	/**
+	 * AJAX: Atualiza o status do post diretamente da tela de exportação.
+	 */
+	public function ajax_update_status() {
+		check_ajax_referer( 'sults_export_status_nonce', 'security' );
+
+		$post_id    = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$new_status = isset( $_POST['status'] ) ? sanitize_key( $_POST['status'] ) : '';
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( 'Sem permissão.' );
+		}
+
+		// Validar se o status é permitido
+		$allowed = array( 'publish', 'pending_pub', 'suspended' );
+		if ( ! in_array( $new_status, $allowed, true ) ) {
+			wp_send_json_error( 'Status inválido.' );
+		}
+
+		// Atualiza o post
+		$updated = wp_update_post( array(
+			'ID'          => $post_id,
+			'post_status' => $new_status,
+		) );
+
+		if ( is_wp_error( $updated ) ) {
+			wp_send_json_error( $updated->get_error_message() );
+		}
+
+		wp_send_json_success( 'Status atualizado com sucesso.' );
+	}
+
+	/**
 	 * Renderiza a tela de listagem (Home da Exportação).
 	 *
 	 * Processa os filtros de busca (texto, autor, categoria) e paginação,
@@ -154,17 +187,20 @@ class ExportController implements HookableInterface {
 		$author_id = isset( $_GET['author'] ) && '' !== $_GET['author'] ? absint( $_GET['author'] ) : null;
 		$cat_id    = isset( $_GET['cat'] ) && '' !== $_GET['cat'] && -1 !== (int) $_GET['cat'] ? absint( $_GET['cat'] ) : null;
 		$paged     = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1;
+		$status = isset( $_GET['status'] ) && '' !== $_GET['status'] ? sanitize_key( $_GET['status'] ) : 'pending_pub';
 		// phpcs:enable
 
 		$filters = array(
 			's'      => $search,
 			'author' => $author_id,
 			'cat'    => $cat_id,
+			'status' => $status,
 			'paged'  => $paged
 		);
 
-		// Busca apenas posts "finalizados" (prontos para exportação).
-		$query = $this->post_repo->get_finished_posts( $paged, $search, $cat_id, $author_id );
+
+		// Busca apenas posts "aguardando publicação" (prontos para exportação).
+		$query = $this->post_repo->get_finished_posts( $paged, $search, $cat_id, $author_id, $status);
 
 		// Prepara dropdowns de filtro.
 		$sults_cat_dropdown_args = array(
@@ -189,7 +225,7 @@ class ExportController implements HookableInterface {
 
 		$this->view->render( 'export-home', array(
 			'query'                     => $query,
-			'filters'                   => $filters,
+			'filters'                   => array_merge( $filters, array( 'status' => $status ) ),
 			'sults_categories_dropdown' => $sults_categories_dropdown,
 			'sults_author_dropdown'     => $sults_author_dropdown,
 		) );

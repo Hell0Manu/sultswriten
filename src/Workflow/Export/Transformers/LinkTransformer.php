@@ -75,6 +75,10 @@ class LinkTransformer implements DomTransformerInterface {
 				continue;
 			}
 
+			//Remove a barra final da URL, se existir (ex: /slug/ -> /slug).
+			$href = rtrim( $href, '/' );
+			$link->setAttribute( 'href', $href );
+
 			// Ignora links funcionais que não são navegação (âncoras, email, telefone).
 			if ( strpos( $href, '#' ) === 0 || stripos( $href, 'mailto:' ) === 0 || stripos( $href, 'tel:' ) === 0 ) {
 				continue;

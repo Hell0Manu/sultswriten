@@ -8,7 +8,9 @@
  *
  * @var string $sults_tree_html         HTML pré-renderizado da árvore de posts (lista aninhada/sortable).
  * @var array  $sults_categories        Lista de categorias (WP_Term) para os dropdowns.
- * @var array  $sults_authors           Lista de usuários (WP_User) para atribuição.
+ * @var array  $sults_authors           Lista de usuários (WP_User) gerais/redatores.
+ * @var array  $sults_proofreaders      Lista de usuários (WP_User) com role de Corretor.
+ * @var array  $sults_designers         Lista de usuários (WP_User) com role de Designer.
  * @var array  $sults_potential_parents Lista de posts que podem servir de "Pai" para novos conteúdos.
  */
 
@@ -53,11 +55,29 @@ defined( 'ABSPATH' ) || exit;
 						</div>
 				</div>
 
-				<div class="sults-info-group">
-					<label>CRIADO POR</label>
-					<div class="sults-author-block">
-						<img id="drawer-author-avatar" src="" alt="Avatar" class="sults-avatar-img">
-						<span id="drawer-author-name"></span>
+		
+
+				<div class="sults-info-grid three-columns">
+					<div class="sults-info-group">
+						<label>REDATOR</label>
+						<div class="sults-author-block">
+							<img id="drawer-author-avatar" src="" alt="Avatar" class="sults-avatar-img">
+							<span id="drawer-author-name"></span>
+						</div>
+					</div>
+					
+					<div class="sults-info-group">
+						<label>CORRETOR</label>
+						<div class="sults-author-block">
+							<span id="drawer-proofreader-name" class="sults-meta-value">-</span>
+						</div>
+					</div>
+
+					<div class="sults-info-group">
+						<label>DESIGNER</label>
+						<div class="sults-author-block">
+							<span id="drawer-designer-name" class="sults-meta-value">-</span>
+						</div>
 					</div>
 				</div>
 
@@ -113,7 +133,7 @@ defined( 'ABSPATH' ) || exit;
 									foreach ( $sults_categories as $sults_cat ) :
 										$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
 										$sults_indent = str_repeat( '— ', $sults_level );
-										$sults_style  = ( $sults_level === 0 ); // Estilo para categorias raiz.
+										$sults_style  = ( $sults_level === 0 );
 										?>
 										<option value="<?php echo esc_attr( $sults_cat->term_id ); ?>" style="<?php echo esc_attr( $sults_style ); ?>">
 											<?php echo esc_html( $sults_indent . $sults_cat->name ); ?>
@@ -123,10 +143,36 @@ defined( 'ABSPATH' ) || exit;
 							</div>
 							
 							<div class="sults-form-group">
-								<label for="quick-edit-author">Autor</label>
+								<label for="quick-edit-author">Redator (Autor)</label>
 								<select name="post_author" id="quick-edit-author" class="sults-input">
 									<?php foreach ( $sults_authors as $sults_author ) : ?>
 										<option value="<?php echo esc_attr( $sults_author->ID ); ?>"><?php echo esc_html( $sults_author->display_name ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+						</div>
+
+						<div class="sults-info-grid">
+							<div class="sults-form-group">
+								<label for="quick-edit-proofreader">Corretor Responsável</label>
+								<select name="proofreader_id" id="quick-edit-proofreader" class="sults-input">
+									<option value="0">-- Nenhum --</option>
+									<?php foreach ( $sults_proofreaders as $sults_proofreader ) : ?>
+										<option value="<?php echo esc_attr( $sults_proofreader->ID ); ?>">
+											<?php echo esc_html( $sults_proofreader->display_name ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+
+							<div class="sults-form-group">
+								<label for="quick-edit-designer">Designer Responsável</label>
+								<select name="designer_id" id="quick-edit-designer" class="sults-input">
+									<option value="0">-- Nenhum --</option>
+									<?php foreach ( $sults_designers as $sults_designer ) : ?>
+										<option value="<?php echo esc_attr( $sults_designer->ID ); ?>">
+											<?php echo esc_html( $sults_designer->display_name ); ?>
+										</option>
 									<?php endforeach; ?>
 								</select>
 							</div>
@@ -193,7 +239,6 @@ defined( 'ABSPATH' ) || exit;
 							<option value="0" data-slug="" data-parent-slug="">Sem Categoria</option>
 							<?php
 							foreach ( $sults_categories as $sults_cat ) :
-								// Lógica para calcular o slug completo da categoria (para o prefixo da URL).
 								$sults_level  = isset( $sults_cat->depth_level ) ? (int) $sults_cat->depth_level : 0;
 								$sults_indent = str_repeat( '— ', $sults_level );
 								$sults_style  = ( $sults_level === 0 );
@@ -223,6 +268,45 @@ defined( 'ABSPATH' ) || exit;
 							<?php endforeach; ?>
 						</select>
 					</div>
+					
+					<div class="sults-info-grid">
+						<div class="sults-form-group">
+							<label for="new-post-author">Redator</label>
+							<select id="new-post-author" name="author_id" class="sults-input">
+								<option value="<?php echo get_current_user_id(); ?>" selected>Eu (<?php echo wp_get_current_user()->display_name; ?>)</option>
+								<?php foreach ( $sults_authors as $sults_author ) : ?>
+									<?php if ( $sults_author->ID !== get_current_user_id() ) : ?>
+										<option value="<?php echo esc_attr( $sults_author->ID ); ?>">
+											<?php echo esc_html( $sults_author->display_name ); ?>
+										</option>
+									<?php endif; ?>
+								<?php endforeach; ?>
+							</select>
+						</div>
+						<div class="sults-form-group">
+							<label for="new-post-proofreader">Corretor</label>
+							<select id="new-post-proofreader" name="proofreader_id" class="sults-input">
+								<option value="0">-- Definir depois --</option>
+								<?php foreach ( $sults_proofreaders as $sults_proofreader ) : ?>
+									<option value="<?php echo esc_attr( $sults_proofreader->ID ); ?>">
+										<?php echo esc_html( $sults_proofreader->display_name ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+
+						<div class="sults-form-group">
+							<label for="new-post-designer">Designer</label>
+							<select id="new-post-designer" name="designer_id" class="sults-input">
+								<option value="0">-- Definir depois --</option>
+								<?php foreach ( $sults_designers as $sults_designer ) : ?>
+									<option value="<?php echo esc_attr( $sults_designer->ID ); ?>">
+										<?php echo esc_html( $sults_designer->display_name ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+					</div>
 
 					<div class="sults-form-group" id="group-new-post-parent" style="display:none;">
 						<label for="new-post-parent">Post Pai (Raiz)</label>
@@ -248,7 +332,40 @@ defined( 'ABSPATH' ) || exit;
 							<span class="sults-input-prefix" id="new-post-slug-prefix">/</span>
 							<input type="text" id="new-post-slug" name="slug" class="sults-input" placeholder="guia-de-instalacao">
 						</div>
+					
 					</div>
+
+					<div style="background: #f6f7f7; padding: 15px; border-radius: 4px; border: 1px solid #dcdcde; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; color: #646970;">Briefing para o Redator</h4>
+                        
+                        <div class="sults-form-group">
+                            <label for="briefing-objective">Objetivo do Conteúdo</label>
+                            <textarea id="briefing-objective" name="briefing_objective" class="sults-input" rows="3" placeholder="Ex: Explicar ao cliente como instalar o software passo a passo..."></textarea>
+                        </div>
+
+                        <div class="sults-info-grid">
+                            <div class="sults-form-group">
+                                <label for="briefing-type">Tipo de Texto</label>
+                                <select id="briefing-type" name="briefing_type" class="sults-input">
+                                    <option value="artigo">Artigo de Blog</option>
+                                    <option value="pagina_vendas">Página de Vendas</option>
+                                    <option value="visao_geral">Visão Geral / Institucional</option>
+                                    <option value="segmento">Página de Segmento</option>
+                                    <option value="ajuda">Central de Ajuda (Tutorial)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="sults-form-group">
+                                <label for="briefing-style">Forma de Escrita</label>
+                                <input type="text" id="briefing-style" name="briefing_style" class="sults-input" placeholder="Ex: Formal, Técnico, Descontraído...">
+                            </div>
+                        </div>
+                         
+                        <div class="sults-form-group">
+                             <label for="briefing-deadline">Prazo de Entrega</label>
+                             <input type="date" id="briefing-deadline" name="briefing_deadline" class="sults-input">
+                        </div>
+                    </div>
 
 					<div class="sults-modal-footer">
 						<button type="button" class="button sults-modal-cancel">Cancelar</button>

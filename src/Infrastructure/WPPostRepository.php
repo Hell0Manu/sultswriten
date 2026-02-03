@@ -12,6 +12,7 @@ namespace Sults\Writen\Infrastructure;
 use Sults\Writen\Contracts\PostRepositoryInterface;
 use Sults\Writen\Workflow\PostStatus\PostStatusRegistrar;
 use Sults\Writen\Workflow\Permissions\VisibilityPolicy;
+use Sults\Writen\Workflow\PostStatus\StatusConfig;
 use WP_Query;
 use WP_Post;
 use WP_Error;
@@ -90,7 +91,7 @@ class WPPostRepository implements PostRepositoryInterface {
 		$sults_all_statuses = array_merge( $core_statuses, $custom_statuses );
 
 		// Remove os status finais para exibir apenas tarefas ativas.
-		$workspace_statuses = array_diff( $sults_all_statuses, array( 'publish', 'finished' ) );
+		$workspace_statuses = array_diff( $sults_all_statuses, array( StatusConfig::PENDING_PUBLICATION) );
 
 		$args = array(
 			'post_type'      => 'post',
@@ -122,12 +123,12 @@ class WPPostRepository implements PostRepositoryInterface {
 		int $page = 1, 
 		?string $search = null, 
 		?int $category_id = null, 
-		?int $author_id = null 
+		?int $author_id = null,
+		?string $status = null
 	): WP_Query {
-		
 		$args = array(
 			'post_type'      => 'post',
-			'post_status'    => 'finished',
+			'post_status'    => StatusConfig::PENDING_PUBLICATION,
 			'posts_per_page' => 20,
 			'paged'          => $page,
 			'orderby'        => 'date',

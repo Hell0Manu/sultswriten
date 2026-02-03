@@ -77,4 +77,6 @@ class RoleLabelUpdater {
 
 		return $roles;
 	}
+
+	
 }

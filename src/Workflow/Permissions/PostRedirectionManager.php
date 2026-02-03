@@ -69,6 +69,7 @@ class PostRedirectionManager {
 	 */
 	public function register(): void {
 		add_action( 'load-post.php', array( $this, 'maybe_redirect_from_edit_screen' ) );
+		add_action( 'load-edit.php', array( $this, 'redirect_post_list' ) );
 	}
 
 	/**
@@ -114,6 +115,26 @@ class PostRedirectionManager {
 		// Se o usuário tem role bloqueada E o status é bloqueado -> Redireciona.
 		if ( array_intersect( $roles_to_block, $user_roles ) && in_array( $current_status, $statuses_to_block, true ) ) {
 			wp_safe_redirect( get_permalink( $sults_post_id ) );
+			exit;
+		}
+	}
+
+	/**
+	 * Redireciona a listagem padrão de Posts para a página de Estrutura.
+	 *
+	 * Verifica se a tela atual é a listagem do post type 'post'.
+	 * Se for, redireciona para 'admin.php?page=sults-writen-structure'.
+	 *
+	 * @return void
+	 */
+	public function redirect_post_list(): void {
+		$screen = get_current_screen();
+
+		if ( $screen && 'edit-post' === $screen->id && 'post' === $screen->post_type ) {
+			
+			$structure_url = admin_url( 'admin.php?page=sults-writen-structure' );
+			
+			wp_safe_redirect( $structure_url );
 			exit;
 		}
 	}

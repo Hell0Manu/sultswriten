@@ -46,6 +46,14 @@ class JspHtmlSanitizer implements JspHtmlSanitizerInterface {
 	 * @return string O HTML sanitizado (seguro para value="...").
 	 */
 	public function sanitize( string $html ): string {
+		// Remove espaços não separáveis (NBSP) e placeholders literais.
+		// Converte &nbsp; (entidade), \xc2\xa0 (caractere unicode) e [NBSP] (se existir literal) para espaço simples.
+		$html = str_replace( array( '&nbsp;', "\xc2\xa0", '[NBSP]' ), ' ', $html );
+
+		// Remove tags <strong> vazias ou que contêm apenas espaços em branco.
+		// Regex: <strong ...>(qualquer espaço)</strong>
+		$html = preg_replace( '/<strong\b[^>]*>(\s)*<\/strong>/i', '', $html );
+
 		// Passo 1: Normaliza atributos das tags HTML para usar aspas simples.
 		// Regex: Procura por [espaço][chave]=["valor"] e troca por [espaço][chave]='valor'.
 		// Exemplo: <img src="foto.jpg"> vira <img src='foto.jpg'>.
